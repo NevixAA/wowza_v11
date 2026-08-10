@@ -23,12 +23,21 @@ standard 0.40, else 0.30 (props were the 0.30 zero-signal case; team O/U has rea
 p_market / p_blend / EV-lb / edge) next to v9's live tip, updated to the latest pre-KO snapshot.
 
 ## Roadmap
-- [x] Shadow log (this) — reads v9 public data, logs market-first decisions
-- [ ] **Grader + CLV** — join picks to results, capture closing line, compute CLV per pick
-- [ ] **v9-vs-V11 scoreboard** — hit-rate / P&L (units) / CLV side by side, cumulative
+- [x] Shadow log — reads v9 public data, logs market-first decisions (`v11_shadow.py`)
+- [x] **Grader + scoreboard** — grades v9's & v11's picks vs actual results, writes a
+  head-to-head (picks / W-L / P&L units / hit%), overall + monthly (`v11_grade.py` →
+  `output/v11_graded.csv`, `output/v11_scoreboard.csv`)
+- [ ] **CLV per pick** — capture the closing line for v11's own picks + CLV column
+- [ ] **Full result coverage** — fetch football-data / API-Football results so v11 picks on
+  fixtures v9 didn't tip also get graded (v1 uses v9's ledger → only the overlap)
 - [ ] **Multi-book feed** — V11's own OddsAPI per-book fetch → consensus + best-price
-  (line-shopping) — the main missing edge source
+  (line-shopping); may be limited in our thin-book leagues
 - [ ] Monthly review → decide what (if anything) graduates toward v9
+
+## The monthly review
+Open `output/v11_scoreboard.csv` — the `overall` rows show v9 vs v11 (picks, W-L, P/L in
+units, hit%). Right now v11 is far more selective than v9 (market-first NO_BET default), so
+compare *quality* (P/L per pick, hit%) not volume.
 
 ## Run
 ```bash
