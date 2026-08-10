@@ -1,0 +1,7 @@
+__pycache__/
+*.pyc
+.venv/
+.env
+.api_keys
+# local v9-data overrides used only for offline testing (CI fetches from GitHub)
+output/_v9_*

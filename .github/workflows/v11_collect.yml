@@ -1,0 +1,41 @@
+name: V11 Collect
+
+# Data-collection only. Reads v9's PUBLIC data, logs the market-first engine's decisions to
+# output/v11_shadow_log.csv. No Telegram, no dashboard, no stakes. Cannot affect v9.
+
+on:
+  schedule:
+    - cron: '25,55 8-23 * * *'   # twice/hour during match hours
+  workflow_dispatch:
+
+concurrency:
+  group: v11-collect
+  cancel-in-progress: false
+
+jobs:
+  collect:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install deps
+        run: pip install pandas numpy requests
+
+      - name: Collect V11 shadow (reads v9 public data)
+        run: python scripts/v11_shadow.py
+
+      - name: Commit log
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add -f output/v11_shadow_log.csv 2>/dev/null || true
+          git diff --staged --quiet || \
+            git commit -m "auto: v11 collect $(date -u '+%Y-%m-%d %H:%M UTC')"
+          git push || echo "nothing to push / push skipped"
