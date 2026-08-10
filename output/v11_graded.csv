@@ -123,7 +123,7 @@ date,month,league,match,over25_result,live_side,live_tier,live_pnl,v11_side,v11_
 2026-08-10,2026-08,Sweden Allsvenskan,IK Sirius vs IF Brommapojkarna,,UNDER,SNIPER,,-,NO_BET,
 2026-08-14,2026-08,Sweden Allsvenskan,IF Elfsborg vs Västerås SK,,UNDER,AVOID,,-,NO_BET,
 2026-08-15,2026-08,Sweden Allsvenskan,Mjällby AIF vs IK Sirius,,UNDER,VALUABLE,,-,NO_BET,
-2026-08-16,2026-08,Sweden Allsvenskan,Djurgardens IF vs AIK,,UNDER,SNIPER,,-,NO_BET,
+2026-08-16,2026-08,Sweden Allsvenskan,Djurgardens IF vs AIK,,UNDER,SNIPER,,UNDER,VALUABLE,
 2026-08-16,2026-08,Sweden Allsvenskan,Degerfors IF vs IFK Goteborg,,OVER,AVOID,,-,NO_BET,
 2026-08-16,2026-08,Sweden Allsvenskan,IF Brommapojkarna vs Örgryte IS,,UNDER,VALUABLE,,-,NO_BET,
 2026-08-16,2026-08,Denmark Superliga,FC Nordsjaelland vs Silkeborg IF,,UNDER,AVOID,,-,NO_BET,
