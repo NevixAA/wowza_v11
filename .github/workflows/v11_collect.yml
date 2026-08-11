@@ -34,11 +34,14 @@ jobs:
       - name: Grade + scoreboard (v9 vs v11 on settled fixtures)
         run: python scripts/v11_grade.py
 
+      - name: Residual-vs-market experiment (does the model beat the market?)
+        run: python scripts/v11_residual.py
+
       - name: Commit logs
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          for f in output/v11_shadow_log.csv output/v11_graded.csv output/v11_scoreboard.csv; do
+          for f in output/v11_shadow_log.csv output/v11_graded.csv output/v11_scoreboard.csv output/v11_residual.csv; do
             git add -f "$f" 2>/dev/null || true
           done
           git diff --staged --quiet || \

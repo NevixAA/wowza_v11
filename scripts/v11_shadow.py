@@ -57,7 +57,32 @@ def _blend_weight(odds, n_eff, market, w_cap):
     return max(0.0, min(w_cap, w))
 
 
-def _decide(p_model, o_bet, o_other, n_eff, ece, rclv, w_cap):
+def _validate_odds(o_over, o_under, o_over15=None, o_over35=None):
+    """DATA-VALIDATION FIRST (external review): reject contaminated prices before any decision.
+    Checks overround sanity + O/U line ordering. Returns (ok, reason)."""
+    try:
+        oo, ou = float(o_over), float(o_under)
+    except (TypeError, ValueError):
+        return False, "non-numeric odds"
+    if oo <= 1.0 or ou <= 1.0:
+        return False, "odds <= 1.0"
+    orr = 1.0 / oo + 1.0 / ou
+    if not (config.OVERROUND_MIN < orr <= config.OVERROUND_MAX):
+        return False, f"overround {orr:.3f} outside ({config.OVERROUND_MIN},{config.OVERROUND_MAX}]"
+    ladder = []
+    for v in (o_over15, o_over, o_over35):          # over1.5 < over2.5 < over3.5 (odds)
+        try:
+            fv = float(v)
+            if fv > 1.0:
+                ladder.append(fv)
+        except (TypeError, ValueError):
+            pass
+    if len(ladder) >= 2 and any(ladder[i] >= ladder[i + 1] for i in range(len(ladder) - 1)):
+        return False, "O/U ordering violated"
+    return True, ""
+
+
+def _decide(p_model, o_bet, o_other, n_eff, ece, rclv, rclv_n, w_cap):
     out = {"tier": "NO_BET", "p_market": None, "p_blend": None, "ev_lb": None, "abs_edge": None}
     best = o_bet
     if not o_bet or o_bet <= 1.0 or best > MAX_BET_ODDS:
@@ -78,7 +103,9 @@ def _decide(p_model, o_bet, o_other, n_eff, ece, rclv, w_cap):
     b = _band(best)
     if b is None or _ev < b["ev_floor"] or ae < b["abs_floor"]:
         return out
-    clv_ok = (rclv is not None and rclv > 0)
+    # CLV gate now needs a big enough CLEAN sample, not just mean>0 (external review): below
+    # MIN_CLV_N the CLV evidence is too immature to certify a BET -> cap at VALUABLE (=PAPER).
+    clv_ok = (rclv is not None and rclv > 0 and rclv_n is not None and rclv_n >= config.MIN_CLV_N)
     if _ev >= b["ev_floor"] * 2 and ae >= b["abs_floor"] * 1.5 and clv_ok:
         out["tier"] = "SNIPER"
     elif _ev >= b["ev_floor"] * 1.3 and clv_ok:
@@ -88,7 +115,18 @@ def _decide(p_model, o_bet, o_other, n_eff, ece, rclv, w_cap):
     return out
 
 
-def _rolling_clv_by_league(bl: pd.DataFrame) -> dict:
+def _tier_to_state(tier: str) -> str:
+    """Three explicit states (external review). BET only when CLV-certified (SNIPER/MARKSMAN);
+    PAPER when it clears economics but CLV isn't validated yet; else NO_BET."""
+    if tier in ("SNIPER", "MARKSMAN"):
+        return "BET"
+    if tier == "VALUABLE":
+        return "PAPER"
+    return "NO_BET"
+
+
+def _rolling_clv_stats(bl: pd.DataFrame) -> dict:
+    """league -> (mean_clv_pct, clean_n) from settled live rows."""
     if bl is None or bl.empty:
         return {}
     if "source" in bl.columns:
@@ -98,15 +136,17 @@ def _rolling_clv_by_league(bl: pd.DataFrame) -> dict:
     bl = bl.dropna(subset=["clv_pct"])
     if bl.empty or "league" not in bl.columns:
         return {}
-    return bl.groupby("league")["clv_pct"].mean().to_dict()
+    g = bl.groupby("league")["clv_pct"]
+    means, counts = g.mean(), g.count()
+    return {lg: (float(means[lg]), int(counts[lg])) for lg in means.index}
 
 
 def run():
     df = _load_v9("predictions.csv")
     try:
-        rclv = _rolling_clv_by_league(_load_v9("bets_ledger.csv"))
+        rstats = _rolling_clv_stats(_load_v9("bets_ledger.csv"))
     except Exception:
-        rclv = {}
+        rstats = {}
     ts = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
     today = datetime.now(timezone.utc).strftime("%Y-%m-%d")
 
@@ -117,29 +157,38 @@ def run():
             p_over = float(r.get("p_over25"))
         except (TypeError, ValueError):
             continue
-        if not (o_over > 1.0 and o_under > 1.0 and 0.0 <= p_over <= 1.0):
+        if not (0.0 <= p_over <= 1.0) or str(r.get("date", ""))[:10] < today:
             continue
-        if str(r.get("date", ""))[:10] < today:
-            continue
-        lg = str(r.get("league", "")); rc = rclv.get(lg)
+        lg = str(r.get("league", "")); rc, rn = rstats.get(lg, (None, None))
         w_cap = MOAT_W_CAP.get(str(r.get("model_type", "")), DEFAULT_W_CAP)
-        over = _decide(p_over, o_over, o_under, N_EFF, ECE, rc, w_cap)
-        under = _decide(1.0 - p_over, o_under, o_over, N_EFF, ECE, rc, w_cap)
-        side, best = (("OVER", over) if TIER_RANK[over["tier"]] >= TIER_RANK[under["tier"]]
-                      else ("UNDER", under))
-        if best["tier"] in ("NO_BET", "OBSERVE"):
-            side = "-"
+
+        # DATA-VALIDATION FIRST — reject contaminated prices before deciding.
+        valid, reason = _validate_odds(o_over, o_under, r.get("odds_over15"), r.get("odds_over35"))
+        if not valid:
+            side, best, state = "-", {"tier": "NO_BET", "p_market": None, "p_blend": None,
+                                      "ev_lb": None, "abs_edge": None}, "NO_BET"
+        else:
+            over = _decide(p_over, o_over, o_under, N_EFF, ECE, rc, rn, w_cap)
+            under = _decide(1.0 - p_over, o_under, o_over, N_EFF, ECE, rc, rn, w_cap)
+            side, best = (("OVER", over) if TIER_RANK[over["tier"]] >= TIER_RANK[under["tier"]]
+                          else ("UNDER", under))
+            state = _tier_to_state(best["tier"])
+            if best["tier"] in ("NO_BET", "OBSERVE"):
+                side = "-"
+
         rows.append({
             "snapshot_ts": ts, "date": str(r.get("date", ""))[:10], "league": lg,
             "match": f"{r.get('home_team', '')} vs {r.get('away_team', '')}",
             "model_type": r.get("model_type", ""),
             "odds_over25": o_over, "odds_under25": o_under,
+            "valid_odds": valid, "reject_reason": reason,
             "live_side": r.get("best_side", r.get("bet", "")), "live_tier": r.get("signal_tier", ""),
             "p_model_over": round(p_over, 3),
-            "v11_side": side, "v11_tier": best["tier"], "v11_p_market": best["p_market"],
-            "v11_p_blend": best["p_blend"], "v11_ev_lb": best["ev_lb"],
-            "v11_abs_edge": best["abs_edge"],
+            "v11_state": state, "v11_side": side, "v11_tier": best["tier"],
+            "v11_p_market": best["p_market"], "v11_p_blend": best["p_blend"],
+            "v11_ev_lb": best["ev_lb"], "v11_abs_edge": best["abs_edge"],
             "rolling_clv_pct": round(rc, 2) if rc is not None else "",
+            "rolling_clv_n": rn if rn is not None else "",
         })
     if not rows:
         print("[v11] no upcoming fixtures"); return 0
@@ -153,8 +202,10 @@ def run():
             pass
     new = new.sort_values("snapshot_ts").drop_duplicates(subset=["date", "match"], keep="last")
     new.to_csv(out_f, index=False)
-    n_bet = int(new["v11_tier"].isin(["SNIPER", "MARKSMAN", "VALUABLE"]).sum())
-    print(f"[v11] logged {len(rows)} fixtures ({n_bet} V11 bets) -> {out_f.name} (tracked {len(new)})")
+    sc = new["v11_state"].value_counts().to_dict() if "v11_state" in new.columns else {}
+    rej = int((new["valid_odds"] == False).sum()) if "valid_odds" in new.columns else 0
+    print(f"[v11] logged {len(rows)} fixtures -> {out_f.name} (tracked {len(new)}); "
+          f"states {sc}; odds-rejected {rej}")
     return len(rows)
 
 

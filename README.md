@@ -24,15 +24,27 @@ p_market / p_blend / EV-lb / edge) next to v9's live tip, updated to the latest 
 
 ## Roadmap
 - [x] Shadow log — reads v9 public data, logs market-first decisions (`v11_shadow.py`)
-- [x] **Grader + scoreboard** — grades v9's & v11's picks vs actual results, writes a
-  head-to-head (picks / W-L / P&L units / hit%), overall + monthly (`v11_grade.py` →
-  `output/v11_graded.csv`, `output/v11_scoreboard.csv`)
+- [x] **Grader + scoreboard** — head-to-head v9 vs v11 on settled fixtures (`v11_grade.py`)
+- [x] **Data-validation-first gate** — reject contaminated prices (overround + O/U ordering)
+  before any decision (`_validate_odds`)
+- [x] **BET / PAPER / NO_BET states + CLV-sample gate** — BET only when a segment's *clean*
+  CLV count ≥ `MIN_CLV_N` (150) and positive; else PAPER (solves the bootstrap trap); else
+  NO_BET (`v11_state` column)
+- [x] **Residual-vs-market experiment** — MARKET vs MARKET+WOWZA on Brier + log-loss per
+  segment; the real test of whether the model adds info after the price (`v11_residual.py` →
+  `output/v11_residual.csv`)
 - [ ] **CLV per pick** — capture the closing line for v11's own picks + CLV column
-- [ ] **Full result coverage** — fetch football-data / API-Football results so v11 picks on
-  fixtures v9 didn't tip also get graded (v1 uses v9's ledger → only the overlap)
+- [ ] **Full result coverage** — own football-data / API-Football results fetch (v1 grades
+  only the overlap with v9's ledger)
 - [ ] **Multi-book feed** — V11's own OddsAPI per-book fetch → consensus + best-price
   (line-shopping); may be limited in our thin-book leagues
+- [ ] **Hierarchical league calibration** — `logit(p_corr)=logit(p_global)+league_intercept`
+  with shrinkage (fixes the H2 manufactured-edge / distribution-shift problem cleanly)
 - [ ] Monthly review → decide what (if anything) graduates toward v9
+
+> **Design note (external review):** don't let CLV *decide* until the clean sample is large
+> (hence `MIN_CLV_N`); data integrity comes before market-first signals; the residual test —
+> not standalone AUC — is how we learn whether Wowza knows anything the market doesn't.
 
 ## The monthly review
 Open `output/v11_scoreboard.csv` — the `overall` rows show v9 vs v11 (picks, W-L, P/L in
