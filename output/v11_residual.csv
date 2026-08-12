@@ -1,4 +1,5 @@
 scope,n,brier_market,brier_market_wowza,logloss_market,logloss_market_wowza,wowza_helps
-overall,3,0.2932,0.2715,0.7798,0.7365,True
+overall,4,0.3023,0.2896,0.7982,0.773,True
+Argentina Primera Division,1,0.3295,0.3437,0.8534,0.8825,False
 Denmark Superliga,1,0.4024,0.3418,1.006,0.8787,True
 Sweden Allsvenskan,2,0.2386,0.2364,0.6667,0.6654,True
