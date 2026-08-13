@@ -7,174 +7,174 @@ snapshot_ts,date,league,match,model_type,odds_over25,odds_under25,live_side,live
 2026-08-11T20:29:38Z,2026-08-15,Finland Veikkausliiga,FC Lahti vs KuPS Kuopio,new_format,1.95,1.88,OVER,AVOID,0.505,-,NO_BET,0.4902,0.4968,-0.1236,0.0066,12.81,True,,NO_BET,9.0
 2026-08-11T20:29:38Z,2026-08-15,Finland Veikkausliiga,AC Oulu vs FC Inter Turku,new_format,1.99,1.85,OVER,AVOID,0.499,-,NO_BET,0.4806,0.489,-0.1208,0.0084,12.81,True,,NO_BET,9.0
 2026-08-11T23:25:22Z,2026-08-12,Argentina Primera Division,Talleres vs Lanus,new_format,2.75,1.44,OVER,VALUABLE,0.421,-,NO_BET,0.3297,0.3617,-0.1257,0.032,-60.71,True,,NO_BET,1.0
-2026-08-13T20:24:48Z,2026-08-16,Brazil Serie A,Vasco da Gama vs Santos,new_format,2.01,1.78,OVER,VALUABLE,0.553,-,NO_BET,0.4669,0.497,-0.0957,0.0301,10.52,True,,NO_BET,10
-2026-08-13T20:24:48Z,2026-08-16,Brazil Serie A,Vitoria vs Botafogo,new_format,1.96,1.82,OVER,AVOID,0.498,-,NO_BET,0.4798,0.488,-0.1363,0.0082,10.52,True,,NO_BET,10
-2026-08-13T20:24:48Z,2026-08-16,Brazil Serie A,Mirassol vs Flamengo,new_format,2.0,1.75,OVER,AVOID,0.485,-,NO_BET,0.463,0.473,-0.1482,0.01,10.52,True,,NO_BET,10
-2026-08-13T20:24:48Z,2026-08-16,Brazil Serie A,Corinthians vs Cruzeiro,new_format,2.2,1.62,OVER,AVOID,0.464,-,NO_BET,0.4156,0.4324,-0.15,0.0168,10.52,True,,NO_BET,10
-2026-08-13T20:24:48Z,2026-08-17,Brazil Serie A,Internacional vs Remo,new_format,1.83,1.91,OVER,AVOID,0.538,-,NO_BET,0.5119,0.5235,-0.1298,0.0117,10.52,True,,NO_BET,10
-2026-08-13T20:24:48Z,2026-08-14,Japan J-League,Tokyo Verdy vs Kashiwa Reysol,new_format,2.25,1.58,OVER,VALUABLE,0.506,-,NO_BET,0.402,0.4385,-0.1167,0.0365,0.0,True,,NO_BET,2
-2026-08-13T20:24:48Z,2026-08-15,Japan J-League,Mito HollyHock vs Gamba Osaka,new_format,2.05,1.78,OVER,AVOID,0.477,-,NO_BET,0.4621,0.4674,-0.1378,0.0053,0.0,True,,NO_BET,2
-2026-08-13T20:24:48Z,2026-08-15,Japan J-League,Avispa Fukuoka vs Cerezo Osaka,new_format,2.02,1.8,OVER,VALUABLE,0.553,-,NO_BET,0.469,0.4982,-0.0886,0.0292,0.0,True,,NO_BET,2
-2026-08-13T20:24:48Z,2026-08-15,Japan J-League,Shimizu S Pulse vs Yokohama F Marinos,new_format,1.96,1.85,UNDER,AVOID,0.479,-,NO_BET,0.4845,0.4818,-0.1484,-0.0026,0.0,True,,NO_BET,2
-2026-08-13T20:24:48Z,2026-08-15,Japan J-League,Fagiano Okayama vs V-Varen Nagasaki,new_format,2.08,1.65,OVER,AVOID,0.493,-,NO_BET,0.4345,0.4551,-0.1504,0.0207,0.0,True,,NO_BET,2
-2026-08-13T20:24:48Z,2026-08-15,Japan J-League,JEF United Chiba vs FC Machida Zelvia,new_format,2.15,1.71,UNDER,AVOID,0.424,-,NO_BET,0.4387,0.4337,-0.1671,-0.005,0.0,True,,NO_BET,2
-2026-08-13T20:24:48Z,2026-08-15,Japan J-League,Vissel Kobe vs FC Tokyo,new_format,2.17,1.7,UNDER,AVOID,0.408,-,NO_BET,0.4348,0.4255,-0.1768,-0.0093,0.0,True,,NO_BET,2
-2026-08-13T20:24:48Z,2026-08-15,Japan J-League,Urawa Red Diamonds vs Hiroshima Sanfrecce FC,new_format,1.92,1.89,OVER,AVOID,0.506,-,NO_BET,0.4958,0.5002,-0.131,0.0044,0.0,True,,NO_BET,2
-2026-08-13T20:24:48Z,2026-08-15,Japan J-League,Kawasaki Frontale vs Kyoto Purple Sanga,new_format,1.78,1.92,OVER,AVOID,0.526,-,NO_BET,0.5214,0.5233,-0.1546,0.0019,0.0,True,,NO_BET,2
-2026-08-13T20:24:48Z,2026-08-15,Mexico Liga MX,Atlante FC vs Toluca,new_format,1.57,2.2,UNDER,AVOID,0.57,-,NO_BET,0.5957,0.5842,-0.1608,-0.0115,26.96,True,,NO_BET,4
-2026-08-13T20:24:48Z,2026-08-16,Mexico Liga MX,Monterrey vs FC Juárez,new_format,1.5,2.38,UNDER,AVOID,0.58,-,NO_BET,0.629,0.6071,-0.1644,-0.0219,26.96,True,,NO_BET,4
-2026-08-13T20:24:48Z,2026-08-15,Japan J-League,Kashima Antlers vs Nagoya Grampus,new_format,1.95,1.75,OVER,AVOID,0.487,-,NO_BET,0.4694,0.4773,-0.1617,0.0079,0.0,True,,NO_BET,2
-2026-08-13T20:24:48Z,2026-08-16,Brazil Serie A,Atletico Mineiro vs Grêmio,new_format,2.0,1.75,OVER,AVOID,0.485,-,NO_BET,0.463,0.4729,-0.1485,0.0099,10.52,True,,NO_BET,10
-2026-08-13T20:24:48Z,2026-08-16,Argentina Primera Division,Barracas Central vs Rosario Central,new_format,2.85,1.41,OVER,AVOID,0.386,-,NO_BET,0.3153,0.3401,-0.154,0.0248,-60.71,True,,NO_BET,1
-2026-08-13T20:24:48Z,2026-08-16,Brazil Serie A,Sao Paulo vs Coritiba,new_format,1.96,1.82,OVER,AVOID,0.488,-,NO_BET,0.4798,0.4833,-0.1454,0.0036,10.52,True,,NO_BET,10
-2026-08-13T20:24:48Z,2026-08-16,Finland Veikkausliiga,FC Lahti vs KuPS Kuopio,new_format,1.79,1.88,OVER,AVOID,0.524,-,NO_BET,0.514,0.5184,-0.1586,0.0043,12.81,True,,NO_BET,9
-2026-08-13T20:24:48Z,2026-08-17,Finland Veikkausliiga,IF Gnistan vs Ilves Tampere,new_format,1.6,2.29,UNDER,AVOID,0.575,-,NO_BET,0.5971,0.5874,-0.1392,-0.0097,12.81,True,,NO_BET,9
-2026-08-13T20:24:48Z,2026-08-14,Argentina Primera Division,Racing Club vs Banfield,new_format,2.36,1.59,UNDER,AVOID,0.395,-,NO_BET,0.3947,0.3948,-0.1749,0.0001,-60.71,True,,NO_BET,1
-2026-08-13T20:24:48Z,2026-08-15,Argentina Primera Division,Aldosivi Mar del Plata vs CA Tigre BA,new_format,2.85,1.41,OVER,VALUABLE,0.442,-,NO_BET,0.3153,0.3597,-0.0988,0.0444,-60.71,True,,NO_BET,1
-2026-08-13T20:24:48Z,2026-08-15,Argentina Primera Division,San Lorenzo vs Union Santa Fe,new_format,2.62,1.47,OVER,VALUABLE,0.435,-,NO_BET,0.346,0.3773,-0.1275,0.0313,-60.71,True,,NO_BET,1
-2026-08-13T20:24:48Z,2026-08-15,Argentina Primera Division,Estudiantes vs Gimnasia La Plata,new_format,2.58,1.49,OVER,AVOID,0.415,-,NO_BET,0.354,0.3754,-0.1458,0.0214,-60.71,True,,NO_BET,1
-2026-08-13T20:24:48Z,2026-08-15,Argentina Primera Division,Belgrano de Cordoba vs Independiente Rivadavia,new_format,2.62,1.47,OVER,AVOID,0.419,-,NO_BET,0.346,0.3715,-0.1424,0.0256,-60.71,True,,NO_BET,1
-2026-08-13T20:24:48Z,2026-08-15,Argentina Primera Division,Newells Old Boys vs Deportivo Riestra,new_format,3.05,1.37,OVER,VALUABLE,0.417,-,NO_BET,0.2929,0.3364,-0.1043,0.0435,-60.71,True,,NO_BET,1
-2026-08-13T20:24:48Z,2026-08-16,Brazil Serie A,Chapecoense vs Bahia,new_format,1.85,1.93,UNDER,AVOID,0.485,-,NO_BET,0.5115,0.4996,-0.1645,-0.0119,10.52,True,,NO_BET,10
-2026-08-13T20:24:48Z,2026-08-16,Argentina Primera Division,Platense vs Boca Juniors,new_format,2.95,1.39,OVER,VALUABLE,0.397,-,NO_BET,0.304,0.3366,-0.1338,0.0326,-60.71,True,,NO_BET,1
-2026-08-13T20:24:48Z,2026-08-16,Argentina Primera Division,River Plate vs Argentinos Juniors,new_format,2.58,1.49,OVER,AVOID,0.41,-,NO_BET,0.354,0.3737,-0.1502,0.0197,-60.71,True,,NO_BET,1
-2026-08-13T20:24:48Z,2026-08-16,Argentina Primera Division,Central Córdoba vs Instituto de Córdoba,new_format,2.55,1.43,OVER,AVOID,0.407,-,NO_BET,0.3387,0.3626,-0.1883,0.0239,-60.71,True,,NO_BET,1
-2026-08-13T20:24:48Z,2026-08-17,Argentina Primera Division,Estudiantes de Río Cuarto vs Atlético Tucuman,new_format,2.95,1.39,OVER,VALUABLE,0.452,-,NO_BET,0.304,0.3558,-0.0777,0.0518,-60.71,True,,NO_BET,1
-2026-08-13T20:24:48Z,2026-08-17,Argentina Primera Division,Lanus vs Independiente,new_format,2.75,1.44,OVER,AVOID,0.389,-,NO_BET,0.3297,0.3503,-0.1566,0.0206,-60.71,True,,NO_BET,1
-2026-08-13T20:24:48Z,2026-08-17,Argentina Primera Division,Velez Sarsfield BA vs Defensa y Justicia,new_format,2.33,1.6,OVER,AVOID,0.458,-,NO_BET,0.3994,0.4201,-0.1272,0.0206,-60.71,True,,NO_BET,1
-2026-08-13T20:24:48Z,2026-08-18,Argentina Primera Division,Gimnasia Mendoza vs Talleres,new_format,2.92,1.39,OVER,VALUABLE,0.415,-,NO_BET,0.3054,0.3439,-0.1217,0.0385,-60.71,True,,NO_BET,1
-2026-08-13T20:24:48Z,2026-08-15,Brazil Serie A,Fluminense vs Palmeiras,new_format,2.27,1.66,OVER,VALUABLE,0.507,-,NO_BET,0.4174,0.4488,-0.0853,0.0314,10.52,True,,NO_BET,10
-2026-08-13T20:24:48Z,2026-08-15,Brazil Serie A,Atletico Paranaense vs Bragantino-SP,new_format,2.05,1.7,OVER,AVOID,0.485,-,NO_BET,0.4478,0.4608,-0.1513,0.013,10.52,True,,NO_BET,10
-2026-08-13T20:24:48Z,2026-08-16,Argentina Primera Division,Sarmiento de Junin vs Atlético Huracán,new_format,3.15,1.35,OVER,VALUABLE,0.37,-,NO_BET,0.2819,0.3126,-0.1482,0.0307,-60.71,True,,NO_BET,1
-2026-08-13T20:24:48Z,2026-08-16,Mexico Liga MX,Atlas vs Tigres,new_format,2.08,1.71,OVER,VALUABLE,0.523,-,NO_BET,0.4463,0.4731,-0.113,0.0269,26.96,True,,NO_BET,4
-2026-08-13T20:24:48Z,2026-08-16,USA MLS,Nashville SC vs Inter Miami CF,new_format,1.44,2.62,UNDER,AVOID,0.603,-,NO_BET,0.6627,0.6358,-0.1569,-0.0269,40.82,True,,NO_BET,6
-2026-08-13T20:24:48Z,2026-08-16,Mexico Liga MX,América vs Atlético San Luis,new_format,1.57,2.2,UNDER,VALUABLE,0.493,-,NO_BET,0.5957,0.5497,-0.2151,-0.046,26.96,True,,NO_BET,4
-2026-08-13T20:24:48Z,2026-08-16,USA MLS,Chicago Fire vs Portland Timbers,new_format,1.33,3.1,UNDER,VALUABLE,0.609,-,NO_BET,0.7233,0.6718,-0.1745,-0.0515,40.82,True,,NO_BET,6
-2026-08-13T20:24:48Z,2026-08-16,USA MLS,New York City FC vs Philadelphia Union,new_format,1.62,2.2,OVER,VALUABLE,0.677,-,NO_BET,0.5844,0.6261,-0.0649,0.0418,40.82,True,,NO_BET,6
-2026-08-13T20:24:48Z,2026-08-17,USA MLS,Austin FC vs FC Dallas,new_format,1.62,2.15,UNDER,AVOID,0.533,-,NO_BET,0.5794,0.5584,-0.1753,-0.021,40.82,True,,NO_BET,6
-2026-08-13T20:24:48Z,2026-08-17,USA MLS,Seattle Sounders FC vs Vancouver Whitecaps FC,new_format,1.57,2.3,OVER,AVOID,0.63,-,NO_BET,0.6048,0.6163,-0.11,0.0115,40.82,True,,NO_BET,6
-2026-08-13T20:24:48Z,2026-08-19,USA MLS,Columbus Crew SC vs CF Montreal,new_format,1.5,2.45,OVER,AVOID,0.658,-,NO_BET,0.6343,0.6448,-0.1074,0.0105,40.82,True,,NO_BET,6
-2026-08-13T20:24:48Z,2026-08-19,USA MLS,Toronto FC vs Charlotte FC,new_format,1.7,2.27,OVER,AVOID,0.599,-,NO_BET,0.5749,0.5858,-0.0869,0.0109,40.82,True,,NO_BET,6
-2026-08-13T20:24:48Z,2026-08-19,USA MLS,Orlando City SC vs Chicago Fire,new_format,1.35,3.0,UNDER,AVOID,0.663,-,NO_BET,0.7118,0.6896,-0.1374,-0.0222,40.82,True,,NO_BET,6
-2026-08-13T20:24:48Z,2026-08-19,USA MLS,D.C. United vs New England Revolution,new_format,1.77,2.15,UNDER,AVOID,0.51,-,NO_BET,0.5506,0.5323,-0.1436,-0.0184,40.82,True,,NO_BET,6
-2026-08-13T20:24:48Z,2026-08-16,USA MLS,San Jose Earthquakes vs St. Louis City SC,new_format,1.44,2.5,UNDER,AVOID,0.616,-,NO_BET,0.6549,0.6373,-0.1548,-0.0176,40.82,True,,NO_BET,6
-2026-08-13T20:24:48Z,2026-08-19,USA MLS,FC Cincinnati vs New York City FC,new_format,1.44,2.62,OVER,AVOID,0.67,-,NO_BET,0.6627,0.6659,-0.1132,0.0032,40.82,True,,NO_BET,6
-2026-08-13T20:24:48Z,2026-08-19,USA MLS,New York Red Bulls vs Nashville SC,new_format,1.5,2.45,UNDER,VALUABLE,0.544,-,NO_BET,0.6343,0.5935,-0.185,-0.0408,40.82,True,,NO_BET,6
-2026-08-13T20:24:48Z,2026-08-20,USA MLS,Sporting Kansas City vs St. Louis City SC,new_format,1.44,2.5,UNDER,AVOID,0.579,-,NO_BET,0.6549,0.6206,-0.179,-0.0342,40.82,True,,NO_BET,6
-2026-08-13T20:24:48Z,2026-08-20,USA MLS,Minnesota United FC vs Atlanta United FC,new_format,1.72,2.22,OVER,VALUABLE,0.627,-,NO_BET,0.5665,0.5937,-0.0622,0.0272,40.82,True,,NO_BET,6
-2026-08-13T20:24:48Z,2026-08-20,USA MLS,Seattle Sounders FC vs Austin FC,new_format,1.69,2.28,OVER,AVOID,0.593,-,NO_BET,0.5777,0.5844,-0.0947,0.0067,40.82,True,,NO_BET,6
-2026-08-13T20:24:48Z,2026-08-20,USA MLS,Colorado Rapids vs Los Angeles FC,new_format,1.68,2.3,OVER,AVOID,0.608,-,NO_BET,0.5814,0.5935,-0.0848,0.0121,40.82,True,,NO_BET,6
-2026-08-13T20:24:48Z,2026-08-20,USA MLS,Real Salt Lake vs FC Dallas,new_format,1.5,2.45,UNDER,AVOID,0.6,-,NO_BET,0.6343,0.6191,-0.1464,-0.0153,40.82,True,,NO_BET,6
-2026-08-13T20:24:48Z,2026-08-16,Finland Veikkausliiga,AC Oulu vs FC Inter Turku,new_format,1.88,1.78,OVER,AVOID,0.511,-,NO_BET,0.4843,0.4965,-0.1564,0.0122,12.81,True,,NO_BET,9
-2026-08-13T20:24:48Z,2026-08-20,USA MLS,Vancouver Whitecaps FC vs Houston Dynamo,new_format,1.44,2.5,UNDER,AVOID,0.598,-,NO_BET,0.6549,0.6291,-0.1667,-0.0257,40.82,True,,NO_BET,6
-2026-08-13T20:24:48Z,2026-08-19,USA MLS,Philadelphia Union vs Inter Miami CF,new_format,1.36,2.88,UNDER,VALUABLE,0.563,-,NO_BET,0.7028,0.6401,-0.199,-0.0627,40.82,True,,NO_BET,6
-2026-08-13T20:24:48Z,2026-08-16,Mexico Liga MX,Pumas vs Querétaro,new_format,1.72,2.06,UNDER,AVOID,0.493,-,NO_BET,0.5496,0.5242,-0.1822,-0.0254,26.96,True,,NO_BET,4
-2026-08-13T20:24:48Z,2026-08-16,USA MLS,Los Angeles FC vs San Diego FC,new_format,1.44,2.62,UNDER,VALUABLE,0.574,-,NO_BET,0.6627,0.6227,-0.1761,-0.04,40.82,True,,NO_BET,6
-2026-08-13T20:24:48Z,2026-08-16,USA MLS,Colorado Rapids vs Sporting Kansas City,new_format,1.4,2.7,UNDER,AVOID,0.639,-,NO_BET,0.6799,0.6616,-0.1444,-0.0183,40.82,True,,NO_BET,6
-2026-08-13T20:24:48Z,2026-08-17,Mexico Liga MX,Santos Laguna vs Guadalajara,new_format,1.55,2.32,UNDER,AVOID,0.537,-,NO_BET,0.6113,0.578,-0.1814,-0.0334,26.96,True,,NO_BET,4
-2026-08-13T20:24:48Z,2026-08-17,Mexico Liga MX,Tijuana vs Cruz Azul,new_format,1.81,1.95,OVER,AVOID,0.542,-,NO_BET,0.5205,0.5304,-0.1271,0.0099,26.96,True,,NO_BET,4
-2026-08-13T20:24:48Z,2026-08-18,Mexico Liga MX,Necaxa vs León,new_format,1.68,2.12,UNDER,AVOID,0.533,-,NO_BET,0.5639,0.55,-0.1583,-0.0139,26.96,True,,NO_BET,4
-2026-08-13T20:24:48Z,2026-08-18,Mexico Liga MX,Pachuca vs Puebla,new_format,1.67,2.0,OVER,AVOID,0.555,-,NO_BET,0.552,0.5533,-0.1578,0.0013,26.96,True,,NO_BET,4
-2026-08-13T20:24:48Z,2026-08-14,China Super League,Shandong Luneng Taishan FC vs Qingdao Hainiu FC,new_format,1.35,2.95,UNDER,VALUABLE,0.577,-,NO_BET,0.7096,0.6499,-0.1917,-0.0597,-4.58,True,,NO_BET,3
-2026-08-13T20:24:48Z,2026-08-14,China Super League,Wuhan Three Towns vs Shanghai SIPG FC,new_format,1.52,2.32,OVER,AVOID,0.618,-,NO_BET,0.6188,0.6186,-0.1354,-0.0002,-4.58,True,,NO_BET,3
-2026-08-13T20:24:48Z,2026-08-14,China Super League,Qingdao West Coast FC vs Chongqing Tonglianglong FC,new_format,1.99,1.84,OVER,AVOID,0.52,-,NO_BET,0.4791,0.4975,-0.1038,0.0185,-4.58,True,,NO_BET,3
-2026-08-13T20:24:48Z,2026-08-15,China Super League,Liaoning Tieren FC vs Shenzhen Peng City FC,new_format,1.55,2.28,OVER,AVOID,0.644,-,NO_BET,0.6079,0.624,-0.1094,0.0162,-4.58,True,,NO_BET,3
-2026-08-13T20:24:48Z,2026-08-16,USA MLS,Real Salt Lake vs Minnesota United FC,new_format,1.57,2.25,UNDER,AVOID,0.592,-,NO_BET,0.6004,0.5967,-0.141,-0.0037,40.82,True,,NO_BET,6
-2026-08-13T20:24:48Z,2026-08-15,China Super League,Tianjin Jinmen Tiger FC vs Beijing FC,new_format,1.76,2.03,OVER,AVOID,0.576,-,NO_BET,0.5389,0.5554,-0.1076,0.0165,-4.58,True,,NO_BET,3
-2026-08-13T20:24:48Z,2026-08-15,China Super League,Yunnan Yukun vs Dalian Yingbo,new_format,1.37,2.85,UNDER,AVOID,0.645,-,NO_BET,0.6978,0.6739,-0.1462,-0.024,-4.58,True,,NO_BET,3
-2026-08-13T20:24:48Z,2026-08-15,China Super League,Shanghai Shenhua FC vs Henan FC,new_format,1.42,2.68,UNDER,VALUABLE,0.57,-,NO_BET,0.6724,0.6261,-0.1828,-0.0463,-4.58,True,,NO_BET,3
-2026-08-13T20:24:48Z,2026-08-15,USA MLS,Atlanta United FC vs New York Red Bulls,new_format,1.36,2.8,UNDER,AVOID,0.629,-,NO_BET,0.6988,0.6672,-0.1617,-0.0316,40.82,True,,NO_BET,6
-2026-08-13T20:24:48Z,2026-08-15,USA MLS,CF Montreal vs D.C. United,new_format,1.71,2.1,UNDER,AVOID,0.516,-,NO_BET,0.556,0.5379,-0.1636,-0.0181,40.82,True,,NO_BET,6
-2026-08-13T20:24:48Z,2026-08-15,USA MLS,Charlotte FC vs Columbus Crew SC,new_format,1.73,2.21,OVER,AVOID,0.618,-,NO_BET,0.5637,0.588,-0.0666,0.0243,40.82,True,,NO_BET,6
-2026-08-13T20:24:48Z,2026-08-15,USA MLS,Orlando City SC vs FC Cincinnati,new_format,1.25,3.5,UNDER,VALUABLE,0.667,-,NO_BET,0.7698,0.7235,-0.1597,-0.0463,40.82,True,,NO_BET,6
-2026-08-13T20:24:48Z,2026-08-15,USA MLS,Toronto FC vs New England Revolution,new_format,1.68,2.15,UNDER,AVOID,0.562,-,NO_BET,0.567,0.5646,-0.1337,-0.0025,40.82,True,,NO_BET,6
-2026-08-13T20:24:48Z,2026-08-16,USA MLS,Houston Dynamo vs LA Galaxy,new_format,1.55,2.3,UNDER,AVOID,0.534,-,NO_BET,0.6096,0.5757,-0.1849,-0.0339,40.82,True,,NO_BET,6
-2026-08-13T20:24:48Z,2026-08-15,China Super League,Zhejiang vs Chengdu Rongcheng FC,new_format,1.38,2.82,UNDER,VALUABLE,0.56,-,NO_BET,0.6929,0.633,-0.1968,-0.0599,-4.58,True,,NO_BET,3
-2026-08-13T20:24:48Z,2026-08-16,Finland Veikkausliiga,HJK Helsinki vs Jaro,new_format,1.44,2.72,UNDER,AVOID,0.658,-,NO_BET,0.6686,0.664,-0.1159,-0.0046,12.81,True,,NO_BET,9
-2026-08-13T20:24:48Z,2026-08-16,Bundesliga 2,Arminia Bielefeld vs FC Energie Cottbus,standard,1.55,2.25,UNDER,AVOID,0.549,-,NO_BET,0.6052,0.5826,-0.1742,-0.0226,1.46,True,,NO_BET,12
-2026-08-13T20:24:48Z,2026-08-14,Finland Veikkausliiga,VPS Vaasa vs TPS Turku,new_format,1.68,2.0,UNDER,AVOID,0.535,-,NO_BET,0.5501,0.5431,-0.1699,-0.007,12.81,True,,NO_BET,9
-2026-08-13T20:24:48Z,2026-08-15,League One,Huddersfield Town vs Wimbledon,standard,1.69,2.01,UNDER,AVOID,0.54,-,NO_BET,0.5493,0.5455,-0.1607,-0.0038,0.11,True,,NO_BET,4
-2026-08-13T20:24:48Z,2026-08-15,League One,Leyton Orient vs Sheffield Wednesday,standard,1.88,1.89,OVER,AVOID,0.514,-,NO_BET,0.5015,0.5066,-0.1374,0.0052,0.11,True,,NO_BET,4
-2026-08-13T20:24:48Z,2026-08-15,League One,Plymouth Argyle vs Stockport County FC,standard,1.7,2.11,UNDER,VALUABLE,0.478,-,NO_BET,0.5589,0.5265,-0.1881,-0.0325,0.11,True,,NO_BET,4
-2026-08-13T20:24:48Z,2026-08-15,League Two,Newport County vs Rochdale,standard,1.93,1.75,OVER,AVOID,0.49,-,NO_BET,0.4721,0.4792,-0.1668,0.0071,,True,,NO_BET,
-2026-08-13T20:24:48Z,2026-08-15,League Two,Oldham Athletic vs Port Vale,standard,2.08,1.64,OVER,AVOID,0.478,-,NO_BET,0.4324,0.4485,-0.1641,0.0161,,True,,NO_BET,
-2026-08-13T20:24:48Z,2026-08-15,League Two,Accrington Stanley vs Colchester United,standard,2.05,1.73,OVER,AVOID,0.483,-,NO_BET,0.4534,0.4637,-0.1455,0.0103,,True,,NO_BET,
-2026-08-13T20:24:48Z,2026-08-15,League Two,Barnet vs Salford City,standard,1.92,1.76,OVER,AVOID,0.518,-,NO_BET,0.4752,0.4924,-0.1459,0.0172,,True,,NO_BET,
-2026-08-13T20:24:48Z,2026-08-15,League Two,York City vs Bristol Rovers,standard,2.04,1.74,OVER,AVOID,0.524,-,NO_BET,0.4564,0.4801,-0.1163,0.0238,,True,,NO_BET,
-2026-08-13T20:24:48Z,2026-08-15,League Two,Cheltenham Town vs Rotherham United,standard,1.88,1.87,UNDER,AVOID,0.472,-,NO_BET,0.4985,0.4878,-0.1727,-0.0107,,True,,NO_BET,
-2026-08-13T20:24:48Z,2026-08-15,League Two,Chesterfield FC vs Fleetwood Town,standard,2.01,1.76,OVER,AVOID,0.487,-,NO_BET,0.4635,0.4716,-0.1467,0.0081,,True,,NO_BET,
-2026-08-13T20:24:48Z,2026-08-15,League Two,Crawley Town vs Crewe Alexandra,standard,1.9,1.77,OVER,AVOID,0.515,-,NO_BET,0.4797,0.4937,-0.1525,0.014,,True,,NO_BET,
-2026-08-13T20:24:48Z,2026-08-15,League Two,Grimsby Town vs Exeter City,standard,1.81,1.86,UNDER,AVOID,0.487,-,NO_BET,0.5078,0.4996,-0.1828,-0.0081,,True,,NO_BET,
-2026-08-13T20:24:48Z,2026-08-15,League Two,Gillingham vs Walsall,standard,2.01,1.76,OVER,AVOID,0.482,-,NO_BET,0.4635,0.4698,-0.1502,0.0063,,True,,NO_BET,
-2026-08-13T20:24:48Z,2026-08-15,League Two,Northampton Town vs Swindon Town,standard,1.9,1.85,OVER,AVOID,0.495,-,NO_BET,0.4926,0.4938,-0.1524,0.0011,,True,,NO_BET,
-2026-08-13T20:24:48Z,2026-08-15,League Two,Tranmere Rovers vs Shrewsbury Town,standard,2.09,1.7,OVER,AVOID,0.507,-,NO_BET,0.4433,0.4655,-0.1247,0.0222,,True,,NO_BET,
-2026-08-13T20:24:48Z,2026-08-14,Bundesliga 2,Eintracht Braunschweig vs VfL Bochum,standard,1.82,1.85,OVER,AVOID,0.584,-,NO_BET,0.5047,0.5363,-0.1114,0.0317,1.46,True,,NO_BET,12
-2026-08-13T20:24:48Z,2026-08-14,Bundesliga 2,Holstein Kiel vs FC St. Pauli,standard,1.75,2.05,UNDER,AVOID,0.501,-,NO_BET,0.543,0.5262,-0.1641,-0.0169,1.46,True,,NO_BET,12
-2026-08-13T20:24:48Z,2026-08-15,League One,Mansfield Town vs Doncaster Rovers,standard,1.87,1.9,UNDER,AVOID,0.502,-,NO_BET,0.5044,0.5032,-0.1484,-0.0011,0.11,True,,NO_BET,4
-2026-08-13T20:24:48Z,2026-08-15,League One,Cambridge United vs Wigan Athletic,standard,2.23,1.63,OVER,AVOID,0.482,-,NO_BET,0.4149,0.4383,-0.1251,0.0234,0.11,True,,NO_BET,4
-2026-08-13T20:24:48Z,2026-08-15,League One,Burton Albion vs Stevenage,standard,2.42,1.54,OVER,VALUABLE,0.471,-,NO_BET,0.3782,0.4107,-0.1152,0.0325,0.11,True,,NO_BET,4
-2026-08-13T20:24:48Z,2026-08-15,League One,Bradford City vs Peterborough United,standard,1.79,1.99,OVER,AVOID,0.538,-,NO_BET,0.5289,0.5325,-0.1332,0.0036,0.11,True,,NO_BET,4
-2026-08-13T20:24:48Z,2026-08-20,USA MLS,LA Galaxy vs San Jose Earthquakes,new_format,1.44,2.6,UNDER,AVOID,0.582,-,NO_BET,0.6614,0.6255,-0.172,-0.0359,40.82,True,,NO_BET,6
-2026-08-13T20:24:48Z,2026-08-14,Championship,Wolverhampton Wanderers vs Blackburn Rovers,standard,1.75,2.04,UNDER,AVOID,0.525,-,NO_BET,0.5419,0.535,-0.1487,-0.0069,,True,,NO_BET,
-2026-08-13T20:24:48Z,2026-08-15,Championship,Bolton Wanderers vs Preston North End,standard,1.9,1.87,OVER,AVOID,0.504,-,NO_BET,0.4956,0.4989,-0.1426,0.0033,,True,,NO_BET,
-2026-08-13T20:24:48Z,2026-08-15,Championship,Bristol City vs Millwall,standard,1.91,1.86,OVER,AVOID,0.503,-,NO_BET,0.4927,0.4968,-0.142,0.0041,,True,,NO_BET,
-2026-08-13T20:24:48Z,2026-08-15,Championship,Charlton Athletic vs Derby County,standard,2.13,1.69,OVER,AVOID,0.468,-,NO_BET,0.437,0.4477,-0.1452,0.0107,,True,,NO_BET,
-2026-08-13T20:24:48Z,2026-08-15,Championship,Middlesbrough vs Lincoln City,standard,1.66,2.18,UNDER,VALUABLE,0.477,-,NO_BET,0.5741,0.5353,-0.1929,-0.0387,,True,,NO_BET,
-2026-08-13T20:24:48Z,2026-08-15,Championship,Norwich City vs West Bromwich Albion,standard,1.89,1.88,UNDER,AVOID,0.497,-,NO_BET,0.4985,0.4981,-0.1488,-0.0005,,True,,NO_BET,
-2026-08-13T20:24:48Z,2026-08-15,Championship,Portsmouth vs Queens Park Rangers,standard,1.94,1.83,UNDER,AVOID,0.463,-,NO_BET,0.484,0.4756,-0.1693,-0.0084,,True,,NO_BET,
-2026-08-13T20:24:48Z,2026-08-15,Bundesliga 2,Hertha Berlin vs 1. FC Heidenheim,standard,1.6,2.2,UNDER,AVOID,0.511,-,NO_BET,0.5888,0.5579,-0.1866,-0.0309,1.46,True,,NO_BET,12
-2026-08-13T20:24:48Z,2026-08-15,Championship,Stoke City vs Swansea City,standard,2.07,1.73,OVER,AVOID,0.485,-,NO_BET,0.4511,0.4629,-0.1385,0.0119,,True,,NO_BET,
-2026-08-13T20:24:48Z,2026-08-16,Championship,Watford vs Southampton,standard,1.75,2.04,UNDER,AVOID,0.505,-,NO_BET,0.5419,0.5272,-0.1622,-0.0146,,True,,NO_BET,
-2026-08-13T20:24:48Z,2026-08-16,Championship,Burnley vs West Ham United,standard,1.73,2.07,UNDER,AVOID,0.487,-,NO_BET,0.5489,0.5241,-0.1775,-0.0248,,True,,NO_BET,
-2026-08-13T20:24:48Z,2026-08-17,Championship,Cardiff City vs Wrexham AFC,standard,1.74,2.05,UNDER,AVOID,0.491,-,NO_BET,0.5448,0.5234,-0.1739,-0.0215,,True,,NO_BET,
-2026-08-13T20:24:48Z,2026-08-15,League One,Notts County vs Leicester City,standard,1.99,1.79,OVER,AVOID,0.526,-,NO_BET,0.4711,0.4929,-0.113,0.0219,0.11,True,,NO_BET,4
-2026-08-13T20:24:48Z,2026-08-15,League One,Reading vs Luton,standard,1.86,1.91,UNDER,AVOID,0.458,-,NO_BET,0.5073,0.4875,-0.1823,-0.0198,0.11,True,,NO_BET,4
-2026-08-13T20:24:48Z,2026-08-15,League One,Oxford United vs Milton Keynes Dons,standard,2.08,1.72,OVER,AVOID,0.46,-,NO_BET,0.4481,0.4523,-0.1562,0.0042,0.11,True,,NO_BET,4
-2026-08-13T20:24:48Z,2026-08-15,League One,Barnsley vs Bromley FC,standard,1.91,1.86,UNDER,AVOID,0.476,-,NO_BET,0.4927,0.486,-0.1627,-0.0068,0.11,True,,NO_BET,4
-2026-08-13T20:24:48Z,2026-08-15,League One,Blackpool vs Wycombe Wanderers,standard,1.93,1.84,OVER,AVOID,0.502,-,NO_BET,0.4869,0.4931,-0.1399,0.0062,0.11,True,,NO_BET,4
-2026-08-13T20:24:48Z,2026-08-15,Championship,Sheffield United vs Birmingham City,standard,1.99,1.79,OVER,AVOID,0.481,-,NO_BET,0.4711,0.4749,-0.1487,0.0039,,True,,NO_BET,
-2026-08-13T20:24:48Z,2026-08-15,Bundesliga 2,VfL Osnabrück vs 1. FC Magdeburg,standard,1.52,2.32,UNDER,AVOID,0.583,-,NO_BET,0.6188,0.6047,-0.1567,-0.0141,1.46,True,,NO_BET,12
-2026-08-13T20:24:48Z,2026-08-15,Bundesliga 2,Greuther Fürth vs 1. FC Nürnberg,standard,1.68,2.14,UNDER,AVOID,0.551,-,NO_BET,0.566,0.5601,-0.1412,-0.0059,1.46,True,,NO_BET,12
-2026-08-13T20:24:48Z,2026-08-15,Bundesliga 2,1. FC Kaiserslautern vs Karlsruher SC,standard,1.52,2.35,UNDER,AVOID,0.582,-,NO_BET,0.6213,0.6055,-0.1555,-0.0158,1.46,True,,NO_BET,12
-2026-08-13T20:24:48Z,2026-08-16,Austrian Bundesliga,Hartberg vs Austria Wien,new_format,1.97,1.78,OVER,AVOID,0.54,-,NO_BET,0.472,0.5028,-0.1026,0.0308,-1.7,True,,NO_BET,3
-2026-08-13T20:24:48Z,2026-08-16,Austrian Bundesliga,WSG Tirol vs RB Salzburg,new_format,1.56,2.38,UNDER,VALUABLE,0.493,-,NO_BET,0.6139,0.5597,-0.2046,-0.0542,-1.7,True,,NO_BET,3
-2026-08-13T20:24:48Z,2026-08-16,Austrian Bundesliga,Rapid Wien vs Grazer AK,new_format,1.85,1.92,UNDER,AVOID,0.487,-,NO_BET,0.5102,0.4997,-0.1642,-0.0104,-1.7,True,,NO_BET,3
-2026-08-13T20:24:48Z,2026-08-14,Sweden Allsvenskan,IF Elfsborg vs Västerås SK,new_format,1.68,2.0,UNDER,AVOID,0.493,-,NO_BET,0.5501,0.5246,-0.201,-0.0255,10.31,True,,NO_BET,8
-2026-08-13T20:24:48Z,2026-08-15,Sweden Allsvenskan,Mjällby AIF vs IK Sirius,new_format,1.62,2.12,UNDER,AVOID,0.493,-,NO_BET,0.5762,0.539,-0.2069,-0.0372,10.31,True,,NO_BET,8
-2026-08-13T20:24:48Z,2026-08-16,Sweden Allsvenskan,Djurgardens IF vs AIK,new_format,1.52,2.48,UNDER,VALUABLE,0.535,-,NO_BET,0.6313,0.588,-0.1822,-0.0433,10.31,True,,NO_BET,8
-2026-08-13T20:24:48Z,2026-08-16,Sweden Allsvenskan,Degerfors IF vs IFK Goteborg,new_format,1.85,1.81,OVER,AVOID,0.512,-,NO_BET,0.4937,0.5022,-0.1597,0.0084,10.31,True,,NO_BET,8
-2026-08-13T20:24:48Z,2026-08-16,Sweden Allsvenskan,IF Brommapojkarna vs Örgryte IS,new_format,1.61,2.12,UNDER,AVOID,0.493,-,NO_BET,0.5784,0.5402,-0.21,-0.0382,10.31,True,,NO_BET,8
-2026-08-13T20:24:48Z,2026-08-15,Austrian Bundesliga,Sturm Graz vs Rheindorf Altach,new_format,1.86,1.91,OVER,AVOID,0.512,-,NO_BET,0.5073,0.5093,-0.1418,0.002,-1.7,True,,NO_BET,3
-2026-08-13T20:24:48Z,2026-08-16,Sweden Allsvenskan,GAIS vs Malmo FF,new_format,1.57,2.16,UNDER,AVOID,0.549,-,NO_BET,0.5917,0.5723,-0.1795,-0.0194,10.31,True,,NO_BET,8
-2026-08-13T20:24:48Z,2026-08-17,Sweden Allsvenskan,BK Hacken vs Halmstads BK,new_format,1.44,2.75,UNDER,SNIPER,0.493,-,NO_BET,0.6703,0.5907,-0.2224,-0.0796,10.31,True,,NO_BET,8
-2026-08-13T20:24:48Z,2026-08-14,Norway Eliteserien,Rosenborg vs Viking FK,new_format,1.47,2.62,UNDER,AVOID,0.592,-,NO_BET,0.654,0.6259,-0.1537,-0.0281,77.41,True,,NO_BET,2
-2026-08-13T20:24:48Z,2026-08-15,Norway Eliteserien,KFUM vs Lillestrom,new_format,1.57,1.97,OVER,AVOID,0.571,-,NO_BET,0.5702,0.5705,-0.1824,0.0003,77.41,True,,NO_BET,2
-2026-08-13T20:24:48Z,2026-08-16,Norway Eliteserien,Aalesund vs Vålerenga,new_format,1.39,2.95,UNDER,VALUABLE,0.557,-,NO_BET,0.696,0.6333,-0.1905,-0.0627,77.41,True,,NO_BET,2
-2026-08-13T20:24:48Z,2026-08-16,Norway Eliteserien,SK Brann vs HamKam,new_format,1.46,2.68,UNDER,VALUABLE,0.534,-,NO_BET,0.6605,0.6034,-0.1927,-0.0571,77.41,True,,NO_BET,2
-2026-08-13T20:24:48Z,2026-08-16,Norway Eliteserien,Molde vs Tromso,new_format,1.72,1.96,OVER,VALUABLE,0.689,-,NO_BET,0.5373,0.6055,-0.0417,0.0682,77.41,True,,NO_BET,2
-2026-08-13T20:24:48Z,2026-08-16,Norway Eliteserien,Sarpsborg FK vs Sandefjord,new_format,1.5,2.52,OVER,AVOID,0.637,-,NO_BET,0.6393,0.6382,-0.1174,-0.0011,77.41,True,,NO_BET,2
-2026-08-13T20:24:48Z,2026-08-16,Norway Eliteserien,Fredrikstad FK vs Kristiansund BK,new_format,1.68,2.0,OVER,AVOID,0.594,-,NO_BET,0.5501,0.5697,-0.1249,0.0197,77.41,True,,NO_BET,2
-2026-08-13T20:24:48Z,2026-08-16,Sweden Allsvenskan,Kalmar FF vs Hammarby IF,new_format,1.64,2.08,UNDER,AVOID,0.531,-,NO_BET,0.5676,0.5514,-0.1765,-0.0163,10.31,True,,NO_BET,8
-2026-08-13T20:24:48Z,2026-08-15,Finland Veikkausliiga,IFK Mariehamn vs SJK Seinäjoki,new_format,1.42,2.6,UNDER,VALUABLE,0.533,-,NO_BET,0.6675,0.6072,-0.2099,-0.0603,12.81,True,,NO_BET,9
-2026-08-13T20:24:48Z,2026-08-15,Austrian Bundesliga,Austria Lustenau vs Wolfsberger AC,new_format,1.92,1.85,OVER,VALUABLE,0.581,-,NO_BET,0.4898,0.5308,-0.072,0.041,-1.7,True,,NO_BET,3
-2026-08-13T20:24:48Z,2026-08-17,Denmark Superliga,Brondby IF vs SonderjyskE,new_format,1.55,2.25,OVER,AVOID,0.625,-,NO_BET,0.6052,0.6142,-0.1249,0.009,78.0,True,,NO_BET,3
-2026-08-13T20:24:48Z,2026-08-16,Bundesliga 2,Dynamo Dresden vs SV Darmstadt 98,standard,1.57,2.21,UNDER,AVOID,0.584,-,NO_BET,0.5966,0.5914,-0.1493,-0.0052,1.46,True,,NO_BET,12
-2026-08-13T20:24:48Z,2026-08-16,Bundesliga 2,Hannover 96 vs VfL Wolfsburg,standard,1.6,2.3,UNDER,AVOID,0.526,-,NO_BET,0.598,0.5692,-0.1684,-0.0288,1.46,True,,NO_BET,12
-2026-08-13T20:24:48Z,2026-08-14,La Liga 2,Real Sociedad B vs CD Castellón,standard,1.61,2.38,UNDER,AVOID,0.558,-,NO_BET,0.6025,0.5847,-0.138,-0.0178,0.0,True,,NO_BET,2
-2026-08-13T20:24:48Z,2026-08-15,La Liga 2,Andorra CF vs AD Ceuta FC,standard,1.7,2.0,UNDER,AVOID,0.473,-,NO_BET,0.5462,0.5167,-0.2047,-0.0295,0.0,True,,NO_BET,2
-2026-08-13T20:24:48Z,2026-08-15,La Liga 2,Cádiz CF vs Celta Vigo,standard,2.0,1.83,OVER,VALUABLE,0.56,-,NO_BET,0.4763,0.5096,-0.075,0.0334,0.0,True,,NO_BET,2
-2026-08-13T20:24:48Z,2026-08-15,La Liga 2,Oviedo vs Granada CF,standard,1.94,1.91,UNDER,AVOID,0.469,-,NO_BET,0.4959,0.4852,-0.1508,-0.0107,0.0,True,,NO_BET,2
-2026-08-13T20:24:48Z,2026-08-15,La Liga 2,Mallorca vs Real Valladolid CF,standard,1.88,1.97,OVER,AVOID,0.557,-,NO_BET,0.5124,0.5303,-0.0927,0.018,0.0,True,,NO_BET,2
-2026-08-13T20:24:48Z,2026-08-16,La Liga 2,SD Eibar vs Tenerife,standard,2.23,1.68,OVER,VALUABLE,0.52,-,NO_BET,0.425,0.4582,-0.0808,0.0332,0.0,True,,NO_BET,2
-2026-08-13T20:24:48Z,2026-08-14,Austrian Bundesliga,LASK vs Ried,new_format,1.73,2.07,UNDER,AVOID,0.527,-,NO_BET,0.5489,0.5392,-0.1513,-0.0097,-1.7,True,,NO_BET,3
-2026-08-13T20:24:48Z,2026-08-16,La Liga 2,Burgos CF vs Córdoba,standard,2.17,1.72,OVER,AVOID,0.491,-,NO_BET,0.4385,0.4567,-0.1094,0.0182,0.0,True,,NO_BET,2
-2026-08-13T20:24:48Z,2026-08-16,La Liga 2,Las Palmas vs Albacete,standard,1.88,1.97,UNDER,AVOID,0.453,-,NO_BET,0.5124,0.4886,-0.1712,-0.0238,0.0,True,,NO_BET,2
-2026-08-13T20:24:48Z,2026-08-17,La Liga 2,Sporting Gijón vs Sabadell FC,standard,2.15,1.73,OVER,VALUABLE,0.559,-,NO_BET,0.4424,0.483,-0.0613,0.0407,0.0,True,,NO_BET,2
-2026-08-13T20:24:48Z,2026-08-17,La Liga 2,Almería vs CD Eldense,standard,1.61,2.38,UNDER,AVOID,0.558,-,NO_BET,0.6025,0.5847,-0.1381,-0.0178,0.0,True,,NO_BET,2
-2026-08-13T20:24:48Z,2026-08-14,Denmark Superliga,Viborg FF vs AGF Aarhus,new_format,1.61,2.14,UNDER,AVOID,0.521,-,NO_BET,0.5805,0.5538,-0.188,-0.0267,78.0,True,,NO_BET,3
-2026-08-13T20:24:48Z,2026-08-16,Denmark Superliga,OB Odense BK vs AC Horsens,new_format,1.88,1.89,UNDER,AVOID,0.493,-,NO_BET,0.5015,0.4979,-0.1538,-0.0036,78.0,True,,NO_BET,3
-2026-08-13T20:24:48Z,2026-08-16,Denmark Superliga,FC Nordsjaelland vs Silkeborg IF,new_format,1.39,2.95,UNDER,AVOID,0.679,-,NO_BET,0.696,0.6883,-0.1131,-0.0077,78.0,True,,NO_BET,3
-2026-08-13T20:24:48Z,2026-08-16,Denmark Superliga,Lyngby vs FC Midtjylland,new_format,1.55,2.38,OVER,AVOID,0.616,-,NO_BET,0.6163,0.6162,-0.1217,-0.0,78.0,True,,NO_BET,3
-2026-08-13T20:24:48Z,2026-08-16,Denmark Superliga,Randers FC vs FC Copenhagen,new_format,1.61,2.27,UNDER,AVOID,0.568,-,NO_BET,0.5931,0.5818,-0.1427,-0.0113,78.0,True,,NO_BET,3
-2026-08-13T20:24:48Z,2026-08-16,La Liga 2,Girona FC vs Leganés,standard,2.03,1.82,OVER,VALUABLE,0.558,-,NO_BET,0.471,0.5015,-0.0773,0.0305,0.0,True,,NO_BET,2
-2026-08-13T20:24:48Z,2026-08-20,USA MLS,Portland Timbers vs San Diego FC,new_format,1.35,3.0,UNDER,VALUABLE,0.626,-,NO_BET,0.7118,0.6731,-0.16,-0.0387,40.82,True,,NO_BET,6
+2026-08-13T21:11:40Z,2026-08-16,Brazil Serie A,Vasco da Gama vs Santos,new_format,2.01,1.78,OVER,VALUABLE,0.553,-,NO_BET,0.4669,0.497,-0.0957,0.0301,10.52,True,,NO_BET,10
+2026-08-13T21:11:40Z,2026-08-16,Brazil Serie A,Vitoria vs Botafogo,new_format,1.96,1.82,OVER,AVOID,0.498,-,NO_BET,0.4798,0.488,-0.1363,0.0082,10.52,True,,NO_BET,10
+2026-08-13T21:11:40Z,2026-08-16,Brazil Serie A,Mirassol vs Flamengo,new_format,2.0,1.75,OVER,AVOID,0.485,-,NO_BET,0.463,0.473,-0.1482,0.01,10.52,True,,NO_BET,10
+2026-08-13T21:11:40Z,2026-08-16,Brazil Serie A,Corinthians vs Cruzeiro,new_format,2.2,1.62,OVER,AVOID,0.464,-,NO_BET,0.4156,0.4324,-0.15,0.0168,10.52,True,,NO_BET,10
+2026-08-13T21:11:40Z,2026-08-17,Brazil Serie A,Internacional vs Remo,new_format,1.83,1.91,OVER,AVOID,0.538,-,NO_BET,0.5119,0.5235,-0.1298,0.0117,10.52,True,,NO_BET,10
+2026-08-13T21:11:40Z,2026-08-14,Japan J-League,Tokyo Verdy vs Kashiwa Reysol,new_format,2.25,1.58,OVER,VALUABLE,0.506,-,NO_BET,0.402,0.4385,-0.1167,0.0365,0.0,True,,NO_BET,2
+2026-08-13T21:11:40Z,2026-08-15,Japan J-League,Mito HollyHock vs Gamba Osaka,new_format,2.05,1.78,OVER,AVOID,0.477,-,NO_BET,0.4621,0.4674,-0.1378,0.0053,0.0,True,,NO_BET,2
+2026-08-13T21:11:40Z,2026-08-15,Japan J-League,Avispa Fukuoka vs Cerezo Osaka,new_format,2.02,1.8,OVER,VALUABLE,0.553,-,NO_BET,0.469,0.4982,-0.0886,0.0292,0.0,True,,NO_BET,2
+2026-08-13T21:11:40Z,2026-08-15,Japan J-League,Shimizu S Pulse vs Yokohama F Marinos,new_format,1.96,1.85,UNDER,AVOID,0.479,-,NO_BET,0.4845,0.4818,-0.1484,-0.0026,0.0,True,,NO_BET,2
+2026-08-13T21:11:40Z,2026-08-15,Japan J-League,Fagiano Okayama vs V-Varen Nagasaki,new_format,2.08,1.65,OVER,AVOID,0.493,-,NO_BET,0.4345,0.4551,-0.1504,0.0207,0.0,True,,NO_BET,2
+2026-08-13T21:11:40Z,2026-08-15,Japan J-League,JEF United Chiba vs FC Machida Zelvia,new_format,2.15,1.71,UNDER,AVOID,0.424,-,NO_BET,0.4387,0.4337,-0.1671,-0.005,0.0,True,,NO_BET,2
+2026-08-13T21:11:40Z,2026-08-15,Japan J-League,Vissel Kobe vs FC Tokyo,new_format,2.17,1.7,UNDER,AVOID,0.408,-,NO_BET,0.4348,0.4255,-0.1768,-0.0093,0.0,True,,NO_BET,2
+2026-08-13T21:11:40Z,2026-08-15,Japan J-League,Urawa Red Diamonds vs Hiroshima Sanfrecce FC,new_format,1.92,1.89,OVER,AVOID,0.506,-,NO_BET,0.4958,0.5002,-0.131,0.0044,0.0,True,,NO_BET,2
+2026-08-13T21:11:40Z,2026-08-15,Japan J-League,Kawasaki Frontale vs Kyoto Purple Sanga,new_format,1.78,1.92,OVER,AVOID,0.526,-,NO_BET,0.5214,0.5233,-0.1546,0.0019,0.0,True,,NO_BET,2
+2026-08-13T21:11:40Z,2026-08-15,Mexico Liga MX,Atlante FC vs Toluca,new_format,1.57,2.2,UNDER,AVOID,0.57,-,NO_BET,0.5957,0.5842,-0.1608,-0.0115,26.96,True,,NO_BET,4
+2026-08-13T21:11:40Z,2026-08-16,Mexico Liga MX,Monterrey vs FC Juárez,new_format,1.5,2.38,UNDER,AVOID,0.58,-,NO_BET,0.629,0.6071,-0.1644,-0.0219,26.96,True,,NO_BET,4
+2026-08-13T21:11:40Z,2026-08-15,Japan J-League,Kashima Antlers vs Nagoya Grampus,new_format,1.95,1.75,OVER,AVOID,0.487,-,NO_BET,0.4694,0.4773,-0.1617,0.0079,0.0,True,,NO_BET,2
+2026-08-13T21:11:40Z,2026-08-16,Brazil Serie A,Atletico Mineiro vs Grêmio,new_format,2.0,1.75,OVER,AVOID,0.485,-,NO_BET,0.463,0.4729,-0.1485,0.0099,10.52,True,,NO_BET,10
+2026-08-13T21:11:40Z,2026-08-16,Argentina Primera Division,Barracas Central vs Rosario Central,new_format,2.85,1.41,OVER,AVOID,0.386,-,NO_BET,0.3153,0.3401,-0.154,0.0248,-60.71,True,,NO_BET,1
+2026-08-13T21:11:40Z,2026-08-16,Brazil Serie A,Sao Paulo vs Coritiba,new_format,1.96,1.82,OVER,AVOID,0.488,-,NO_BET,0.4798,0.4833,-0.1454,0.0036,10.52,True,,NO_BET,10
+2026-08-13T21:11:40Z,2026-08-16,Finland Veikkausliiga,FC Lahti vs KuPS Kuopio,new_format,1.79,1.88,OVER,AVOID,0.524,-,NO_BET,0.514,0.5184,-0.1586,0.0043,12.81,True,,NO_BET,9
+2026-08-13T21:11:40Z,2026-08-17,Finland Veikkausliiga,IF Gnistan vs Ilves Tampere,new_format,1.6,2.29,UNDER,AVOID,0.575,-,NO_BET,0.5971,0.5874,-0.1392,-0.0097,12.81,True,,NO_BET,9
+2026-08-13T21:11:40Z,2026-08-14,Argentina Primera Division,Racing Club vs Banfield,new_format,2.36,1.59,UNDER,AVOID,0.395,-,NO_BET,0.3947,0.3948,-0.1749,0.0001,-60.71,True,,NO_BET,1
+2026-08-13T21:11:40Z,2026-08-15,Argentina Primera Division,Aldosivi Mar del Plata vs CA Tigre BA,new_format,2.85,1.41,OVER,VALUABLE,0.442,-,NO_BET,0.3153,0.3597,-0.0988,0.0444,-60.71,True,,NO_BET,1
+2026-08-13T21:11:40Z,2026-08-15,Argentina Primera Division,San Lorenzo vs Union Santa Fe,new_format,2.62,1.47,OVER,VALUABLE,0.435,-,NO_BET,0.346,0.3773,-0.1275,0.0313,-60.71,True,,NO_BET,1
+2026-08-13T21:11:40Z,2026-08-15,Argentina Primera Division,Estudiantes vs Gimnasia La Plata,new_format,2.45,1.55,OVER,AVOID,0.415,-,NO_BET,0.3783,0.3913,-0.1514,0.0129,-60.71,True,,NO_BET,1
+2026-08-13T21:11:40Z,2026-08-15,Argentina Primera Division,Belgrano de Cordoba vs Independiente Rivadavia,new_format,2.62,1.47,OVER,AVOID,0.419,-,NO_BET,0.346,0.3715,-0.1424,0.0256,-60.71,True,,NO_BET,1
+2026-08-13T21:11:40Z,2026-08-15,Argentina Primera Division,Newells Old Boys vs Deportivo Riestra,new_format,3.05,1.37,OVER,VALUABLE,0.417,-,NO_BET,0.2929,0.3364,-0.1043,0.0435,-60.71,True,,NO_BET,1
+2026-08-13T21:11:40Z,2026-08-16,Brazil Serie A,Chapecoense vs Bahia,new_format,1.85,1.93,UNDER,AVOID,0.485,-,NO_BET,0.5115,0.4996,-0.1645,-0.0119,10.52,True,,NO_BET,10
+2026-08-13T21:11:40Z,2026-08-16,Argentina Primera Division,Platense vs Boca Juniors,new_format,2.95,1.39,OVER,VALUABLE,0.397,-,NO_BET,0.304,0.3366,-0.1338,0.0326,-60.71,True,,NO_BET,1
+2026-08-13T21:11:40Z,2026-08-16,Argentina Primera Division,River Plate vs Argentinos Juniors,new_format,2.58,1.49,OVER,AVOID,0.41,-,NO_BET,0.354,0.3737,-0.1502,0.0197,-60.71,True,,NO_BET,1
+2026-08-13T21:11:40Z,2026-08-16,Argentina Primera Division,Central Córdoba vs Instituto de Córdoba,new_format,2.55,1.43,OVER,AVOID,0.407,-,NO_BET,0.3387,0.3626,-0.1883,0.0239,-60.71,True,,NO_BET,1
+2026-08-13T21:11:40Z,2026-08-17,Argentina Primera Division,Estudiantes de Río Cuarto vs Atlético Tucuman,new_format,2.95,1.39,OVER,VALUABLE,0.452,-,NO_BET,0.304,0.3558,-0.0777,0.0518,-60.71,True,,NO_BET,1
+2026-08-13T21:11:40Z,2026-08-17,Argentina Primera Division,Lanus vs Independiente,new_format,2.75,1.44,OVER,AVOID,0.389,-,NO_BET,0.3297,0.3503,-0.1566,0.0206,-60.71,True,,NO_BET,1
+2026-08-13T21:11:40Z,2026-08-17,Argentina Primera Division,Velez Sarsfield BA vs Defensa y Justicia,new_format,2.33,1.6,OVER,AVOID,0.458,-,NO_BET,0.3994,0.4201,-0.1272,0.0206,-60.71,True,,NO_BET,1
+2026-08-13T21:11:40Z,2026-08-18,Argentina Primera Division,Gimnasia Mendoza vs Talleres,new_format,2.92,1.39,OVER,VALUABLE,0.415,-,NO_BET,0.3054,0.3439,-0.1217,0.0385,-60.71,True,,NO_BET,1
+2026-08-13T21:11:40Z,2026-08-15,Brazil Serie A,Fluminense vs Palmeiras,new_format,2.27,1.66,OVER,VALUABLE,0.507,-,NO_BET,0.4174,0.4488,-0.0853,0.0314,10.52,True,,NO_BET,10
+2026-08-13T21:11:40Z,2026-08-15,Brazil Serie A,Atletico Paranaense vs Bragantino-SP,new_format,2.05,1.7,OVER,AVOID,0.485,-,NO_BET,0.4478,0.4608,-0.1513,0.013,10.52,True,,NO_BET,10
+2026-08-13T21:11:40Z,2026-08-16,Argentina Primera Division,Sarmiento de Junin vs Atlético Huracán,new_format,3.15,1.35,OVER,VALUABLE,0.37,-,NO_BET,0.2819,0.3126,-0.1482,0.0307,-60.71,True,,NO_BET,1
+2026-08-13T21:11:40Z,2026-08-16,Mexico Liga MX,Atlas vs Tigres,new_format,2.08,1.71,OVER,VALUABLE,0.523,-,NO_BET,0.4463,0.4731,-0.113,0.0269,26.96,True,,NO_BET,4
+2026-08-13T21:11:40Z,2026-08-16,USA MLS,Nashville SC vs Inter Miami CF,new_format,1.44,2.62,UNDER,AVOID,0.603,-,NO_BET,0.6627,0.6358,-0.1569,-0.0269,40.82,True,,NO_BET,6
+2026-08-13T21:11:40Z,2026-08-16,Mexico Liga MX,América vs Atlético San Luis,new_format,1.57,2.2,UNDER,VALUABLE,0.493,-,NO_BET,0.5957,0.5497,-0.2151,-0.046,26.96,True,,NO_BET,4
+2026-08-13T21:11:40Z,2026-08-16,USA MLS,Chicago Fire vs Portland Timbers,new_format,1.33,3.1,UNDER,VALUABLE,0.609,-,NO_BET,0.7233,0.6718,-0.1745,-0.0515,40.82,True,,NO_BET,6
+2026-08-13T21:11:40Z,2026-08-16,USA MLS,New York City FC vs Philadelphia Union,new_format,1.62,2.2,OVER,VALUABLE,0.677,-,NO_BET,0.5844,0.6261,-0.0649,0.0418,40.82,True,,NO_BET,6
+2026-08-13T21:11:40Z,2026-08-17,USA MLS,Austin FC vs FC Dallas,new_format,1.62,2.15,UNDER,AVOID,0.533,-,NO_BET,0.5794,0.5584,-0.1753,-0.021,40.82,True,,NO_BET,6
+2026-08-13T21:11:40Z,2026-08-17,USA MLS,Seattle Sounders FC vs Vancouver Whitecaps FC,new_format,1.57,2.3,OVER,AVOID,0.63,-,NO_BET,0.6048,0.6163,-0.11,0.0115,40.82,True,,NO_BET,6
+2026-08-13T21:11:40Z,2026-08-19,USA MLS,Columbus Crew SC vs CF Montreal,new_format,1.5,2.45,OVER,AVOID,0.658,-,NO_BET,0.6343,0.6448,-0.1074,0.0105,40.82,True,,NO_BET,6
+2026-08-13T21:11:40Z,2026-08-19,USA MLS,Toronto FC vs Charlotte FC,new_format,1.7,2.27,OVER,AVOID,0.599,-,NO_BET,0.5749,0.5858,-0.0869,0.0109,40.82,True,,NO_BET,6
+2026-08-13T21:11:40Z,2026-08-19,USA MLS,Orlando City SC vs Chicago Fire,new_format,1.35,3.0,UNDER,AVOID,0.663,-,NO_BET,0.7118,0.6896,-0.1374,-0.0222,40.82,True,,NO_BET,6
+2026-08-13T21:11:40Z,2026-08-19,USA MLS,D.C. United vs New England Revolution,new_format,1.77,2.15,UNDER,AVOID,0.51,-,NO_BET,0.5506,0.5323,-0.1436,-0.0184,40.82,True,,NO_BET,6
+2026-08-13T21:11:40Z,2026-08-16,USA MLS,San Jose Earthquakes vs St. Louis City SC,new_format,1.44,2.5,UNDER,AVOID,0.616,-,NO_BET,0.6549,0.6373,-0.1548,-0.0176,40.82,True,,NO_BET,6
+2026-08-13T21:11:40Z,2026-08-19,USA MLS,FC Cincinnati vs New York City FC,new_format,1.44,2.62,OVER,AVOID,0.67,-,NO_BET,0.6627,0.6659,-0.1132,0.0032,40.82,True,,NO_BET,6
+2026-08-13T21:11:40Z,2026-08-19,USA MLS,New York Red Bulls vs Nashville SC,new_format,1.5,2.45,UNDER,VALUABLE,0.544,-,NO_BET,0.6343,0.5935,-0.185,-0.0408,40.82,True,,NO_BET,6
+2026-08-13T21:11:40Z,2026-08-20,USA MLS,Sporting Kansas City vs St. Louis City SC,new_format,1.44,2.5,UNDER,AVOID,0.579,-,NO_BET,0.6549,0.6206,-0.179,-0.0342,40.82,True,,NO_BET,6
+2026-08-13T21:11:40Z,2026-08-20,USA MLS,Minnesota United FC vs Atlanta United FC,new_format,1.72,2.22,OVER,VALUABLE,0.627,-,NO_BET,0.5665,0.5937,-0.0622,0.0272,40.82,True,,NO_BET,6
+2026-08-13T21:11:40Z,2026-08-20,USA MLS,Seattle Sounders FC vs Austin FC,new_format,1.69,2.28,OVER,AVOID,0.593,-,NO_BET,0.5777,0.5844,-0.0947,0.0067,40.82,True,,NO_BET,6
+2026-08-13T21:11:40Z,2026-08-20,USA MLS,Colorado Rapids vs Los Angeles FC,new_format,1.68,2.3,OVER,AVOID,0.608,-,NO_BET,0.5814,0.5935,-0.0848,0.0121,40.82,True,,NO_BET,6
+2026-08-13T21:11:40Z,2026-08-20,USA MLS,Real Salt Lake vs FC Dallas,new_format,1.5,2.45,UNDER,AVOID,0.6,-,NO_BET,0.6343,0.6191,-0.1464,-0.0153,40.82,True,,NO_BET,6
+2026-08-13T21:11:40Z,2026-08-16,Finland Veikkausliiga,AC Oulu vs FC Inter Turku,new_format,1.88,1.78,OVER,AVOID,0.511,-,NO_BET,0.4843,0.4965,-0.1564,0.0122,12.81,True,,NO_BET,9
+2026-08-13T21:11:40Z,2026-08-20,USA MLS,Vancouver Whitecaps FC vs Houston Dynamo,new_format,1.44,2.5,UNDER,AVOID,0.598,-,NO_BET,0.6549,0.6291,-0.1667,-0.0257,40.82,True,,NO_BET,6
+2026-08-13T21:11:40Z,2026-08-19,USA MLS,Philadelphia Union vs Inter Miami CF,new_format,1.36,2.88,UNDER,VALUABLE,0.563,-,NO_BET,0.7028,0.6401,-0.199,-0.0627,40.82,True,,NO_BET,6
+2026-08-13T21:11:40Z,2026-08-16,Mexico Liga MX,Pumas vs Querétaro,new_format,1.72,2.06,UNDER,AVOID,0.493,-,NO_BET,0.5496,0.5242,-0.1822,-0.0254,26.96,True,,NO_BET,4
+2026-08-13T21:11:40Z,2026-08-16,USA MLS,Los Angeles FC vs San Diego FC,new_format,1.44,2.62,UNDER,VALUABLE,0.574,-,NO_BET,0.6627,0.6227,-0.1761,-0.04,40.82,True,,NO_BET,6
+2026-08-13T21:11:40Z,2026-08-16,USA MLS,Colorado Rapids vs Sporting Kansas City,new_format,1.4,2.7,UNDER,AVOID,0.639,-,NO_BET,0.6799,0.6616,-0.1444,-0.0183,40.82,True,,NO_BET,6
+2026-08-13T21:11:40Z,2026-08-17,Mexico Liga MX,Santos Laguna vs Guadalajara,new_format,1.55,2.32,UNDER,AVOID,0.537,-,NO_BET,0.6113,0.578,-0.1814,-0.0334,26.96,True,,NO_BET,4
+2026-08-13T21:11:40Z,2026-08-17,Mexico Liga MX,Tijuana vs Cruz Azul,new_format,1.81,1.95,OVER,AVOID,0.542,-,NO_BET,0.5205,0.5304,-0.1271,0.0099,26.96,True,,NO_BET,4
+2026-08-13T21:11:40Z,2026-08-18,Mexico Liga MX,Necaxa vs León,new_format,1.68,2.12,UNDER,AVOID,0.533,-,NO_BET,0.5639,0.55,-0.1583,-0.0139,26.96,True,,NO_BET,4
+2026-08-13T21:11:40Z,2026-08-18,Mexico Liga MX,Pachuca vs Puebla,new_format,1.67,2.0,OVER,AVOID,0.555,-,NO_BET,0.552,0.5533,-0.1578,0.0013,26.96,True,,NO_BET,4
+2026-08-13T21:11:40Z,2026-08-14,China Super League,Shandong Luneng Taishan FC vs Qingdao Hainiu FC,new_format,1.35,2.95,UNDER,VALUABLE,0.577,-,NO_BET,0.7096,0.6499,-0.1917,-0.0597,-4.58,True,,NO_BET,3
+2026-08-13T21:11:40Z,2026-08-14,China Super League,Wuhan Three Towns vs Shanghai SIPG FC,new_format,1.52,2.32,OVER,AVOID,0.618,-,NO_BET,0.6188,0.6186,-0.1354,-0.0002,-4.58,True,,NO_BET,3
+2026-08-13T21:11:40Z,2026-08-14,China Super League,Qingdao West Coast FC vs Chongqing Tonglianglong FC,new_format,1.96,1.82,OVER,AVOID,0.52,-,NO_BET,0.4798,0.4979,-0.1168,0.0181,-4.58,True,,NO_BET,3
+2026-08-13T21:11:40Z,2026-08-15,China Super League,Liaoning Tieren FC vs Shenzhen Peng City FC,new_format,1.55,2.28,OVER,AVOID,0.644,-,NO_BET,0.6079,0.624,-0.1094,0.0162,-4.58,True,,NO_BET,3
+2026-08-13T21:11:40Z,2026-08-16,USA MLS,Real Salt Lake vs Minnesota United FC,new_format,1.57,2.25,UNDER,AVOID,0.592,-,NO_BET,0.6004,0.5967,-0.141,-0.0037,40.82,True,,NO_BET,6
+2026-08-13T21:11:40Z,2026-08-15,China Super League,Tianjin Jinmen Tiger FC vs Beijing FC,new_format,1.76,2.03,OVER,AVOID,0.576,-,NO_BET,0.5389,0.5554,-0.1076,0.0165,-4.58,True,,NO_BET,3
+2026-08-13T21:11:40Z,2026-08-15,China Super League,Yunnan Yukun vs Dalian Yingbo,new_format,1.37,2.85,UNDER,AVOID,0.645,-,NO_BET,0.6978,0.6739,-0.1462,-0.024,-4.58,True,,NO_BET,3
+2026-08-13T21:11:40Z,2026-08-15,China Super League,Shanghai Shenhua FC vs Henan FC,new_format,1.42,2.68,UNDER,VALUABLE,0.57,-,NO_BET,0.6724,0.6261,-0.1828,-0.0463,-4.58,True,,NO_BET,3
+2026-08-13T21:11:40Z,2026-08-15,USA MLS,Atlanta United FC vs New York Red Bulls,new_format,1.36,2.8,UNDER,AVOID,0.629,-,NO_BET,0.6988,0.6672,-0.1617,-0.0316,40.82,True,,NO_BET,6
+2026-08-13T21:11:40Z,2026-08-15,USA MLS,CF Montreal vs D.C. United,new_format,1.71,2.1,UNDER,AVOID,0.516,-,NO_BET,0.556,0.5379,-0.1636,-0.0181,40.82,True,,NO_BET,6
+2026-08-13T21:11:40Z,2026-08-15,USA MLS,Charlotte FC vs Columbus Crew SC,new_format,1.73,2.21,OVER,AVOID,0.618,-,NO_BET,0.5637,0.588,-0.0666,0.0243,40.82,True,,NO_BET,6
+2026-08-13T21:11:40Z,2026-08-15,USA MLS,Orlando City SC vs FC Cincinnati,new_format,1.25,3.5,UNDER,VALUABLE,0.667,-,NO_BET,0.7698,0.7235,-0.1597,-0.0463,40.82,True,,NO_BET,6
+2026-08-13T21:11:40Z,2026-08-15,USA MLS,Toronto FC vs New England Revolution,new_format,1.68,2.15,UNDER,AVOID,0.562,-,NO_BET,0.567,0.5646,-0.1337,-0.0025,40.82,True,,NO_BET,6
+2026-08-13T21:11:40Z,2026-08-16,USA MLS,Houston Dynamo vs LA Galaxy,new_format,1.55,2.3,UNDER,AVOID,0.534,-,NO_BET,0.6096,0.5757,-0.1849,-0.0339,40.82,True,,NO_BET,6
+2026-08-13T21:11:40Z,2026-08-15,China Super League,Zhejiang vs Chengdu Rongcheng FC,new_format,1.38,2.82,UNDER,VALUABLE,0.56,-,NO_BET,0.6929,0.633,-0.1968,-0.0599,-4.58,True,,NO_BET,3
+2026-08-13T21:11:40Z,2026-08-16,Finland Veikkausliiga,HJK Helsinki vs Jaro,new_format,1.44,2.72,UNDER,AVOID,0.658,-,NO_BET,0.6686,0.664,-0.1159,-0.0046,12.81,True,,NO_BET,9
+2026-08-13T21:11:40Z,2026-08-16,Bundesliga 2,Arminia Bielefeld vs FC Energie Cottbus,standard,1.55,2.25,UNDER,AVOID,0.549,-,NO_BET,0.6052,0.5826,-0.1742,-0.0226,1.46,True,,NO_BET,12
+2026-08-13T21:11:40Z,2026-08-14,Finland Veikkausliiga,VPS Vaasa vs TPS Turku,new_format,1.68,2.0,UNDER,AVOID,0.535,-,NO_BET,0.5501,0.5431,-0.1699,-0.007,12.81,True,,NO_BET,9
+2026-08-13T21:11:40Z,2026-08-15,League One,Huddersfield Town vs Wimbledon,standard,1.69,2.01,UNDER,AVOID,0.54,-,NO_BET,0.5493,0.5455,-0.1607,-0.0038,0.11,True,,NO_BET,4
+2026-08-13T21:11:40Z,2026-08-15,League One,Leyton Orient vs Sheffield Wednesday,standard,1.88,1.89,OVER,AVOID,0.514,-,NO_BET,0.5015,0.5066,-0.1374,0.0052,0.11,True,,NO_BET,4
+2026-08-13T21:11:40Z,2026-08-15,League One,Plymouth Argyle vs Stockport County FC,standard,1.7,2.11,UNDER,VALUABLE,0.478,-,NO_BET,0.5589,0.5265,-0.1881,-0.0325,0.11,True,,NO_BET,4
+2026-08-13T21:11:40Z,2026-08-15,League Two,Newport County vs Rochdale,standard,1.93,1.75,OVER,AVOID,0.49,-,NO_BET,0.4721,0.4792,-0.1668,0.0071,,True,,NO_BET,
+2026-08-13T21:11:40Z,2026-08-15,League Two,Oldham Athletic vs Port Vale,standard,2.08,1.64,OVER,AVOID,0.478,-,NO_BET,0.4324,0.4485,-0.1641,0.0161,,True,,NO_BET,
+2026-08-13T21:11:40Z,2026-08-15,League Two,Accrington Stanley vs Colchester United,standard,2.05,1.73,OVER,AVOID,0.483,-,NO_BET,0.4534,0.4637,-0.1455,0.0103,,True,,NO_BET,
+2026-08-13T21:11:40Z,2026-08-15,League Two,Barnet vs Salford City,standard,1.92,1.76,OVER,AVOID,0.518,-,NO_BET,0.4752,0.4924,-0.1459,0.0172,,True,,NO_BET,
+2026-08-13T21:11:40Z,2026-08-15,League Two,York City vs Bristol Rovers,standard,2.04,1.74,OVER,AVOID,0.524,-,NO_BET,0.4564,0.4801,-0.1163,0.0238,,True,,NO_BET,
+2026-08-13T21:11:40Z,2026-08-15,League Two,Cheltenham Town vs Rotherham United,standard,1.88,1.87,UNDER,AVOID,0.472,-,NO_BET,0.4985,0.4878,-0.1727,-0.0107,,True,,NO_BET,
+2026-08-13T21:11:40Z,2026-08-15,League Two,Chesterfield FC vs Fleetwood Town,standard,2.01,1.76,OVER,AVOID,0.487,-,NO_BET,0.4635,0.4716,-0.1467,0.0081,,True,,NO_BET,
+2026-08-13T21:11:40Z,2026-08-15,League Two,Crawley Town vs Crewe Alexandra,standard,1.9,1.77,OVER,AVOID,0.515,-,NO_BET,0.4797,0.4937,-0.1525,0.014,,True,,NO_BET,
+2026-08-13T21:11:40Z,2026-08-15,League Two,Grimsby Town vs Exeter City,standard,1.81,1.86,UNDER,AVOID,0.487,-,NO_BET,0.5078,0.4996,-0.1828,-0.0081,,True,,NO_BET,
+2026-08-13T21:11:40Z,2026-08-15,League Two,Gillingham vs Walsall,standard,2.01,1.76,OVER,AVOID,0.482,-,NO_BET,0.4635,0.4698,-0.1502,0.0063,,True,,NO_BET,
+2026-08-13T21:11:40Z,2026-08-15,League Two,Northampton Town vs Swindon Town,standard,1.9,1.85,OVER,AVOID,0.495,-,NO_BET,0.4926,0.4938,-0.1524,0.0011,,True,,NO_BET,
+2026-08-13T21:11:40Z,2026-08-15,League Two,Tranmere Rovers vs Shrewsbury Town,standard,2.09,1.7,OVER,AVOID,0.507,-,NO_BET,0.4433,0.4655,-0.1247,0.0222,,True,,NO_BET,
+2026-08-13T21:11:40Z,2026-08-14,Bundesliga 2,Eintracht Braunschweig vs VfL Bochum,standard,1.82,1.85,OVER,AVOID,0.584,-,NO_BET,0.5047,0.5363,-0.1114,0.0317,1.46,True,,NO_BET,12
+2026-08-13T21:11:40Z,2026-08-14,Bundesliga 2,Holstein Kiel vs FC St. Pauli,standard,1.75,2.05,UNDER,AVOID,0.501,-,NO_BET,0.543,0.5262,-0.1641,-0.0169,1.46,True,,NO_BET,12
+2026-08-13T21:11:40Z,2026-08-15,League One,Mansfield Town vs Doncaster Rovers,standard,1.87,1.9,UNDER,AVOID,0.502,-,NO_BET,0.5044,0.5032,-0.1484,-0.0011,0.11,True,,NO_BET,4
+2026-08-13T21:11:40Z,2026-08-15,League One,Cambridge United vs Wigan Athletic,standard,2.23,1.63,OVER,AVOID,0.482,-,NO_BET,0.4149,0.4383,-0.1251,0.0234,0.11,True,,NO_BET,4
+2026-08-13T21:11:40Z,2026-08-15,League One,Burton Albion vs Stevenage,standard,2.42,1.54,OVER,VALUABLE,0.471,-,NO_BET,0.3782,0.4107,-0.1152,0.0325,0.11,True,,NO_BET,4
+2026-08-13T21:11:40Z,2026-08-15,League One,Bradford City vs Peterborough United,standard,1.79,1.99,OVER,AVOID,0.538,-,NO_BET,0.5289,0.5325,-0.1332,0.0036,0.11,True,,NO_BET,4
+2026-08-13T21:11:40Z,2026-08-20,USA MLS,LA Galaxy vs San Jose Earthquakes,new_format,1.44,2.6,UNDER,AVOID,0.582,-,NO_BET,0.6614,0.6255,-0.172,-0.0359,40.82,True,,NO_BET,6
+2026-08-13T21:11:40Z,2026-08-14,Championship,Wolverhampton Wanderers vs Blackburn Rovers,standard,1.75,2.04,UNDER,AVOID,0.525,-,NO_BET,0.5419,0.535,-0.1487,-0.0069,,True,,NO_BET,
+2026-08-13T21:11:40Z,2026-08-15,Championship,Bolton Wanderers vs Preston North End,standard,1.9,1.87,OVER,AVOID,0.504,-,NO_BET,0.4956,0.4989,-0.1426,0.0033,,True,,NO_BET,
+2026-08-13T21:11:40Z,2026-08-15,Championship,Bristol City vs Millwall,standard,1.91,1.86,OVER,AVOID,0.503,-,NO_BET,0.4927,0.4968,-0.142,0.0041,,True,,NO_BET,
+2026-08-13T21:11:40Z,2026-08-15,Championship,Charlton Athletic vs Derby County,standard,2.13,1.69,OVER,AVOID,0.468,-,NO_BET,0.437,0.4477,-0.1452,0.0107,,True,,NO_BET,
+2026-08-13T21:11:40Z,2026-08-15,Championship,Middlesbrough vs Lincoln City,standard,1.66,2.18,UNDER,VALUABLE,0.477,-,NO_BET,0.5741,0.5353,-0.1929,-0.0387,,True,,NO_BET,
+2026-08-13T21:11:40Z,2026-08-15,Championship,Norwich City vs West Bromwich Albion,standard,1.89,1.88,UNDER,AVOID,0.497,-,NO_BET,0.4985,0.4981,-0.1488,-0.0005,,True,,NO_BET,
+2026-08-13T21:11:40Z,2026-08-15,Championship,Portsmouth vs Queens Park Rangers,standard,1.94,1.83,UNDER,AVOID,0.463,-,NO_BET,0.484,0.4756,-0.1693,-0.0084,,True,,NO_BET,
+2026-08-13T21:11:40Z,2026-08-15,Bundesliga 2,Hertha Berlin vs 1. FC Heidenheim,standard,1.6,2.2,UNDER,AVOID,0.511,-,NO_BET,0.5888,0.5579,-0.1866,-0.0309,1.46,True,,NO_BET,12
+2026-08-13T21:11:40Z,2026-08-15,Championship,Stoke City vs Swansea City,standard,2.07,1.73,OVER,AVOID,0.485,-,NO_BET,0.4511,0.4629,-0.1385,0.0119,,True,,NO_BET,
+2026-08-13T21:11:40Z,2026-08-16,Championship,Watford vs Southampton,standard,1.75,2.04,UNDER,AVOID,0.505,-,NO_BET,0.5419,0.5272,-0.1622,-0.0146,,True,,NO_BET,
+2026-08-13T21:11:40Z,2026-08-16,Championship,Burnley vs West Ham United,standard,1.73,2.07,UNDER,AVOID,0.487,-,NO_BET,0.5489,0.5241,-0.1775,-0.0248,,True,,NO_BET,
+2026-08-13T21:11:40Z,2026-08-17,Championship,Cardiff City vs Wrexham AFC,standard,1.74,2.05,UNDER,AVOID,0.491,-,NO_BET,0.5448,0.5234,-0.1739,-0.0215,,True,,NO_BET,
+2026-08-13T21:11:40Z,2026-08-15,League One,Notts County vs Leicester City,standard,1.99,1.79,OVER,AVOID,0.526,-,NO_BET,0.4711,0.4929,-0.113,0.0219,0.11,True,,NO_BET,4
+2026-08-13T21:11:40Z,2026-08-15,League One,Reading vs Luton,standard,1.86,1.91,UNDER,AVOID,0.458,-,NO_BET,0.5073,0.4875,-0.1823,-0.0198,0.11,True,,NO_BET,4
+2026-08-13T21:11:40Z,2026-08-15,League One,Oxford United vs Milton Keynes Dons,standard,2.08,1.72,OVER,AVOID,0.46,-,NO_BET,0.4481,0.4523,-0.1562,0.0042,0.11,True,,NO_BET,4
+2026-08-13T21:11:40Z,2026-08-15,League One,Barnsley vs Bromley FC,standard,1.91,1.86,UNDER,AVOID,0.476,-,NO_BET,0.4927,0.486,-0.1627,-0.0068,0.11,True,,NO_BET,4
+2026-08-13T21:11:40Z,2026-08-15,League One,Blackpool vs Wycombe Wanderers,standard,1.93,1.84,OVER,AVOID,0.502,-,NO_BET,0.4869,0.4931,-0.1399,0.0062,0.11,True,,NO_BET,4
+2026-08-13T21:11:40Z,2026-08-15,Championship,Sheffield United vs Birmingham City,standard,1.99,1.79,OVER,AVOID,0.481,-,NO_BET,0.4711,0.4749,-0.1487,0.0039,,True,,NO_BET,
+2026-08-13T21:11:40Z,2026-08-15,Bundesliga 2,VfL Osnabrück vs 1. FC Magdeburg,standard,1.52,2.32,UNDER,AVOID,0.583,-,NO_BET,0.6188,0.6047,-0.1567,-0.0141,1.46,True,,NO_BET,12
+2026-08-13T21:11:40Z,2026-08-15,Bundesliga 2,Greuther Fürth vs 1. FC Nürnberg,standard,1.68,2.14,UNDER,AVOID,0.551,-,NO_BET,0.566,0.5601,-0.1412,-0.0059,1.46,True,,NO_BET,12
+2026-08-13T21:11:40Z,2026-08-15,Bundesliga 2,1. FC Kaiserslautern vs Karlsruher SC,standard,1.52,2.35,UNDER,AVOID,0.582,-,NO_BET,0.6213,0.6055,-0.1555,-0.0158,1.46,True,,NO_BET,12
+2026-08-13T21:11:40Z,2026-08-16,Austrian Bundesliga,Hartberg vs Austria Wien,new_format,1.97,1.78,OVER,AVOID,0.54,-,NO_BET,0.472,0.5028,-0.1026,0.0308,-1.7,True,,NO_BET,3
+2026-08-13T21:11:40Z,2026-08-16,Austrian Bundesliga,WSG Tirol vs RB Salzburg,new_format,1.56,2.38,UNDER,VALUABLE,0.493,-,NO_BET,0.6139,0.5597,-0.2046,-0.0542,-1.7,True,,NO_BET,3
+2026-08-13T21:11:40Z,2026-08-16,Austrian Bundesliga,Rapid Wien vs Grazer AK,new_format,1.85,1.92,UNDER,AVOID,0.487,-,NO_BET,0.5102,0.4997,-0.1642,-0.0104,-1.7,True,,NO_BET,3
+2026-08-13T21:11:40Z,2026-08-14,Sweden Allsvenskan,IF Elfsborg vs Västerås SK,new_format,1.68,2.0,UNDER,AVOID,0.493,-,NO_BET,0.5501,0.5246,-0.201,-0.0255,10.31,True,,NO_BET,8
+2026-08-13T21:11:40Z,2026-08-15,Sweden Allsvenskan,Mjällby AIF vs IK Sirius,new_format,1.62,2.12,UNDER,AVOID,0.493,-,NO_BET,0.5762,0.539,-0.2069,-0.0372,10.31,True,,NO_BET,8
+2026-08-13T21:11:40Z,2026-08-16,Sweden Allsvenskan,Djurgardens IF vs AIK,new_format,1.52,2.48,UNDER,VALUABLE,0.535,-,NO_BET,0.6313,0.588,-0.1822,-0.0433,10.31,True,,NO_BET,8
+2026-08-13T21:11:40Z,2026-08-16,Sweden Allsvenskan,Degerfors IF vs IFK Goteborg,new_format,1.85,1.81,OVER,AVOID,0.512,-,NO_BET,0.4937,0.5022,-0.1597,0.0084,10.31,True,,NO_BET,8
+2026-08-13T21:11:40Z,2026-08-16,Sweden Allsvenskan,IF Brommapojkarna vs Örgryte IS,new_format,1.61,2.12,UNDER,AVOID,0.493,-,NO_BET,0.5784,0.5402,-0.21,-0.0382,10.31,True,,NO_BET,8
+2026-08-13T21:11:40Z,2026-08-15,Austrian Bundesliga,Sturm Graz vs Rheindorf Altach,new_format,1.86,1.91,OVER,AVOID,0.512,-,NO_BET,0.5073,0.5093,-0.1418,0.002,-1.7,True,,NO_BET,3
+2026-08-13T21:11:40Z,2026-08-16,Sweden Allsvenskan,GAIS vs Malmo FF,new_format,1.57,2.16,UNDER,AVOID,0.549,-,NO_BET,0.5917,0.5723,-0.1795,-0.0194,10.31,True,,NO_BET,8
+2026-08-13T21:11:40Z,2026-08-17,Sweden Allsvenskan,BK Hacken vs Halmstads BK,new_format,1.44,2.75,UNDER,SNIPER,0.493,-,NO_BET,0.6703,0.5907,-0.2224,-0.0796,10.31,True,,NO_BET,8
+2026-08-13T21:11:40Z,2026-08-14,Norway Eliteserien,Rosenborg vs Viking FK,new_format,1.47,2.62,UNDER,AVOID,0.592,-,NO_BET,0.654,0.6259,-0.1537,-0.0281,77.41,True,,NO_BET,2
+2026-08-13T21:11:40Z,2026-08-15,Norway Eliteserien,KFUM vs Lillestrom,new_format,1.57,1.97,OVER,AVOID,0.571,-,NO_BET,0.5702,0.5705,-0.1824,0.0003,77.41,True,,NO_BET,2
+2026-08-13T21:11:40Z,2026-08-16,Norway Eliteserien,Aalesund vs Vålerenga,new_format,1.39,2.95,UNDER,VALUABLE,0.557,-,NO_BET,0.696,0.6333,-0.1905,-0.0627,77.41,True,,NO_BET,2
+2026-08-13T21:11:40Z,2026-08-16,Norway Eliteserien,SK Brann vs HamKam,new_format,1.46,2.68,UNDER,VALUABLE,0.534,-,NO_BET,0.6605,0.6034,-0.1927,-0.0571,77.41,True,,NO_BET,2
+2026-08-13T21:11:40Z,2026-08-16,Norway Eliteserien,Molde vs Tromso,new_format,1.72,1.96,OVER,VALUABLE,0.689,-,NO_BET,0.5373,0.6055,-0.0417,0.0682,77.41,True,,NO_BET,2
+2026-08-13T21:11:40Z,2026-08-16,Norway Eliteserien,Sarpsborg FK vs Sandefjord,new_format,1.5,2.52,OVER,AVOID,0.637,-,NO_BET,0.6393,0.6382,-0.1174,-0.0011,77.41,True,,NO_BET,2
+2026-08-13T21:11:40Z,2026-08-16,Norway Eliteserien,Fredrikstad FK vs Kristiansund BK,new_format,1.68,2.0,OVER,AVOID,0.594,-,NO_BET,0.5501,0.5697,-0.1249,0.0197,77.41,True,,NO_BET,2
+2026-08-13T21:11:40Z,2026-08-16,Sweden Allsvenskan,Kalmar FF vs Hammarby IF,new_format,1.64,2.08,UNDER,AVOID,0.531,-,NO_BET,0.5676,0.5514,-0.1765,-0.0163,10.31,True,,NO_BET,8
+2026-08-13T21:11:40Z,2026-08-15,Finland Veikkausliiga,IFK Mariehamn vs SJK Seinäjoki,new_format,1.42,2.6,UNDER,VALUABLE,0.533,-,NO_BET,0.6675,0.6072,-0.2099,-0.0603,12.81,True,,NO_BET,9
+2026-08-13T21:11:40Z,2026-08-15,Austrian Bundesliga,Austria Lustenau vs Wolfsberger AC,new_format,1.92,1.85,OVER,VALUABLE,0.581,-,NO_BET,0.4898,0.5308,-0.072,0.041,-1.7,True,,NO_BET,3
+2026-08-13T21:11:40Z,2026-08-17,Denmark Superliga,Brondby IF vs SonderjyskE,new_format,1.55,2.25,OVER,AVOID,0.625,-,NO_BET,0.6052,0.6142,-0.1249,0.009,78.0,True,,NO_BET,3
+2026-08-13T21:11:40Z,2026-08-16,Bundesliga 2,Dynamo Dresden vs SV Darmstadt 98,standard,1.57,2.21,UNDER,AVOID,0.584,-,NO_BET,0.5966,0.5914,-0.1493,-0.0052,1.46,True,,NO_BET,12
+2026-08-13T21:11:40Z,2026-08-16,Bundesliga 2,Hannover 96 vs VfL Wolfsburg,standard,1.6,2.3,UNDER,AVOID,0.526,-,NO_BET,0.598,0.5692,-0.1684,-0.0288,1.46,True,,NO_BET,12
+2026-08-13T21:11:40Z,2026-08-14,La Liga 2,Real Sociedad B vs CD Castellón,standard,1.61,2.38,UNDER,AVOID,0.558,-,NO_BET,0.6025,0.5847,-0.138,-0.0178,0.0,True,,NO_BET,2
+2026-08-13T21:11:40Z,2026-08-15,La Liga 2,Andorra CF vs AD Ceuta FC,standard,1.7,2.0,UNDER,AVOID,0.473,-,NO_BET,0.5462,0.5167,-0.2047,-0.0295,0.0,True,,NO_BET,2
+2026-08-13T21:11:40Z,2026-08-15,La Liga 2,Cádiz CF vs Celta Vigo,standard,2.0,1.83,OVER,VALUABLE,0.56,-,NO_BET,0.4763,0.5096,-0.075,0.0334,0.0,True,,NO_BET,2
+2026-08-13T21:11:40Z,2026-08-15,La Liga 2,Oviedo vs Granada CF,standard,1.94,1.91,UNDER,AVOID,0.469,-,NO_BET,0.4959,0.4852,-0.1508,-0.0107,0.0,True,,NO_BET,2
+2026-08-13T21:11:40Z,2026-08-15,La Liga 2,Mallorca vs Real Valladolid CF,standard,1.88,1.97,OVER,AVOID,0.557,-,NO_BET,0.5124,0.5303,-0.0927,0.018,0.0,True,,NO_BET,2
+2026-08-13T21:11:40Z,2026-08-16,La Liga 2,SD Eibar vs Tenerife,standard,2.23,1.68,OVER,VALUABLE,0.52,-,NO_BET,0.425,0.4582,-0.0808,0.0332,0.0,True,,NO_BET,2
+2026-08-13T21:11:40Z,2026-08-14,Austrian Bundesliga,LASK vs Ried,new_format,1.72,2.08,UNDER,AVOID,0.527,-,NO_BET,0.5519,0.5408,-0.1535,-0.011,-1.7,True,,NO_BET,3
+2026-08-13T21:11:40Z,2026-08-16,La Liga 2,Burgos CF vs Córdoba,standard,2.17,1.72,OVER,AVOID,0.491,-,NO_BET,0.4385,0.4567,-0.1094,0.0182,0.0,True,,NO_BET,2
+2026-08-13T21:11:40Z,2026-08-16,La Liga 2,Las Palmas vs Albacete,standard,1.88,1.97,UNDER,AVOID,0.453,-,NO_BET,0.5124,0.4886,-0.1712,-0.0238,0.0,True,,NO_BET,2
+2026-08-13T21:11:40Z,2026-08-17,La Liga 2,Sporting Gijón vs Sabadell FC,standard,2.15,1.73,OVER,VALUABLE,0.559,-,NO_BET,0.4424,0.483,-0.0613,0.0407,0.0,True,,NO_BET,2
+2026-08-13T21:11:40Z,2026-08-17,La Liga 2,Almería vs CD Eldense,standard,1.61,2.38,UNDER,AVOID,0.558,-,NO_BET,0.6025,0.5847,-0.1381,-0.0178,0.0,True,,NO_BET,2
+2026-08-13T21:11:40Z,2026-08-14,Denmark Superliga,Viborg FF vs AGF Aarhus,new_format,1.61,2.14,UNDER,AVOID,0.521,-,NO_BET,0.5805,0.5538,-0.188,-0.0267,78.0,True,,NO_BET,3
+2026-08-13T21:11:40Z,2026-08-16,Denmark Superliga,OB Odense BK vs AC Horsens,new_format,1.88,1.89,UNDER,AVOID,0.493,-,NO_BET,0.5015,0.4979,-0.1538,-0.0036,78.0,True,,NO_BET,3
+2026-08-13T21:11:40Z,2026-08-16,Denmark Superliga,FC Nordsjaelland vs Silkeborg IF,new_format,1.39,2.95,UNDER,AVOID,0.679,-,NO_BET,0.696,0.6883,-0.1131,-0.0077,78.0,True,,NO_BET,3
+2026-08-13T21:11:40Z,2026-08-16,Denmark Superliga,Lyngby vs FC Midtjylland,new_format,1.55,2.38,OVER,AVOID,0.616,-,NO_BET,0.6163,0.6162,-0.1217,-0.0,78.0,True,,NO_BET,3
+2026-08-13T21:11:40Z,2026-08-16,Denmark Superliga,Randers FC vs FC Copenhagen,new_format,1.61,2.27,UNDER,AVOID,0.568,-,NO_BET,0.5931,0.5818,-0.1427,-0.0113,78.0,True,,NO_BET,3
+2026-08-13T21:11:40Z,2026-08-16,La Liga 2,Girona FC vs Leganés,standard,2.03,1.82,OVER,VALUABLE,0.558,-,NO_BET,0.471,0.5015,-0.0773,0.0305,0.0,True,,NO_BET,2
+2026-08-13T21:11:40Z,2026-08-20,USA MLS,Portland Timbers vs San Diego FC,new_format,1.35,3.0,UNDER,VALUABLE,0.626,-,NO_BET,0.7118,0.6731,-0.16,-0.0387,40.82,True,,NO_BET,6
