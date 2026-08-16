@@ -1,5 +1,5 @@
 scope,n,brier_market,brier_market_wowza,logloss_market,logloss_market_wowza,wowza_helps
-overall,47,0.2277,0.2309,0.6474,0.6544,False
+overall,48,0.2281,0.2313,0.6482,0.6552,False
 Argentina Primera Division,7,0.2326,0.2324,0.6549,0.6553,False
 Austrian Bundesliga,3,0.2233,0.2285,0.6385,0.6498,False
 Brazil Serie A,1,0.3395,0.2989,0.8738,0.7912,True
@@ -9,7 +9,7 @@ China Super League,6,0.117,0.1398,0.4155,0.4671,False
 Denmark Superliga,2,0.2774,0.2637,0.7506,0.7211,True
 Finland Veikkausliiga,2,0.3176,0.2807,0.8352,0.7557,True
 Japan J-League,7,0.2477,0.2448,0.6888,0.6827,True
-La Liga 2,2,0.1839,0.2077,0.5596,0.6079,False
+La Liga 2,3,0.2046,0.222,0.6014,0.6368,False
 League One,2,0.1859,0.2081,0.5636,0.6088,False
 Mexico Liga MX,1,0.3296,0.3285,0.8535,0.8513,True
 Norway Eliteserien,2,0.2252,0.2345,0.6407,0.6606,False
