@@ -35,14 +35,58 @@ ECE = 0.02
 
 
 def _load_v9(name: str) -> pd.DataFrame:
-    """Read a v9 output CSV: local override output/_v9_<name> if present (for testing), else
-    fetch from the v9 public repo."""
-    local = config.OUTPUT_DIR / f"_v9_{name}"
-    if local.exists():
-        return pd.read_csv(local)
-    r = requests.get(f"{config.V9_RAW_BASE}/{name}", timeout=30)
-    r.raise_for_status()
-    return pd.read_csv(StringIO(r.text))
+    """Read a v9 output CSV.
+
+    Order: explicit test override -> local v9 clone -> public raw HTTP with backoff.
+
+    raw.githubusercontent.com RATE-LIMITS unauthenticated requests, and this collector
+    fetches several files twice an hour. On 2026-08-17 a plain fetch returned
+    `429 Too Many Requests`, which the previous implementation turned into an unhandled
+    HTTPError — the run died and wrote nothing. v11's snapshot history stops dead at
+    2026-08-11T09:26, six days before, which this explains.
+
+    So: prefer a checkout on disk (free, unthrottled, and what CI should use), and treat a
+    429 as retryable rather than fatal. Prompt 3 section 26 — record degraded states, never
+    silently corrupt or lose data.
+    """
+    import os
+    import time
+
+    override = config.OUTPUT_DIR / f"_v9_{name}"
+    if override.exists():
+        return pd.read_csv(override)
+
+    # A sibling clone of wowza-betting, if one is present. V9_LOCAL lets CI point at an
+    # actions/checkout of the baseline repo instead of hammering raw HTTP.
+    for cand in (os.getenv("V9_LOCAL", ""),
+                 config.BASE_DIR.parent / "v9",
+                 config.BASE_DIR.parent / "wowza-betting"):
+        if not cand:
+            continue
+        p = Path(cand) / "output" / name
+        if p.exists():
+            return pd.read_csv(p)
+
+    last = None
+    for attempt in range(4):
+        try:
+            r = requests.get(f"{config.V9_RAW_BASE}/{name}", timeout=30)
+            if r.status_code == 429:
+                wait = 5 * (attempt + 1)
+                print(f"[v11] raw.githubusercontent 429 for {name}; "
+                      f"retry {attempt + 1}/3 in {wait}s")
+                last = requests.HTTPError(f"429 for {name}")
+                time.sleep(wait)
+                continue
+            r.raise_for_status()
+            return pd.read_csv(StringIO(r.text))
+        except Exception as e:
+            last = e
+            time.sleep(3 * (attempt + 1))
+    raise RuntimeError(
+        f"could not read v9 {name} after retries ({last}). Provide a local v9 checkout "
+        f"via V9_LOCAL to avoid raw-HTTP rate limits."
+    ) from last
 
 
 def _blend_weight(odds, n_eff, market, w_cap):
@@ -141,6 +185,43 @@ def _rolling_clv_stats(bl: pd.DataFrame) -> dict:
     return {lg: (float(means[lg]), int(counts[lg])) for lg in means.index}
 
 
+def _fixture_id(date, league, match) -> str:
+    """Deterministic fixture identity (Prompt 3 section 5). v9 publishes no fixture_id, so
+    one is derived from (date, league, match). Stable across runs and machines, which is what
+    lets snapshots taken hours apart join to the same fixture."""
+    import hashlib
+    import re
+    import unicodedata
+
+    def _n(s):
+        nf = unicodedata.normalize("NFKD", str(s or ""))
+        a = "".join(c for c in nf if not unicodedata.combining(c)).lower()
+        return re.sub(r"\s+", " ", re.sub(r"[^a-z0-9 ]", " ", a)).strip()
+
+    raw = f"{str(date or '')[:10]}|{_n(league)}|{_n(match)}"
+    return hashlib.sha1(raw.encode("utf-8")).hexdigest()[:16]
+
+
+def _snapshot_id(fixture_id: str, snapshot_ts) -> str:
+    """One observation of one fixture at one instant. The dedup key — exact re-ingestion is
+    idempotent, while genuine time-series rows are always distinct."""
+    import hashlib
+    return hashlib.sha1(f"{fixture_id}|{snapshot_ts}".encode("utf-8")).hexdigest()[:16]
+
+
+def _minutes_to_kickoff(kickoff_utc, snapshot_ts) -> float | str:
+    """Horizon of this observation. Required for the T-12h/T-6h/T-3h/T-1h analysis in
+    Prompt 3 section 16 — without it a snapshot cannot be placed on the run-up to kickoff."""
+    try:
+        ko = pd.to_datetime(kickoff_utc, utc=True, errors="coerce")
+        sn = pd.to_datetime(snapshot_ts, utc=True, errors="coerce")
+        if pd.isna(ko) or pd.isna(sn):
+            return ""
+        return round((ko - sn).total_seconds() / 60.0, 1)
+    except Exception:
+        return ""
+
+
 def run():
     df = _load_v9("predictions.csv")
     try:
@@ -176,9 +257,22 @@ def run():
             if best["tier"] in ("NO_BET", "OBSERVE"):
                 side = "-"
 
+        _date = str(r.get("date", ""))[:10]
+        _match = f"{r.get('home_team', '')} vs {r.get('away_team', '')}"
+        _fid = _fixture_id(_date, lg, _match)
+        _kickoff = r.get("kickoff_utc", "")
         rows.append({
-            "snapshot_ts": ts, "date": str(r.get("date", ""))[:10], "league": lg,
-            "match": f"{r.get('home_team', '')} vs {r.get('away_team', '')}",
+            "fixture_id": _fid,
+            "snapshot_id": _snapshot_id(_fid, ts),
+            "snapshot_ts": ts, "date": _date, "league": lg,
+            "match": _match,
+            "kickoff_ts": _kickoff,
+            "minutes_to_kickoff": _minutes_to_kickoff(_kickoff, ts),
+            # v9 stamps these into predictions.csv as of wowza-betting 5f23677. NULL rather
+            # than invented where absent (Prompt 3 section 6).
+            "v9_generated_at": r.get("generated_at", ""),
+            "v9_git_sha": r.get("git_sha", ""),
+            "v9_model_sha": r.get("model_sha", ""),
             "model_type": r.get("model_type", ""),
             "odds_over25": o_over, "odds_under25": o_under,
             "valid_odds": valid, "reject_reason": reason,
@@ -191,23 +285,81 @@ def run():
             "rolling_clv_n": rn if rn is not None else "",
         })
     if not rows:
-        print("[v11] no upcoming fixtures"); return 0
+        # A collector that writes nothing must FAIL, not report success. Previously this
+        # returned 0 quietly, so a run that read no fixtures looked identical to a healthy
+        # one and the workflow committed nothing. Same disease that hid two multi-day
+        # outages in v9.
+        print("[v11] ERROR: no upcoming fixtures produced a row. Either v9's "
+              "predictions.csv was unreadable or every row was filtered out.")
+        return -1
 
     new = pd.DataFrame(rows)
-    out_f = config.OUTPUT_DIR / "v11_shadow_log.csv"
-    if out_f.exists():
+
+    # ── append-only snapshot history ─────────────────────────────────────────
+    # This file is IMMUTABLE RESEARCH HISTORY. Previously the only output collapsed to one
+    # row per (date, match) with keep="last" on every run, so a twice-hourly collector
+    # retained a mean of 1.00 snapshots per fixture — every open->moving->close curve it
+    # could have built was deleted 30 minutes later. Measured 2026-08-17: 161 rows,
+    # max snapshots per fixture = 1.
+    #
+    # Dedup here is ONLY against exact re-ingestion (same snapshot_id) and keeps the FIRST
+    # occurrence, so replaying a run can never rewrite recorded history. It must never
+    # collapse by fixture: two rows for one fixture at different timestamps are the entire
+    # point of the dataset.
+    snap_f = config.OUTPUT_DIR / "v11_shadow_snapshots.csv"
+    latest_f = config.OUTPUT_DIR / "v11_shadow_log.csv"   # the LATEST view; consumers read this
+
+    hist = pd.DataFrame()
+    if snap_f.exists():
         try:
-            new = pd.concat([pd.read_csv(out_f), new], ignore_index=True)
-        except Exception:
-            pass
-    new = new.sort_values("snapshot_ts").drop_duplicates(subset=["date", "match"], keep="last")
-    new.to_csv(out_f, index=False)
-    sc = new["v11_state"].value_counts().to_dict() if "v11_state" in new.columns else {}
-    rej = int((new["valid_odds"] == False).sum()) if "valid_odds" in new.columns else 0
-    print(f"[v11] logged {len(rows)} fixtures -> {out_f.name} (tracked {len(new)}); "
-          f"states {sc}; odds-rejected {rej}")
+            hist = pd.read_csv(snap_f)
+        except Exception as e:
+            print(f"[v11] WARNING: could not read snapshot history ({e}); "
+                  f"refusing to overwrite it")
+            return -1
+    elif latest_f.exists():
+        # One-time migration: the pre-fix log holds real observations. Prompt 2 section 3 /
+        # Prompt 3 section 19 — never discard research data, even collapsed data.
+        try:
+            hist = pd.read_csv(latest_f)
+            if "snapshot_id" not in hist.columns:
+                hist["fixture_id"] = [
+                    _fixture_id(r.get("date"), r.get("league"), r.get("match"))
+                    for _, r in hist.iterrows()
+                ]
+                hist["snapshot_id"] = [
+                    _snapshot_id(r["fixture_id"], r.get("snapshot_ts"))
+                    for _, r in hist.iterrows()
+                ]
+            print(f"[v11] migrated {len(hist)} pre-fix row(s) into snapshot history")
+        except Exception as e:
+            print(f"[v11] WARNING: could not migrate legacy log ({e})")
+            hist = pd.DataFrame()
+
+    combined = pd.concat([hist, new], ignore_index=True) if not hist.empty else new
+    before = len(combined)
+    combined = combined.drop_duplicates(subset=["snapshot_id"], keep="first")
+    dropped = before - len(combined)
+    combined.to_csv(snap_f, index=False)
+
+    # ── latest view (operational convenience, fully derivable) ───────────────
+    latest = (combined.sort_values("snapshot_ts")
+              .drop_duplicates(subset=["fixture_id"], keep="last"))
+    latest.to_csv(latest_f, index=False)
+
+    per_fix = combined.groupby("fixture_id").size()
+    sc = latest["v11_state"].value_counts().to_dict() if "v11_state" in latest.columns else {}
+    rej = int((latest["valid_odds"] == False).sum()) if "valid_odds" in latest.columns else 0
+    print(f"[v11] +{len(rows)} snapshot(s) | history {len(combined)} rows across "
+          f"{per_fix.size} fixtures (mean {per_fix.mean():.2f}, max {per_fix.max()} "
+          f"snapshots/fixture; {dropped} exact duplicate(s) skipped)")
+    print(f"[v11] latest view {len(latest)} fixtures; states {sc}; odds-rejected {rej}")
     return len(rows)
 
 
 if __name__ == "__main__":
-    run()
+    # Propagate failure. `run()`'s return value used to be discarded, so a run that read no
+    # fixtures — or hit raw.githubusercontent's 429 — still exited 0 and the workflow looked
+    # healthy. Prompt 3 section 26: failures must be visible.
+    _n = run()
+    raise SystemExit(0 if isinstance(_n, int) and _n > 0 else 1)

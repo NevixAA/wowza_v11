@@ -1,7 +1,13 @@
 name: V11 Collect
 
-# Data-collection only. Reads v9's PUBLIC data, logs the market-first engine's decisions to
-# output/v11_shadow_log.csv. No Telegram, no dashboard, no stakes. Cannot affect v9.
+# Data-collection only. Reads v9's PUBLIC data and records what the market-first engine WOULD
+# decide. No Telegram, no dashboard, no stakes. Cannot affect v9 — v11 reads v9 and never
+# writes to it, and if v11 fails v9 is unaffected (Prompt 3 section 3).
+#
+# Outputs:
+#   output/v11_shadow_snapshots.csv  APPEND-ONLY immutable research history
+#   output/v11_shadow_log.csv        latest-per-fixture view (what grade/residual consume)
+#   output/v11_graded.csv, v11_scoreboard.csv, v11_residual.csv
 
 on:
   schedule:
@@ -15,11 +21,25 @@ concurrency:
 jobs:
   collect:
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 15
     permissions:
       contents: write
     steps:
       - uses: actions/checkout@v4
+
+      # Read v9 from a CHECKOUT, not raw.githubusercontent.com. Unauthenticated raw fetches
+      # are rate-limited, and this job pulls several files twice an hour: on 2026-08-17 a
+      # plain fetch returned 429 Too Many Requests, which the collector turned into an
+      # unhandled HTTPError. v11's snapshot history stops at 2026-08-11T09:26, six days
+      # earlier, which that explains. A shallow public clone costs nothing and cannot be
+      # throttled. v11 still only READS it.
+      - name: Check out v9 baseline (read-only)
+        uses: actions/checkout@v4
+        with:
+          repository: NevixAA/wowza-betting
+          ref: main
+          path: _v9
+          fetch-depth: 1
 
       - uses: actions/setup-python@v5
         with:
@@ -28,22 +48,38 @@ jobs:
       - name: Install deps
         run: pip install pandas numpy requests
 
-      - name: Collect V11 shadow (reads v9 public data)
+      - name: Collect V11 shadow snapshot
+        env:
+          V9_LOCAL: ${{ github.workspace }}/_v9
         run: python scripts/v11_shadow.py
 
       - name: Grade + scoreboard (v9 vs v11 on settled fixtures)
+        env:
+          V9_LOCAL: ${{ github.workspace }}/_v9
         run: python scripts/v11_grade.py
 
       - name: Residual-vs-market experiment (does the model beat the market?)
+        env:
+          V9_LOCAL: ${{ github.workspace }}/_v9
         run: python scripts/v11_residual.py
 
       - name: Commit logs
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          for f in output/v11_shadow_log.csv output/v11_graded.csv output/v11_scoreboard.csv output/v11_residual.csv; do
+          # v11_shadow_snapshots.csv is the append-only research history and MUST be committed
+          # — it is the season's actual product.
+          for f in output/v11_shadow_snapshots.csv output/v11_shadow_log.csv \
+                   output/v11_graded.csv output/v11_scoreboard.csv output/v11_residual.csv; do
             git add -f "$f" 2>/dev/null || true
           done
           git diff --staged --quiet || \
             git commit -m "auto: v11 collect+grade $(date -u '+%Y-%m-%d %H:%M UTC')"
-          git push || echo "nothing to push / push skipped"
+          # A push failure used to be swallowed by `|| echo "nothing to push"`, so a run that
+          # never persisted its data still reported success. Retry the race, then FAIL.
+          for i in 1 2 3 4 5; do
+            git pull --rebase --autostash origin main && git push && exit 0
+            echo "push race - retry $i"; sleep $((RANDOM % 5 + 3))
+          done
+          echo "::error title=V11 push failed::Snapshots were collected but not persisted."
+          exit 1
