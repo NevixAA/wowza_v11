@@ -222,6 +222,28 @@ def _minutes_to_kickoff(kickoff_utc, snapshot_ts) -> float | str:
         return ""
 
 
+def closing_snapshot(snapshots: "pd.DataFrame") -> "pd.DataFrame":
+    """The latest PRE-kickoff snapshot per fixture — the only legitimate 'close'.
+
+    Prompt 3 sections 9 and 27: never use post-kickoff information, and prove it. Any CLV or
+    closing-price derivation must go through here rather than taking the last row per fixture,
+    because the last row is not always pre-kickoff: predictions.csv is filtered by DATE, so a
+    fixture that kicked off earlier the same day can still be captured (Cardiff City v Wrexham
+    AFC, 3.6 minutes after kickoff, 2026-08-17). Those rows are kept as research data and
+    excluded here.
+    """
+    if snapshots is None or snapshots.empty:
+        return snapshots
+    d = snapshots.copy()
+    mtk = pd.to_numeric(d.get("minutes_to_kickoff"), errors="coerce")
+    # Unknown kickoff (NaN) is EXCLUDED: we cannot prove such a row is pre-kickoff, and
+    # guessing in the permissive direction is exactly how post-kickoff data leaks into CLV.
+    d = d[mtk.notna() & (mtk > 0)]
+    if d.empty:
+        return d
+    return d.sort_values("snapshot_ts").drop_duplicates(subset=["fixture_id"], keep="last")
+
+
 def run():
     df = _load_v9("predictions.csv")
     try:
@@ -261,13 +283,14 @@ def run():
         _match = f"{r.get('home_team', '')} vs {r.get('away_team', '')}"
         _fid = _fixture_id(_date, lg, _match)
         _kickoff = r.get("kickoff_utc", "")
+        _mtk = _minutes_to_kickoff(_kickoff, ts)
         rows.append({
             "fixture_id": _fid,
             "snapshot_id": _snapshot_id(_fid, ts),
             "snapshot_ts": ts, "date": _date, "league": lg,
             "match": _match,
             "kickoff_ts": _kickoff,
-            "minutes_to_kickoff": _minutes_to_kickoff(_kickoff, ts),
+            "minutes_to_kickoff": _mtk,
             # v9 stamps these into predictions.csv as of wowza-betting 5f23677. NULL rather
             # than invented where absent (Prompt 3 section 6).
             "v9_generated_at": r.get("generated_at", ""),
@@ -278,6 +301,21 @@ def run():
             "valid_odds": valid, "reject_reason": reason,
             "live_side": r.get("best_side", r.get("bet", "")), "live_tier": r.get("signal_tier", ""),
             "p_model_over": round(p_over, 3),
+            # WHY the engine decided this. `reject_reason` above carries only the odds-
+            # validation verdict, so classify()'s own explanation was being thrown away:
+            # all 4,193 stored snapshots had reject_reason NaN and v11_tier NO_BET with no
+            # record of the cause. It was in fact "below floors" — every row had a negative
+            # EV lower bound (max -0.0384) — which is the engine working correctly, but
+            # nothing in the dataset said so. Prompt 3 section 6 wants the reject reason kept.
+            "v11_reason": best.get("reason", ""),
+            # Post-kickoff guard (Prompt 3 sections 9 and 27). predictions.csv is pre-match
+            # only, but its date filter is DAY-granular, so a fixture that kicked off earlier
+            # today can still be snapshotted: Cardiff City v Wrexham AFC was captured 3.6
+            # minutes AFTER kickoff on 2026-08-17. Such a row is legitimate research data and
+            # is kept, but it must NEVER be usable as a closing price.
+            "is_post_kickoff": bool(
+                isinstance(_mtk, (int, float)) and _mtk is not True and _mtk < 0
+            ),
             "v11_state": state, "v11_side": side, "v11_tier": best["tier"],
             "v11_p_market": best["p_market"], "v11_p_blend": best["p_blend"],
             "v11_ev_lb": best["ev_lb"], "v11_abs_edge": best["abs_edge"],
