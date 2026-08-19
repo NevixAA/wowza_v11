@@ -1,17 +1,17 @@
 scope,n,brier_market,brier_market_wowza,logloss_market,logloss_market_wowza,wowza_helps
-overall,92,0.2323,0.2323,0.6569,0.657,False
-Argentina Primera Division,15,0.1936,0.198,0.5753,0.5855,False
-Austrian Bundesliga,5,0.2018,0.2157,0.5941,0.6239,False
-Brazil Serie A,5,0.3008,0.2791,0.7967,0.7523,True
-Bundesliga 2,3,0.3116,0.2928,0.8198,0.78,True
-Championship,1,0.2164,0.2396,0.6259,0.6724,False
-China Super League,6,0.117,0.1398,0.4155,0.4671,False
-Denmark Superliga,5,0.2996,0.2767,0.8012,0.75,True
-Finland Veikkausliiga,2,0.3176,0.2807,0.8352,0.7557,True
-Japan J-League,7,0.2477,0.2448,0.6888,0.6827,True
-La Liga 2,9,0.2353,0.2481,0.6633,0.6893,False
-League One,2,0.1859,0.2081,0.5636,0.6088,False
-Mexico Liga MX,6,0.2794,0.2651,0.7524,0.723,True
-Norway Eliteserien,5,0.1601,0.1713,0.5061,0.531,False
-Sweden Allsvenskan,8,0.2315,0.2305,0.6562,0.6542,True
-USA MLS,13,0.2625,0.2591,0.7218,0.7138,True
+overall,94,0.2328,0.2327,0.6579,0.6577,True
+Argentina Primera Division,16,0.2083,0.2085,0.6057,0.6063,False
+Austrian Bundesliga,5,0.2018,0.2044,0.5941,0.5998,False
+Brazil Serie A,5,0.3008,0.2978,0.7967,0.7905,True
+Bundesliga 2,3,0.3116,0.3077,0.8198,0.8113,True
+Championship,1,0.2164,0.221,0.6259,0.635,False
+China Super League,7,0.1128,0.1168,0.4063,0.4157,False
+Denmark Superliga,5,0.2996,0.2947,0.8012,0.7899,True
+Finland Veikkausliiga,2,0.3176,0.3099,0.8352,0.8181,True
+Japan J-League,7,0.2477,0.2475,0.6888,0.6883,True
+La Liga 2,9,0.2353,0.2375,0.6633,0.6678,False
+League One,2,0.1859,0.1894,0.5636,0.5708,False
+Mexico Liga MX,6,0.2794,0.2769,0.7524,0.7471,True
+Norway Eliteserien,5,0.1601,0.1623,0.5061,0.511,False
+Sweden Allsvenskan,8,0.2315,0.2308,0.6562,0.6549,True
+USA MLS,13,0.2625,0.2617,0.7218,0.7198,True
