@@ -71,6 +71,11 @@ jobs:
           V9_LOCAL: ${{ github.workspace }}/_v9
         run: python scripts/v11_residual.py
 
+      # Does the market move TOWARD Wowza when they disagree (Prompt 3 section 16)? Only
+      # computable since the snapshot history stopped being deleted every 30 minutes.
+      - name: Market movement vs initial disagreement
+        run: python scripts/v11_market_movement.py
+
       - name: Commit logs
         run: |
           git config user.name "github-actions[bot]"
@@ -79,7 +84,7 @@ jobs:
           # — it is the season's actual product.
           for f in output/v11_shadow_snapshots.csv output/v11_shadow_log.csv \
                    output/v11_graded.csv output/v11_scoreboard.csv output/v11_residual.csv \
-                   output/v11_evidence.json; do
+                   output/v11_evidence.json output/v11_market_movement.csv; do
             git add -f "$f" 2>/dev/null || true
           done
           git diff --staged --quiet || \
