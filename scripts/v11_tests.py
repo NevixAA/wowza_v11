@@ -171,6 +171,31 @@ def main() -> int:
           abs(market_baseline(flipped) - (1.0 - p_over)) < 1e-9,
           f"{market_baseline(flipped):.6f} vs {1 - p_over:.6f}")
 
+    # ── CLV cleanliness gates BET, so a contaminated row must not buy its way past MIN_CLV_N ──
+    print("\n== clean CLV ==")
+    from scripts.v11_shadow import _rolling_clv_stats, CLV_PLAUSIBLE_ABS
+    rows = ([{"source": "live", "league": "L1", "clv_pct": 2.0}] * 10
+            + [{"source": "live", "league": "L1", "clv_pct": 287.1}] * 5)
+    st = _rolling_clv_stats(pd.DataFrame(rows))
+    mean, n = st["L1"]
+    check("implausible rows excluded from the COUNT", n == 10, str(n))
+    check("implausible rows excluded from the MEAN", abs(mean - 2.0) < 1e-9, str(mean))
+    check(f"boundary is inclusive at {CLV_PLAUSIBLE_ABS}",
+          _rolling_clv_stats(pd.DataFrame(
+              [{"source": "live", "league": "L", "clv_pct": CLV_PLAUSIBLE_ABS}]))["L"][1] == 1)
+    check("just beyond the boundary is dropped",
+          "L" not in _rolling_clv_stats(pd.DataFrame(
+              [{"source": "live", "league": "L", "clv_pct": CLV_PLAUSIBLE_ABS + 0.01}])))
+    check("negative outliers dropped too, not just positive",
+          "L" not in _rolling_clv_stats(pd.DataFrame(
+              [{"source": "live", "league": "L", "clv_pct": -66.86}])))
+    # the real-world shape: a segment that only clears MIN_CLV_N on contaminated rows must NOT
+    real = ([{"source": "live", "league": "NF", "clv_pct": 0.0}] * 143
+            + [{"source": "live", "league": "NF", "clv_pct": 120.0}] * 174)
+    m2, n2 = _rolling_clv_stats(pd.DataFrame(real))["NF"]
+    check("a segment cannot reach MIN_CLV_N on bad rows", n2 == 143, str(n2))
+    check("and its mean is not inflated by them", abs(m2) < 1e-9, str(m2))
+
     print(f"\n{'FAILED: ' + ', '.join(FAILS) if FAILS else 'all checks passed'}")
     return 1 if FAILS else 0
 

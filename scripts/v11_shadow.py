@@ -219,8 +219,60 @@ def _tier_to_state(tier: str) -> str:
     return "NO_BET"
 
 
+# Reject CLV observations whose magnitude is impossible for a goal O/U line.
+#
+# ROOT CAUSE — already fixed upstream, this guard is for the HISTORICAL residue.
+#
+# v9 commit c19ca31 (2026-08-10) "stop corrupt O/U lines entering the closing-odds archives":
+# the O/U parser matched ANY bet whose name contained "Over/Under", so NON-GOAL markets — corners,
+# cards, team totals — leaked their "Over 2.5" price into the goal `over25` key, and BTTS prices
+# were copied into `over25`/`under25`. A corners or BTTS-no price sits around 1.20-1.30, so an
+# entry of 1.96 against a "closing" of 1.20 produces clv_pct +63 out of nothing.
+#
+# Confirmed here: 22 contaminated ledger rows have a closing price exactly equal to an archived
+# BTTS price, and ZERO clean rows do. The timeline matches exactly — contaminated rows run through
+# July (81%) and 1-9 August (45%), and stop dead at match_date 2026-08-09, the day before the fix.
+#
+# TWO WRONG DIAGNOSES ARE RECORDED HERE ON PURPOSE, because both were plausible and both would
+# have produced a wrong fix:
+#   1. "mis-joined market or fixture" — refuted: the archived over25/under25 pair is a coherent
+#      market, overround median 1.016 over 3,446 fixtures. It WAS a real market. Just not the
+#      goals one.
+#   2. "in-play prices used as the close" — the leaked prices look exactly like a 0-0 second half
+#      (under shortens, over lengthens), which is why this fit so well. But predict already skips
+#      kicked-off fixtures (`if dt <= now: continue`, src/predict.py), and the BTTS equality above
+#      is not something an in-play goals price would produce.
+#
+# So the mechanism was never temporal. c19ca31 states it cleaned data GOING FORWARD and left
+# "existing archive rows unchanged... a one-time historical re-filter can be done separately if
+# wanted". This filter IS that re-filter, applied at READ time rather than by rewriting history —
+# which also honours "no deleting, we can't lose data".
+#
+# 25% is generous for a genuine closing move and far below the contamination band. Filtering here
+# only ever makes the gate STRICTER, the safe direction for a system whose default is NO_BET.
+#
+# WHY THIS FUNCTION IS THE PLACE TO FIX IT. Its result feeds `clv_ok` in `_decide`, which is the
+# gate that promotes a signal from PAPER to BET. It previously returned a count it CALLED `clean_n`
+# while only dropping NaN, so nothing was ever cleaned. The consequence, measured:
+#
+#     new_format mean CLV   unfiltered +26.26%   ->   clean -0.015%
+#     segments cleared to BET        1            ->   0
+#
+# So the unfiltered mean would have certified a +26% CLV edge that does not exist, and opened BET on
+# it. Clean CLV for new_format is indistinguishable from zero.
+#
+# 25% is deliberately generous: a genuine closing move that large is already remarkable, and it sits
+# far below the contamination band. Filtering here only ever makes the gate STRICTER, which is the
+# safe direction for a system whose default is NO_BET.
+CLV_PLAUSIBLE_ABS = 25.0
+
+
 def _rolling_clv_stats(bl: pd.DataFrame) -> dict:
-    """league -> (mean_clv_pct, clean_n) from settled live rows."""
+    """league -> (mean_clv_pct, clean_n) from settled live rows.
+
+    `clean_n` now means what it says: implausible observations are excluded from BOTH the mean and
+    the count, so a contaminated segment cannot buy its way past MIN_CLV_N on bad rows.
+    """
     if bl is None or bl.empty:
         return {}
     if "source" in bl.columns:
@@ -228,6 +280,11 @@ def _rolling_clv_stats(bl: pd.DataFrame) -> dict:
     bl = bl.copy()
     bl["clv_pct"] = pd.to_numeric(bl.get("clv_pct"), errors="coerce")
     bl = bl.dropna(subset=["clv_pct"])
+    n_present = len(bl)
+    bl = bl[bl["clv_pct"].abs() <= CLV_PLAUSIBLE_ABS]
+    if n_present and len(bl) < n_present:
+        print(f"[v11] CLV: rejected {n_present - len(bl)} of {n_present} observation(s) as "
+              f"implausible (|clv_pct| > {CLV_PLAUSIBLE_ABS}%)")
     if bl.empty or "league" not in bl.columns:
         return {}
     g = bl.groupby("league")["clv_pct"]
