@@ -39,6 +39,7 @@ DEFAULT_W_CAP = 0.30
 # and falls back CONSERVATIVELY when a segment is too thin to speak: less model weight, wider
 # uncertainty. Being unsure should cost the model confidence, not grant it.
 from src.evidence import EvidenceStore, FALLBACK_N_EFF, FALLBACK_ECE
+from src.book_consensus import load_snapshots, build_index, lookup as consensus_lookup
 
 _EVIDENCE = EvidenceStore.from_json(config.OUTPUT_DIR / "v11_evidence.json")
 N_EFF = FALLBACK_N_EFF     # per-row values come from _EVIDENCE.lookup() below
@@ -137,8 +138,10 @@ def _validate_odds(o_over, o_under, o_over15=None, o_over35=None):
     return True, ""
 
 
-def _decide(p_model, o_bet, o_other, n_eff, ece, rclv, rclv_n, w_cap):
-    out = {"tier": "NO_BET", "p_market": None, "p_blend": None, "ev_lb": None, "abs_edge": None}
+def _decide(p_model, o_bet, o_other, n_eff, ece, rclv, rclv_n, w_cap,
+            cons=None, side="OVER"):
+    out = {"tier": "NO_BET", "p_market": None, "p_blend": None, "ev_lb": None, "abs_edge": None,
+           "n_books": 0, "book_dispersion": None, "price_source": "single_book"}
     best = o_bet
     if not o_bet or o_bet <= 1.0 or best > MAX_BET_ODDS:
         return out
@@ -147,10 +150,46 @@ def _decide(p_model, o_bet, o_other, n_eff, ece, rclv, rclv_n, w_cap):
     p_market = power_devig(o_bet, o_other) or proportional_devig(o_bet, o_other)
     if p_market is None:
         return out
-    p_market = market_baseline({}, None) or p_market
+
+    # ── CROSS-BOOK CONSENSUS (2026-08-19) ────────────────────────────────────
+    # This line used to read `market_baseline({}, None)`. With an empty dict market_baseline
+    # returns None, so the `or p_market` fallback always fired and v11's "consensus" was one
+    # book's two-way de-vig — Prompt 3 section 7's highest-priority gap. v9 now publishes every
+    # bookmaker's quote to output/book_odds_snapshots.csv at zero extra API cost (first capture:
+    # 3,480 quotes from 17 books), so a real consensus is available.
+    #
+    # SIDE HANDLING IS THE TRAP. Consensus.books holds P(OVER) per book, because it is built as
+    # devig(over_odds, under_odds). `_decide` is called once per side, so on the UNDER call every
+    # book probability AND the exchange anchor must be flipped. Getting this wrong would not
+    # crash — it would silently invert the market estimate on half of all rows.
+    stale_pen = 0.0
+    if cons is not None and getattr(cons, "usable", False):
+        flip = (str(side).upper() == "UNDER")
+        books = {k: (1.0 - v if flip else v) for k, v in cons.books.items()}
+        exch = cons.exchange_prob
+        if exch is not None and flip:
+            exch = 1.0 - exch
+        cb = market_baseline(books, exch)
+        if cb is not None and 0.0 < cb < 1.0:
+            p_market = cb
+            out["price_source"] = "exchange" if exch is not None else "cross_book_median"
+        out["n_books"] = cons.n_books
+        out["book_dispersion"] = None if cons.dispersion is None else round(cons.dispersion, 5)
+        # BEST EXECUTABLE price for THIS side, which is a different quantity from the consensus
+        # probability: you bet at the best available price, not the median one. On the first real
+        # board the best OVER price beat the median by +3.12% (max +9.84%) — comparable to the
+        # entire edge this system looks for, and previously discarded.
+        bx = cons.best_under_odds if flip else cons.best_over_odds
+        if bx and bx > best and bx <= MAX_BET_ODDS:
+            best = float(bx)
+        # Books disagreeing means the price is not settled yet. Feed that straight into the
+        # uncertainty rather than treating a wide market as if it were a tight one.
+        if cons.dispersion:
+            stale_pen = min(0.02, float(cons.dispersion))
+
     w = _blend_weight(best, n_eff, "over25", w_cap)
     p_blend = blend(p_model, p_market, w)
-    p_lb = lower_bound_prob(p_blend, ece, n_eff, "over25")
+    p_lb = lower_bound_prob(p_blend, ece, n_eff, "over25", stale_penalty=stale_pen)
     _ev = ev_lb(p_lb, best)
     ae = p_blend - p_market
     out.update(p_market=round(p_market, 4), p_blend=round(p_blend, 4),
@@ -264,6 +303,18 @@ def run():
     ts = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
     today = datetime.now(timezone.utc).strftime("%Y-%m-%d")
 
+    # Cross-book prices, loaded ONCE for the whole board rather than per fixture. Absent or
+    # malformed file -> empty index -> every lookup is unusable -> _decide behaves exactly as it
+    # did before, so this cannot regress a run.
+    try:
+        _books_idx = build_index(load_snapshots(_load_v9))
+        _n_usable = sum(1 for c in _books_idx.values() if c.usable)
+        print(f"[v11] cross-book index: {len(_books_idx)} fixture-markets, "
+              f"{_n_usable} with >=3 books")
+    except Exception as e:
+        _books_idx = {}
+        print(f"[v11] cross-book index unavailable ({e}) — falling back to single-book de-vig")
+
     rows = []
     for _, r in df.iterrows():
         try:
@@ -284,8 +335,12 @@ def run():
         else:
             # Segment-specific evidence rather than one global constant for every fixture.
             _ev = _EVIDENCE.lookup(str(r.get("model_type", "")), lg)
-            over = _decide(p_over, o_over, o_under, _ev.n_eff, _ev.ece, rc, rn, w_cap)
-            under = _decide(1.0 - p_over, o_under, o_over, _ev.n_eff, _ev.ece, rc, rn, w_cap)
+            _cons = consensus_lookup(_books_idx, r.get("home_team", ""), r.get("away_team", ""),
+                                     "OU25")
+            over = _decide(p_over, o_over, o_under, _ev.n_eff, _ev.ece, rc, rn, w_cap,
+                           cons=_cons, side="OVER")
+            under = _decide(1.0 - p_over, o_under, o_over, _ev.n_eff, _ev.ece, rc, rn, w_cap,
+                            cons=_cons, side="UNDER")
             side, best = (("OVER", over) if TIER_RANK[over["tier"]] >= TIER_RANK[under["tier"]]
                           else ("UNDER", under))
             state = _tier_to_state(best["tier"])
@@ -327,6 +382,14 @@ def run():
             "ece_used": _ev.ece if valid else "",
             "evidence_scope": _ev.scope if valid else "",
             "evidence_source": _ev.source if valid else "",
+            # How p_market was estimated. Recorded because "cross-book median of 15 books" and
+            # "one book's de-vig" are different measurements, and a later analysis that mixes
+            # them without knowing which is which cannot interpret its own result. This is also
+            # how we will tell whether consensus actually changes decisions or merely restates
+            # the single book.
+            "price_source": best.get("price_source", ""),
+            "n_books": best.get("n_books", 0),
+            "book_dispersion": best.get("book_dispersion", ""),
             # Post-kickoff guard (Prompt 3 sections 9 and 27). predictions.csv is pre-match
             # only, but its date filter is DAY-granular, so a fixture that kicked off earlier
             # today can still be snapshotted: Cardiff City v Wrexham AFC was captured 3.6

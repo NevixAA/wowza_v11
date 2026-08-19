@@ -105,6 +105,72 @@ def main() -> int:
           (kept.fixture_id == "f1").sum() == 2,
           "collapsing by fixture is the bug that destroyed all history")
 
+    # ── cross-book consensus ─────────────────────────────────────────────────
+    # The side flip is the check that matters most. Consensus.books holds P(OVER), and _decide is
+    # called once per side, so a missing flip would silently invert p_market on every UNDER row
+    # without raising anything.
+    print("\n== cross-book consensus ==")
+    from src.book_consensus import load_snapshots, build_index, lookup
+
+    def _q(*specs, match="A vs B"):
+        out = []
+        for bk, o, u in specs:
+            for side, price in (("OVER", o), ("UNDER", u)):
+                if price:
+                    out.append({"snapshot_ts": "2026-08-19T09:00:00Z", "match": match,
+                                "bookmaker": bk, "market": "OU25", "side": side, "odds": price})
+        return out
+
+    books = _q(("a", 1.65, 2.35), ("b", 1.66, 2.30), ("c", 1.64, 2.40),
+               ("d", 1.70, 2.25), ("e", 1.63, 2.45))
+    cons = lookup(build_index(load_snapshots(lambda n: pd.DataFrame(books))), "A", "B")
+    check("5 two-sided books de-vigged", cons.n_books == 5, str(cons.n_books))
+    check("consensus is usable", cons.usable, cons.reason)
+    check("best OVER odds is the MAX, not the median", cons.best_over_odds == 1.70,
+          str(cons.best_over_odds))
+    check("best UNDER odds is its own side's max", cons.best_under_odds == 2.45,
+          str(cons.best_under_odds))
+    check("median odds kept separately from best",
+          cons.median_over_odds is not None and cons.median_over_odds != cons.best_over_odds)
+
+    # a lone outlier must not move the median
+    sk = _q(("a", 1.65, 2.35), ("b", 1.66, 2.30), ("c", 1.64, 2.40), ("z", 3.50, 1.30))
+    cs = lookup(build_index(load_snapshots(lambda n: pd.DataFrame(sk))), "A", "B")
+    check("median resists an outlier book",
+          abs(cs.p_consensus - cs.books["z"]) > 0.10,
+          f"consensus {cs.p_consensus:.4f} vs outlier {cs.books['z']:.4f}")
+
+    # one-sided quote: excluded from consensus (unknown margin) but still executable
+    os_ = _q(("a", 1.65, 2.35), ("b", 1.66, 2.30), ("c", 1.64, 2.40)) + \
+        [{"snapshot_ts": "t", "match": "A vs B", "bookmaker": "oneside", "market": "OU25",
+          "side": "OVER", "odds": 1.99}]
+    co = lookup(build_index(load_snapshots(lambda n: pd.DataFrame(os_))), "A", "B")
+    check("one-sided book excluded from consensus", "oneside" not in co.books, str(list(co.books)))
+    check("one-sided price still counts as executable", co.best_over_odds == 1.99,
+          str(co.best_over_odds))
+
+    # fewer than MIN_BOOKS_FOR_CONSENSUS is not a consensus
+    c1 = lookup(build_index(load_snapshots(lambda n: pd.DataFrame(_q(("a", 1.65, 2.35))))),
+                "A", "B")
+    check("single book is not treated as consensus", not c1.usable, c1.reason)
+
+    # fail-safe: nothing about a missing/broken file may raise or fabricate
+    for nm, ldr in (("raises", lambda n: (_ for _ in ()).throw(FileNotFoundError())),
+                    ("empty", lambda n: pd.DataFrame()),
+                    ("bad schema", lambda n: pd.DataFrame([{"foo": 1}]))):
+        e = lookup(build_index(load_snapshots(ldr)), "A", "B")
+        check(f"fail-safe on {nm}", (not e.usable) and e.p_consensus is None, e.reason)
+    check("unpriced fixture reports why",
+          lookup(build_index(load_snapshots(lambda n: pd.DataFrame(books))),
+                 "Nobody", "Nowhere").reason == "fixture_not_priced")
+
+    # the flip itself, at the market_baseline level
+    p_over = cons.p_consensus
+    flipped = {k: 1.0 - v for k, v in cons.books.items()}
+    check("flipped books give the complementary consensus",
+          abs(market_baseline(flipped) - (1.0 - p_over)) < 1e-9,
+          f"{market_baseline(flipped):.6f} vs {1 - p_over:.6f}")
+
     print(f"\n{'FAILED: ' + ', '.join(FAILS) if FAILS else 'all checks passed'}")
     return 1 if FAILS else 0
 
