@@ -30,8 +30,19 @@ from src.edge_engine import (power_devig, proportional_devig, market_baseline, b
 TIER_RANK = {"SNIPER": 4, "MARKSMAN": 3, "VALUABLE": 2, "OBSERVE": 1, "NO_BET": 0}
 MOAT_W_CAP = {"new_format": 0.45, "standard": 0.40}
 DEFAULT_W_CAP = 0.30
-N_EFF = 1000
-ECE = 0.02
+# MEASURED, not assumed (Prompt 3 sections 11 and 12). These were hardcoded N_EFF = 1000 and
+# ECE = 0.02 since v11 was written, and they push in opposite directions so being wrong about
+# them is not neutral: a flat N_EFF of 1000 claims more evidence than a thin segment has, which
+# inflates the model's blend weight, while a flat ECE of 0.02 understates uncertainty, which
+# inflates EV_lb and lets a bet clear a floor it should not. src/evidence.py derives both from
+# settled outcomes with the section-11 hierarchy (model+market+league -> model+market -> global)
+# and falls back CONSERVATIVELY when a segment is too thin to speak: less model weight, wider
+# uncertainty. Being unsure should cost the model confidence, not grant it.
+from src.evidence import EvidenceStore, FALLBACK_N_EFF, FALLBACK_ECE
+
+_EVIDENCE = EvidenceStore.from_json(config.OUTPUT_DIR / "v11_evidence.json")
+N_EFF = FALLBACK_N_EFF     # per-row values come from _EVIDENCE.lookup() below
+ECE = FALLBACK_ECE
 
 
 def _load_v9(name: str) -> pd.DataFrame:
@@ -271,8 +282,10 @@ def run():
             side, best, state = "-", {"tier": "NO_BET", "p_market": None, "p_blend": None,
                                       "ev_lb": None, "abs_edge": None}, "NO_BET"
         else:
-            over = _decide(p_over, o_over, o_under, N_EFF, ECE, rc, rn, w_cap)
-            under = _decide(1.0 - p_over, o_under, o_over, N_EFF, ECE, rc, rn, w_cap)
+            # Segment-specific evidence rather than one global constant for every fixture.
+            _ev = _EVIDENCE.lookup(str(r.get("model_type", "")), lg)
+            over = _decide(p_over, o_over, o_under, _ev.n_eff, _ev.ece, rc, rn, w_cap)
+            under = _decide(1.0 - p_over, o_under, o_over, _ev.n_eff, _ev.ece, rc, rn, w_cap)
             side, best = (("OVER", over) if TIER_RANK[over["tier"]] >= TIER_RANK[under["tier"]]
                           else ("UNDER", under))
             state = _tier_to_state(best["tier"])
@@ -308,6 +321,12 @@ def run():
             # EV lower bound (max -0.0384) — which is the engine working correctly, but
             # nothing in the dataset said so. Prompt 3 section 6 wants the reject reason kept.
             "v11_reason": best.get("reason", ""),
+            # Which evidence produced this decision. Without it a tier cannot be
+            # reproduced later, because the inputs would be invisible.
+            "n_eff_used": _ev.n_eff if valid else "",
+            "ece_used": _ev.ece if valid else "",
+            "evidence_scope": _ev.scope if valid else "",
+            "evidence_source": _ev.source if valid else "",
             # Post-kickoff guard (Prompt 3 sections 9 and 27). predictions.csv is pre-match
             # only, but its date filter is DAY-granular, so a fixture that kicked off earlier
             # today can still be snapshotted: Cardiff City v Wrexham AFC was captured 3.6

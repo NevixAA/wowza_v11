@@ -58,6 +58,14 @@ jobs:
           V9_LOCAL: ${{ github.workspace }}/_v9
         run: python scripts/v11_grade.py
 
+      # Measure N_EFF and ECE from settled outcomes, replacing the hardcoded 1000 / 0.02.
+      # Runs BEFORE the residual test so that test uses the measured values. If there is not
+      # enough settled history it writes nothing and the conservative fallback stands.
+      - name: Fit measured evidence (N_EFF, ECE)
+        env:
+          V9_LOCAL: ${{ github.workspace }}/_v9
+        run: python scripts/v11_fit_evidence.py
+
       - name: Residual-vs-market experiment (does the model beat the market?)
         env:
           V9_LOCAL: ${{ github.workspace }}/_v9
@@ -70,7 +78,8 @@ jobs:
           # v11_shadow_snapshots.csv is the append-only research history and MUST be committed
           # — it is the season's actual product.
           for f in output/v11_shadow_snapshots.csv output/v11_shadow_log.csv \
-                   output/v11_graded.csv output/v11_scoreboard.csv output/v11_residual.csv; do
+                   output/v11_graded.csv output/v11_scoreboard.csv output/v11_residual.csv \
+                   output/v11_evidence.json; do
             git add -f "$f" 2>/dev/null || true
           done
           git diff --staged --quiet || \
