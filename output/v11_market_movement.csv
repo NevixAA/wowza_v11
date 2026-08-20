@@ -1,13 +1,13 @@
 segment,n,toward_model_rate,mean_movement_pp,label,z_vs_chance,corr_residual_movement,flat_markets
-overall,148,0.5203,-0.055,RESEARCH_ONLY,0.493,0.1995,34.0
+overall,148,0.5203,-0.052,RESEARCH_ONLY,0.493,0.1993,34.0
 band <-10,17,0.7647,-1.465,INSUFFICIENT_SAMPLE,,,
 band -10:-6,21,0.5238,0.019,INSUFFICIENT_SAMPLE,,,
 band -6:-4,17,0.5294,-0.471,INSUFFICIENT_SAMPLE,,,
-band -4:-2,21,0.4762,-0.551,INSUFFICIENT_SAMPLE,,,
-band -2:+2,27,0.4074,0.83,INSUFFICIENT_SAMPLE,,,
+band -4:-2,21,0.4762,-0.541,INSUFFICIENT_SAMPLE,,,
+band -2:+2,27,0.4074,0.84,INSUFFICIENT_SAMPLE,,,
 band +2:+4,14,0.5714,-0.211,INSUFFICIENT_SAMPLE,,,
 band +4:+6,14,0.4286,-0.178,INSUFFICIENT_SAMPLE,,,
 band +6:+10,13,0.6154,1.086,INSUFFICIENT_SAMPLE,,,
 band >+10,4,0.25,1.227,INSUFFICIENT_SAMPLE,,,
-model_type new_format,97,0.5464,-0.08,EARLY_SIGNAL,,,
-model_type standard,51,0.4706,-0.006,EARLY_SIGNAL,,,
+model_type new_format,97,0.5464,-0.078,EARLY_SIGNAL,,,
+model_type standard,51,0.4706,-0.001,EARLY_SIGNAL,,,
