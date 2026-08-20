@@ -7,20 +7,20 @@
   },
   "global": {
     "brier": null,
-    "ece": 0.082372,
+    "ece": 0.09243,
     "logloss": null,
-    "n": 94,
-    "n_eff": 94,
+    "n": 100,
+    "n_eff": 100,
     "scope": "global",
     "source": "measured"
   },
   "segments": {
     "new_format": {
       "brier": null,
-      "ece": 0.088435,
+      "ece": 0.095323,
       "logloss": null,
-      "n": 79,
-      "n_eff": 79,
+      "n": 85,
+      "n_eff": 85,
       "scope": "new_format",
       "source": "shrunk"
     }
