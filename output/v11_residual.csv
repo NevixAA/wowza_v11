@@ -1,17 +1,20 @@
 scope,n,brier_market,brier_market_wowza,logloss_market,logloss_market_wowza,wowza_helps
-overall,105,0.2284,0.2284,0.6484,0.6486,False
-Argentina Primera Division,16,0.2083,0.2085,0.6057,0.6063,False
+overall,115,0.2272,0.2273,0.6459,0.6461,False
+Argentina Primera Division,17,0.1996,0.1998,0.5867,0.5874,False
 Austrian Bundesliga,5,0.2018,0.2044,0.5941,0.5998,False
 Brazil Serie A,5,0.3008,0.2978,0.7967,0.7905,True
 Bundesliga 2,3,0.3116,0.3077,0.8198,0.8113,True
 Championship,1,0.2164,0.221,0.6259,0.635,False
 China Super League,7,0.1128,0.1168,0.4063,0.4157,False
 Denmark Superliga,5,0.2996,0.2947,0.8012,0.7899,True
-Finland Veikkausliiga,2,0.3176,0.3099,0.8352,0.8181,True
-Japan J-League,7,0.2477,0.2475,0.6888,0.6883,True
+Finland Veikkausliiga,3,0.2753,0.271,0.7481,0.7383,True
+Ireland Premier Division,2,0.2354,0.2343,0.6629,0.6609,True
+Japan J-League,9,0.2515,0.252,0.6964,0.6973,False
 La Liga 2,9,0.2353,0.2375,0.6633,0.6678,False
 League One,2,0.1859,0.1894,0.5636,0.5708,False
+Ligue 2,2,0.2345,0.2318,0.661,0.6559,True
 Mexico Liga MX,6,0.2794,0.2769,0.7524,0.7471,True
 Norway Eliteserien,5,0.1601,0.1623,0.5061,0.511,False
-Sweden Allsvenskan,8,0.2315,0.2308,0.6562,0.6549,True
+Serie B,1,0.3215,0.3182,0.8371,0.8303,True
+Sweden Allsvenskan,9,0.2179,0.2179,0.6277,0.628,False
 USA MLS,24,0.2295,0.2297,0.6509,0.6515,False
