@@ -3,36 +3,39 @@ Does the market move TOWARD Wowza when Wowza disagrees with it?
 ==============================================================
     python scripts/v11_market_movement.py
 
-Prompt 3 section 16. This is arguably the most valuable question in the project, and it was
-uncomputable until two days ago: it needs snapshot history with horizons, and v11 was deleting
-its history on every run (mean 1.0 snapshots per fixture). There are now ~26 per fixture
-spanning T-15min to T-7d.
+RESEARCH ONLY. Produces measurements. Selects nothing, sizes nothing, notifies nothing.
 
-Why it matters more than accuracy. A model that LEADS the market is worth something even if its
-standalone hit rate is mediocre — it is seeing something the price has not absorbed yet, which
-is exactly what CLV monetises. A model that FOLLOWS the market is worth nothing however
-accurate, because by the time it speaks the price already agrees.
+THE HYPOTHESIS (movement brief section 24). v11's residual test says Wowza does not beat the
+market at predicting OUTCOMES — Brier 0.2272 vs 0.2273, a dead heat. That is not the same as
+"Wowza knows nothing". It may reach information EARLIER than the broad market, in which case its
+disagreement predicts where the price goes before kickoff even though the closing price
+eventually absorbs the same information. The claim would be "Wowza sometimes gets to the future
+market price first", not "Wowza beats bookmakers".
 
-The test:
+The arithmetic and, more importantly, the two statistical traps that govern how these numbers
+must be read live in src/movement.py. In brief:
 
-    residual  = p_model(first) - p_market(first)     the initial disagreement
-    movement  = p_market(last) - p_market(first)     where the price actually went
+  1. PSEUDO-REPLICATION. 29.7 snapshots per fixture are not 29.7 independent observations.
+     Fixture-level results are primary; snapshot-level intervals are cluster-bootstrapped.
+  2. SIGNED MOVEMENT *IS* FAIR-PROBABILITY CLV. They are one measurement, not two agreeing
+     ones. Only `clv_pct`, computed from executable odds, is independent of it.
 
-If Wowza leads, movement should share the SIGN of residual: when the model says "higher than
-the price", the price should subsequently rise. Measured as:
+Kept from the first version of this script because they are the controls that matter:
 
-  * agreement rate — share of fixtures where sign(movement) == sign(residual). 50% is chance.
-  * mean movement conditioned on residual direction and band.
-  * correlation between residual and movement.
+  * the PLACEBO — the market moving toward a fixed, information-free anchor. The model's
+    probabilities sit more centrally than the market's, so "moved toward the model" and "moved
+    toward the middle" can be the same sentence, and plain mean reversion would reproduce the
+    headline with no skill at all.
+  * flat markets as a THIRD state, never as a miss.
+  * every segment carries n, and small ones are labelled from the FIXTURE count.
 
-Deliberate cautions:
-  * `last` is the last PRE-KICKOFF snapshot via closing_snapshot(). Using the last row would
-    admit a post-kickoff price, and a price that has seen part of the match is not a forecast.
-  * fixtures whose price never moved at all are reported separately rather than counted as
-    disagreement — a flat market is an absence of evidence, not evidence against.
-  * every segment carries n, and small ones are labelled. A promising bucket at n=12 is an
-    observation, not a discovery.
-  * no threshold is tuned here. This measures; it does not select.
+Outputs (brief section 17):
+    output/v11_market_movement_detail.csv   one row per eligible snapshot — the durable record
+    output/v11_movement_summary.csv         headline, placebo, chronological stability
+    output/v11_movement_by_residual.csv     signed and absolute residual buckets
+    output/v11_movement_by_model.csv        standard vs new_format
+    output/v11_movement_by_time.csv         time-to-kickoff buckets
+    output/v11_movement_by_league.csv       per league, with sample-discipline status
 """
 from __future__ import annotations
 
@@ -45,178 +48,299 @@ import pandas as pd
 PROJ = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(PROJ))
 import config  # noqa: E402
+from src import movement as mv  # noqa: E402
 from scripts.v11_shadow import closing_snapshot  # noqa: E402
 
-# Residual bands in percentage points, per Prompt 3 section 15.
-BANDS = [(-100, -10, "<-10"), (-10, -6, "-10:-6"), (-6, -4, "-6:-4"), (-4, -2, "-4:-2"),
-         (-2, 2, "-2:+2"), (2, 4, "+2:+4"), (4, 6, "+4:+6"), (6, 10, "+6:+10"),
-         (10, 100, ">+10")]
-
-MIN_MOVE = 0.002        # below this the price is treated as unmoved, not as a tiny signal
-
-
-def _label(n: int) -> str:
-    if n < 30:
-        return "INSUFFICIENT_SAMPLE"
-    if n < 100:
-        return "EARLY_SIGNAL"
-    if n < 500:
-        return "RESEARCH_ONLY"
-    return "VALIDATED"
+DETAIL_COLS = [
+    "fixture_id", "snapshot_id", "entry_ts", "kickoff_ts", "minutes_to_kickoff",
+    "league", "model_type",
+    "p_model", "p_market_entry", "residual", "abs_residual_pp", "entry_odds", "bet_side",
+    "n_books", "market_prob_std", "market_prob_range", "previous_market_move_pp",
+    "close_ts", "p_market_close", "close_odds",
+    "market_move_pp", "signed_market_move_pp", "toward_wowza",
+    "entry_fair_probability", "close_fair_probability",
+    "clv_pct", "clv_quality", "quality_not_assessed",
+    "residual_band", "abs_residual_band", "time_band",
+    "result", "pnl_flat",
+]
 
 
-def _band(pp: float) -> str:
-    for lo, hi, name in BANDS:
-        if lo <= pp < hi:
-            return name
-    return "?"
-
-
-def build() -> pd.DataFrame:
+def _load_snapshots() -> pd.DataFrame:
     p = config.OUTPUT_DIR / "v11_shadow_snapshots.csv"
     if not p.exists():
-        print("[movement] no snapshot history yet")
         return pd.DataFrame()
     s = pd.read_csv(p)
-    for c in ("p_model_over", "v11_p_market", "minutes_to_kickoff"):
-        s[c] = pd.to_numeric(s.get(c), errors="coerce")
-    s = s[s["p_model_over"].notna() & s["v11_p_market"].notna()]
-    if s.empty:
-        return pd.DataFrame()
+    for c in ("p_model_over", "v11_p_market", "minutes_to_kickoff", "odds_over25",
+              "odds_under25", "n_books", "book_dispersion"):
+        if c in s.columns:
+            s[c] = pd.to_numeric(s[c], errors="coerce")
+    return s.sort_values("snapshot_ts")
 
-    s = s.sort_values("snapshot_ts")
-    first = s.drop_duplicates("fixture_id", keep="first")
 
-    # Last PRE-KICKOFF snapshot. A post-kickoff price has seen part of the match.
-    close = closing_snapshot(s)
-    if close is None or close.empty:
-        print("[movement] no pre-kickoff closing snapshots — cannot measure movement")
-        return pd.DataFrame()
+def _attach_momentum(s: pd.DataFrame) -> pd.DataFrame:
+    """previous_market_move_pp — how far the price had ALREADY moved before this snapshot.
 
-    f = first[["fixture_id", "league", "model_type", "p_model_over", "v11_p_market",
-               "minutes_to_kickoff", "snapshot_ts"]].rename(
-        columns={"p_model_over": "p_model_first", "v11_p_market": "p_market_first",
-                 "minutes_to_kickoff": "hrs_first_min", "snapshot_ts": "ts_first"})
-    l = close[["fixture_id", "v11_p_market", "minutes_to_kickoff", "snapshot_ts"]].rename(
-        columns={"v11_p_market": "p_market_last", "minutes_to_kickoff": "hrs_last_min",
-                 "snapshot_ts": "ts_last"})
-    d = f.merge(l, on="fixture_id", how="inner")
-    d = d[d["ts_last"] > d["ts_first"]]          # need a genuine later observation
+    Brief section 11: is Wowza predicting continuation, predicting reversal, or contributing
+    something independent? Answering that needs the move that preceded the observation, which
+    only exists from the second snapshot of a fixture onward — the first is NaN rather than 0,
+    because "the market had not moved yet" and "we have no prior observation" are different
+    facts and coding the second as 0.0 would invent a flat market.
+    """
+    s = s.sort_values(["fixture_id", "snapshot_ts"]).copy()
+    first_p = s.groupby("fixture_id")["v11_p_market"].transform("first")
+    s["previous_market_move_pp"] = (s["v11_p_market"] - first_p) * 100.0
+    is_first = ~s.duplicated("fixture_id", keep="first")
+    s.loc[is_first, "previous_market_move_pp"] = np.nan
+    return s
 
-    d["residual_pp"] = (d["p_model_first"] - d["p_market_first"]) * 100.0
-    d["movement_pp"] = (d["p_market_last"] - d["p_market_first"]) * 100.0
-    d["residual_band"] = d["residual_pp"].map(_band)
-    d["moved"] = d["movement_pp"].abs() >= MIN_MOVE * 100.0
-    # Did the price move the way the model pointed? Kept as FLOAT, not bool, so an unmoved
-    # market can be NaN — "no evidence" is a third state and must not collapse into False,
-    # which would count a flat market as the model being wrong.
-    d["toward_model"] = np.where(
-        d["moved"],
-        (np.sign(d["movement_pp"]) == np.sign(d["residual_pp"])).astype(float),
-        np.nan,
-    )
+
+def _attach_results(d: pd.DataFrame) -> pd.DataFrame:
+    """Join settled outcomes where they exist. NULL everywhere else — never inferred.
+
+    COVERAGE IS BIASED AND THE BIAS MATTERS. v11 grades from v9's public bets_ledger.csv, which
+    holds only fixtures v9 actually TIPPED, so a fixture v9 passed on can never be graded: 94 of
+    336 (28%). The graded subset is therefore conditioned on v9 having disagreed with the market
+    enough to fire a tip — which is precisely the variable under study. Any ROI or result-based
+    figure here is drawn from that conditioned subset. Movement and CLV are NOT affected: they
+    need only prices, which are unconditioned.
+    """
+    d["result"] = pd.NA
+    d["pnl_flat"] = pd.NA
+    p = config.OUTPUT_DIR / "v11_graded.csv"
+    if not p.exists():
+        return d
+    try:
+        g = pd.read_csv(p)
+    except Exception:
+        return d
+    if "over25_result" not in g.columns or "match" not in g.columns:
+        return d
+    # v11_graded is keyed by match+date, the snapshots by fixture_id; bridge on the pair the
+    # snapshot file also carries.
+    snaps = _load_snapshots()
+    if snaps.empty or "match" not in snaps.columns:
+        return d
+    bridge = snaps.drop_duplicates("fixture_id")[["fixture_id", "match", "date"]]
+    g2 = g[["match", "date", "over25_result", "v11_pnl"]].dropna(subset=["over25_result"])
+    m = bridge.merge(g2, on=["match", "date"], how="inner")
+    if m.empty:
+        return d
+    res = dict(zip(m["fixture_id"], m["over25_result"]))
+    pnl = dict(zip(m["fixture_id"], m["v11_pnl"]))
+    d["result"] = d["fixture_id"].map(res)
+    d["pnl_flat"] = d["fixture_id"].map(pnl)
     return d
 
 
-def report(d: pd.DataFrame) -> pd.DataFrame:
-    moved = d[d["moved"]]
-    print(f"\n=== market movement vs initial disagreement ===")
-    print(f"  fixtures with two comparable snapshots : {len(d)}")
-    print(f"  of which the price actually moved      : {len(moved)} "
-          f"({100 * len(moved) / max(1, len(d)):.0f}%)")
-    print(f"  flat markets (no evidence either way)  : {len(d) - len(moved)}")
-    if moved.empty:
-        print("  nothing moved — no measurement possible")
-        return pd.DataFrame()
+def build() -> tuple[pd.DataFrame, pd.DataFrame]:
+    """(detail, eligible). detail keeps flagged rows; eligible is what carries a claim."""
+    s = _load_snapshots()
+    if s.empty:
+        return pd.DataFrame(), pd.DataFrame()
+    s = s[s["p_model_over"].notna() & s["v11_p_market"].notna()]
+    if s.empty:
+        return pd.DataFrame(), pd.DataFrame()
+    s = _attach_momentum(s)
 
-    agree = float(moved["toward_model"].mean())
-    n = len(moved)
-    # Binomial standard error against the 50% null.
-    se = (0.25 / n) ** 0.5
-    z = (agree - 0.5) / se if se else 0.0
-    print(f"\n  price moved TOWARD the model : {agree:.1%}  (n={n}, 50% = chance)")
-    print(f"  z vs chance                  : {z:+.2f}   [{_label(n)}]")
-    print(f"  mean |movement|              : {moved['movement_pp'].abs().mean():.2f}pp")
-    corr = float(moved[["residual_pp", "movement_pp"]].corr().iloc[0, 1])
-    print(f"  corr(residual, movement)     : {corr:+.3f}")
+    close = closing_snapshot(s)
+    if close is None or close.empty:
+        print("[movement] no pre-kickoff closing snapshots — cannot measure movement")
+        return pd.DataFrame(), pd.DataFrame()
 
-    # ── PLACEBO CONTROL: is this just mean reversion? ────────────────────────
-    #
-    # The model's probabilities are systematically MORE CENTRAL than the market's
-    # (p_model spans ~0.34-0.68, p_market ~0.27-0.77). So "the price moved toward the model"
-    # and "the price moved toward the middle" can be the same sentence, and ordinary mean
-    # reversion in a noisy opening price would produce the headline result with no skill
-    # whatsoever.
-    #
-    # The control replaces p_model with a FIXED anchor that contains no information — the
-    # median opening market probability. If the market moves toward that at the same rate, the
-    # model has added nothing and the 64% is an artifact of where its numbers sit.
-    anchor = float(moved["p_market_first"].median())
-    placebo_resid = (anchor - moved["p_market_first"]) * 100.0
-    placebo_toward = (np.sign(moved["movement_pp"]) == np.sign(placebo_resid)).astype(float)
-    p_rate = float(placebo_toward.mean())
-    p_z = (p_rate - 0.5) / se if se else 0.0
+    d = mv.compute(s, close)
+    if d.empty:
+        return d, d
+
+    # Dispersion fields the brief asks for. book_dispersion is the per-snapshot std of book
+    # probabilities where captured; range is not stored, so it stays NULL rather than being
+    # approximated from the std (which would fabricate a number that looks measured).
+    d["market_prob_std"] = d.get("book_dispersion")
+    d["market_prob_range"] = pd.NA
+    d = _attach_results(d)
+    for c in DETAIL_COLS:
+        if c not in d.columns:
+            d[c] = pd.NA
+    return d[DETAIL_COLS + ["moved", "p_market_entry"]], mv.eligible(d)
+
+
+def _chrono(e: pd.DataFrame, unit: str) -> list[dict]:
+    """Chronological stability (brief section 13): by month, by week, and split halves.
+
+    A DEGENERATE GROUPING IS REPORTED AS SUCH, NOT EMITTED. With every eligible entry inside one
+    ISO week — which is the case today: 2026-08-17 to 2026-08-19, three days — a "week 2026-W34"
+    row is a verbatim copy of the overall row. Emitting it puts a line labelled `week ...` in a
+    file called "stability" that carries no independent information, and a reader scanning for
+    persistence would take it as evidence of persistence. So a grouping with fewer than two
+    non-empty periods produces one explicit NOT_ASSESSABLE row naming the span instead.
+
+    The halves split is still emitted when it exists, but it is a split of whatever span the data
+    covers, NOT a test across time: over three days it separates two arbitrary halves of one
+    weekend, and any difference between them is as likely to be fixture mix as drift.
+    """
+    out = []
+    t = pd.to_datetime(e["entry_ts"], errors="coerce", utc=True)
+    e = e.assign(_month=t.dt.strftime("%Y-%m"), _week=t.dt.strftime("%G-W%V"))
+    span_days = int(t.dt.date.nunique())
+    span = f"{t.min():%Y-%m-%d} to {t.max():%Y-%m-%d}, {span_days} distinct day(s)"
+
+    for key, label in (("_month", "month"), ("_week", "week")):
+        periods = [v for v in sorted(e[key].dropna().unique())]
+        if len(periods) < 2:
+            out.append({"segment": f"{label}ly stability NOT_ASSESSABLE",
+                        "unit": unit, "n_obs": len(e),
+                        "n_fixtures": int(e["fixture_id"].nunique()), "n_moved": 0,
+                        "sample_status": "INSUFFICIENT_SAMPLE",
+                        "note": f"all eligible entries fall in a single {label} "
+                                f"({periods[0] if periods else 'none'}); span {span}. "
+                                f"A per-{label} row would duplicate the overall row."})
+            continue
+        for v, g in e.groupby(key, sort=True):
+            r = mv.summarise(g, f"{label} {v}", unit).__dict__
+            r["note"] = ""
+            out.append(r)
+
+    # Halves by fixture ORDER, not by row order — an even split of rows would put most of one
+    # busy fixture's 40 snapshots in one half.
+    fx = (e.sort_values("entry_ts").drop_duplicates("fixture_id")["fixture_id"].tolist())
+    if len(fx) >= 4:
+        half = len(fx) // 2
+        first, second = set(fx[:half]), set(fx[half:])
+        for label, keep in (("first half of sample", first), ("second half of sample", second)):
+            r = mv.summarise(e[e["fixture_id"].isin(keep)], label, unit).__dict__
+            r["note"] = (f"split of a {span_days}-day span, NOT a test across time"
+                         if span_days < 14 else "")
+            out.append(r)
+    return out
+
+
+def report(detail: pd.DataFrame, e: pd.DataFrame) -> dict[str, pd.DataFrame]:
+    n_fix = detail["fixture_id"].nunique()
+    print(f"\n=== eligibility ===")
+    print(f"  snapshot observations built        : {len(detail):,} over {n_fix} fixtures")
+    vc = detail["clv_quality"].value_counts()
+    for k, v in vc.items():
+        print(f"    {k:26} {v:>6,}")
+    print(f"  eligible for a movement claim     : {len(e):,} over "
+          f"{e['fixture_id'].nunique()} fixtures")
+
+    fl = mv.fixture_level(e)
+    print(f"\n=== PRIMARY: one observation per fixture ({len(fl)} fixtures, earliest entry) ===")
+    prim = mv.summarise(fl, "overall (fixture-level, earliest entry)", "fixture")
+    _print_summary(prim)
+
+    moved_fl = fl[fl["moved"].fillna(False)]
+    p_rate, anchor = mv.placebo_toward_rate(moved_fl)
     print(f"\n  PLACEBO — price moved toward a FIXED anchor ({anchor:.3f}, no model input)")
-    print(f"    toward anchor              : {p_rate:.1%}   z {p_z:+.2f}")
-    edge_over_placebo = agree - p_rate
-    print(f"    model's excess over placebo: {edge_over_placebo:+.1%}")
-    if p_rate >= agree - 0.02:
-        print("    -> THE MODEL ADDS NOTHING. A constant anchor does as well, so the headline")
-        print("       number is mean reversion in a noisy opening price, not foresight.")
+    print(f"    toward anchor                : {p_rate:.1%}")
+    excess = prim.toward_rate - p_rate
+    print(f"    model's excess over placebo  : {excess:+.1%}")
+    if p_rate >= prim.toward_rate - 0.02:
+        print("    -> THE MODEL ADDS NOTHING here: a constant does as well, so the headline is")
+        print("       mean reversion in a noisy opening price, not foresight.")
     elif p_rate > 0.5:
-        print("    -> the market does mean-revert, so part of the headline is that; the model")
-        print("       still beats the constant anchor, which is the part that could be skill")
+        print("    -> the market does mean-revert; the model still beats the constant anchor,")
+        print("       and only that excess can be skill")
     else:
         print("    -> no mean reversion in the control; the headline is not explained by it")
-    if abs(z) < 2:
-        print("  -> NOT distinguishable from chance at this sample size")
-    elif agree > 0.5:
-        print("  -> the market tends to move toward Wowza; this is the LEADING case and is "
-              "what CLV would monetise")
-    else:
-        print("  -> the market moves AWAY from Wowza; the model is following, or wrong")
 
-    rows = []
-    print(f"\n=== by residual band (the sign test, per band) ===")
-    for _, name in [(b[2], b[2]) for b in BANDS]:
-        g = moved[moved["residual_band"] == name]
-        if g.empty:
-            continue
-        a = float(g["toward_model"].mean())
-        rows.append({"segment": f"band {name}", "n": len(g), "toward_model_rate": round(a, 4),
-                     "mean_movement_pp": round(float(g["movement_pp"].mean()), 3),
-                     "label": _label(len(g))})
-        print(f"  {name:>8}  n={len(g):>4}  toward {a:>5.1%}  "
-              f"mean move {g['movement_pp'].mean():+6.2f}pp   [{_label(len(g))}]")
+    print(f"\n=== SECONDARY: all eligible snapshots (cluster-bootstrapped by fixture) ===")
+    sec = mv.summarise(e, "overall (snapshot-level, cluster CI)", "snapshot")
+    _print_summary(sec)
 
-    print(f"\n=== by model type ===")
-    for mt, g in moved.groupby(moved["model_type"].astype(str)):
-        a = float(g["toward_model"].mean())
-        rows.append({"segment": f"model_type {mt}", "n": len(g),
-                     "toward_model_rate": round(a, 4),
-                     "mean_movement_pp": round(float(g["movement_pp"].mean()), 3),
-                     "label": _label(len(g))})
-        print(f"  {mt:<12} n={len(g):>4}  toward {a:>5.1%}   [{_label(len(g))}]")
+    summary_rows = [prim.__dict__, sec.__dict__,
+                    {"segment": "PLACEBO fixed anchor (fixture-level)", "unit": "fixture",
+                     "n_obs": len(moved_fl), "n_fixtures": len(moved_fl),
+                     "n_moved": len(moved_fl), "toward_rate": round(p_rate, 4),
+                     "sample_status": mv.sample_status(len(moved_fl))}]
+    summary_rows += _chrono(e, "snapshot")
 
-    rows.insert(0, {"segment": "overall", "n": n, "toward_model_rate": round(agree, 4),
-                    "mean_movement_pp": round(float(moved["movement_pp"].mean()), 3),
-                    "label": _label(n), "z_vs_chance": round(z, 3),
-                    "corr_residual_movement": round(corr, 4),
-                    "flat_markets": int(len(d) - len(moved))})
-    return pd.DataFrame(rows)
+    by_res = mv.summarise_by(fl, "residual_band", "fixture", prefix="residual ")
+    by_abs = mv.summarise_by(fl, "abs_residual_band", "fixture", prefix="abs residual ")
+    by_model = mv.summarise_by(fl, "model_type", "fixture", prefix="model ")
+    # Time buckets are the one question that lives INSIDE a fixture, so they use every snapshot
+    # with a clustered interval — a fixture can legitimately contribute one row per horizon.
+    by_time = mv.summarise_by(e, "time_band", "snapshot", prefix="T-")
+    by_league = mv.summarise_by(fl, "league", "fixture")
+
+    print(f"\n=== by residual band (fixture-level) ===")
+    _print_table(by_res)
+    print(f"\n=== by |residual| (fixture-level) ===")
+    _print_table(by_abs)
+    print(f"\n=== by model type (fixture-level) ===")
+    _print_table(by_model)
+    print(f"\n=== by time to kickoff (snapshot-level, clustered) ===")
+    _print_table(by_time)
+    print(f"\n=== by league (fixture-level) ===")
+    _print_table(by_league)
+
+    return {
+        "v11_market_movement_detail.csv": detail,
+        "v11_movement_summary.csv": pd.DataFrame(summary_rows),
+        "v11_movement_by_residual.csv": pd.concat([by_res, by_abs], ignore_index=True),
+        "v11_movement_by_model.csv": by_model,
+        "v11_movement_by_time.csv": by_time,
+        "v11_movement_by_league.csv": by_league,
+    }
+
+
+def _print_summary(s: mv.Summary) -> None:
+    print(f"  n moved / n obs / fixtures   : {s.n_moved} / {s.n_obs} / {s.n_fixtures}   "
+          f"[{s.sample_status}]")
+    print(f"  DIRECTION  toward Wowza      : {_pct(s.toward_rate)}  "
+          f"95% CI [{_pct(s.toward_ci_lo)}, {_pct(s.toward_ci_hi)}]  "
+          f"z {s.z_vs_chance:+.2f}  p {s.p_value:.4f}")
+    print(f"  MAGNITUDE  mean signed move  : {s.mean_signed_move_pp:+.3f}pp  "
+          f"95% CI [{s.signed_ci_lo:+.3f}, {s.signed_ci_hi:+.3f}]")
+    print(f"             median signed move: {s.median_signed_move_pp:+.3f}pp")
+    print(f"             when correct      : {s.mean_move_when_correct_pp:+.3f}pp   "
+          f"when wrong: {s.mean_move_when_wrong_pp:+.3f}pp")
+    print(f"             mean |move|       : {s.mean_abs_move_pp:.3f}pp   "
+          f"P(>=0.5pp) {_pct(s.p_move_ge_05pp)}  P(>=1pp) {_pct(s.p_move_ge_1pp)}  "
+          f"P(>=2pp) {_pct(s.p_move_ge_2pp)}")
+    print(f"  EXECUTABLE CLV               : n {s.n_clv}  mean {s.mean_clv_pct:+.3f}%  "
+          f"median {s.median_clv_pct:+.3f}%  positive {_pct(s.pct_positive_clv)}")
+    print(f"             mean entry / close odds: {s.mean_entry_odds:.3f} / "
+          f"{s.mean_close_odds:.3f}")
+
+
+def _pct(v) -> str:
+    return "  n/a" if v is None or pd.isna(v) else f"{100 * float(v):.1f}%"
+
+
+def _print_table(df: pd.DataFrame) -> None:
+    if df.empty:
+        print("  (no rows)")
+        return
+    print(f"  {'segment':<34} {'fix':>4} {'movd':>5} {'toward':>7} {'95% CI':>15} "
+          f"{'mean signed':>12} {'clv n':>6} {'mean clv':>9}  status")
+    for _, r in df.iterrows():
+        ci = f"[{_pct(r['toward_ci_lo'])},{_pct(r['toward_ci_hi'])}]"
+        ms = r["mean_signed_move_pp"]
+        cl = r["mean_clv_pct"]
+        print(f"  {str(r['segment'])[:34]:<34} {int(r['n_fixtures']):>4} "
+              f"{int(r['n_moved']):>5} {_pct(r['toward_rate']):>7} {ci:>15} "
+              f"{'    n/a' if pd.isna(ms) else f'{ms:>+11.3f}':>12} "
+              f"{int(r['n_clv']):>6} {'   n/a' if pd.isna(cl) else f'{cl:>+8.3f}':>9}  "
+              f"{r['sample_status']}")
 
 
 def main() -> int:
-    d = build()
-    if d.empty:
+    detail, e = build()
+    if detail.empty:
         print("[movement] not enough history yet — needs >=2 snapshots per fixture with a "
               "known pre-kickoff horizon")
         return 0
-    out = report(d)
-    if not out.empty:
-        p = config.OUTPUT_DIR / "v11_market_movement.csv"
-        out.to_csv(p, index=False)
-        print(f"\n[movement] written -> {p.name}")
+    if e.empty:
+        print(f"[movement] {len(detail)} observations built but NONE are eligible; "
+              f"flags: {dict(detail['clv_quality'].value_counts())}")
+        return 0
+    outs = report(detail, e)
+    print()
+    for name, df in outs.items():
+        p = config.OUTPUT_DIR / name
+        df.to_csv(p, index=False)
+        print(f"[movement] {name:<38} {len(df):>6,} rows")
+    print("\n[movement] RESEARCH ONLY — not a betting signal. See MARKET_MOVEMENT_RESEARCH.md")
     return 0
 
 

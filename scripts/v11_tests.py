@@ -196,8 +196,251 @@ def main() -> int:
     check("a segment cannot reach MIN_CLV_N on bad rows", n2 == 143, str(n2))
     check("and its mean is not inflated by them", abs(m2) < 1e-9, str(m2))
 
+    _movement_checks()
+
     print(f"\n{'FAILED: ' + ', '.join(FAILS) if FAILS else 'all checks passed'}")
     return 1 if FAILS else 0
+
+
+def _movement_checks() -> None:
+    """Market-movement research invariants (movement brief section 26).
+
+    The brief singles out sign handling: "Direction/sign bugs could completely invalidate this
+    research." So OVER and UNDER are tested separately at every stage, and the UNDER cases are
+    constructed so that a bug which used odds_over25 for both sides would produce a WRONG answer
+    rather than a merely different one.
+    """
+    from src import movement as mv
+
+    print("\n== movement: residual and signed movement ==")
+    # Model 60% over, market 52% over -> residual +8pp, model prefers OVER.
+    # Market closes at 55% -> moved +3pp, i.e. TOWARD the model.
+    e = pd.DataFrame([{"fixture_id": "F1", "snapshot_ts": "2026-08-20T10:00:00Z",
+                       "p_model_over": 0.60, "v11_p_market": 0.52,
+                       "odds_over25": 2.00, "odds_under25": 2.00,
+                       "minutes_to_kickoff": 600.0, "n_books": 8,
+                       "league": "L", "model_type": "standard"}])
+    c = pd.DataFrame([{"fixture_id": "F1", "snapshot_ts": "2026-08-20T18:00:00Z",
+                       "v11_p_market": 0.55, "odds_over25": 1.85, "odds_under25": 2.20,
+                       "minutes_to_kickoff": 60.0}])
+    d = mv.compute(e, c)
+    check("residual = p_model - p_market_entry", abs(d["residual_pp"].iloc[0] - 8.0) < 1e-9,
+          str(d["residual_pp"].iloc[0]))
+    check("market_move = close - entry", abs(d["market_move_pp"].iloc[0] - 3.0) < 1e-9,
+          str(d["market_move_pp"].iloc[0]))
+    check("OVER: signed move positive when price rises toward model",
+          abs(d["signed_market_move_pp"].iloc[0] - 3.0) < 1e-9,
+          str(d["signed_market_move_pp"].iloc[0]))
+    check("OVER: toward_wowza == 1", d["toward_wowza"].iloc[0] == 1.0)
+    check("OVER: bet_side is OVER", d["bet_side"].iloc[0] == "OVER")
+    check("OVER: entry_odds is the OVER price", abs(d["entry_odds"].iloc[0] - 2.00) < 1e-9)
+    check("OVER: close_odds is the OVER price", abs(d["close_odds"].iloc[0] - 1.85) < 1e-9)
+    # entry 2.00 vs close 1.85 -> we beat the close: +8.108%
+    check("OVER: clv_pct = entry/close - 1 > 0 when we got the better price",
+          abs(d["clv_pct"].iloc[0] - (2.00 / 1.85 - 1) * 100) < 1e-6, str(d["clv_pct"].iloc[0]))
+
+    print("\n== movement: UNDER direction (the sign trap) ==")
+    # Model 40% over, market 52% -> residual -12pp, model prefers UNDER.
+    # Market closes at 47% over: the OVER prob FELL, so the UNDER prob ROSE -> toward the model.
+    # Under odds must be used: 2.00 entry vs 2.30 close is NEGATIVE clv for a backer, and a bug
+    # reading odds_over25 (1.85 close) would report a positive one.
+    e2 = e.copy(); e2["p_model_over"] = 0.40
+    c2 = c.copy(); c2["v11_p_market"] = 0.47
+    d2 = mv.compute(e2, c2)
+    check("UNDER: residual is negative", abs(d2["residual_pp"].iloc[0] + 12.0) < 1e-9,
+          str(d2["residual_pp"].iloc[0]))
+    check("UNDER: raw market_move is negative", d2["market_move_pp"].iloc[0] < 0)
+    check("UNDER: SIGNED move is POSITIVE (price moved to the model's side)",
+          abs(d2["signed_market_move_pp"].iloc[0] - 5.0) < 1e-9,
+          str(d2["signed_market_move_pp"].iloc[0]))
+    check("UNDER: toward_wowza == 1", d2["toward_wowza"].iloc[0] == 1.0)
+    check("UNDER: bet_side is UNDER", d2["bet_side"].iloc[0] == "UNDER")
+    check("UNDER: entry_odds is the UNDER price", abs(d2["entry_odds"].iloc[0] - 2.00) < 1e-9)
+    check("UNDER: close_odds is the UNDER price (not the OVER price)",
+          abs(d2["close_odds"].iloc[0] - 2.20) < 1e-9, str(d2["close_odds"].iloc[0]))
+    check("UNDER: clv_pct uses the UNDER pair and is negative here",
+          d2["clv_pct"].iloc[0] < 0, str(d2["clv_pct"].iloc[0]))
+    check("residual == 0 has NO side (must not default to OVER)",
+          mv.price_side_odds(0.0, 1.9, 2.1)[0] == "")
+
+    print("\n== movement: the signed-move == fair-prob CLV identity ==")
+    for lbl, dd in (("OVER", d), ("UNDER", d2)):
+        fair = (dd["close_fair_probability"].iloc[0] - dd["entry_fair_probability"].iloc[0]) * 100
+        check(f"{lbl}: close_fair - entry_fair == signed_market_move",
+              abs(fair - dd["signed_market_move_pp"].iloc[0]) < 1e-9, f"{fair}")
+
+    print("\n== movement: flat market is a THIRD state ==")
+    c3 = c.copy(); c3["v11_p_market"] = 0.5201        # +0.01pp, below MIN_MOVE_PP
+    d3 = mv.compute(e, c3)
+    check("a price that barely moved is not 'moved'", not bool(d3["moved"].iloc[0]))
+    check("flat market -> toward_wowza is NaN, not 0", pd.isna(d3["toward_wowza"].iloc[0]))
+
+    print("\n== movement: bucketing ==")
+    check("residual band picks the right bin", mv.band_of(7.5, mv.RESIDUAL_BANDS) == "+6:+10")
+    check("residual band is lower-inclusive", mv.band_of(6.0, mv.RESIDUAL_BANDS) == "+6:+10")
+    check("residual band upper bound excluded", mv.band_of(10.0, mv.RESIDUAL_BANDS) == "> +10")
+    check("negative residual band", mv.band_of(-5.0, mv.RESIDUAL_BANDS) == "-6:-4")
+    check("abs residual band", mv.band_of(8.0, mv.ABS_BANDS) == "8-10")
+    check("time band >24h", mv.band_of(2000, mv.TIME_BANDS) == ">24h")
+    check("time band 30-60m", mv.band_of(45, mv.TIME_BANDS) == "30-60m")
+    check("time band <10m", mv.band_of(5, mv.TIME_BANDS) == "<10m")
+    check("time band boundary 60 -> 1-3h not 30-60m", mv.band_of(60, mv.TIME_BANDS) == "1-3h")
+    check("NaN never lands in a real bucket", mv.band_of(float("nan"), mv.TIME_BANDS) == "unknown")
+
+    print("\n== movement: close selection and post-kickoff exclusion ==")
+    snaps = pd.DataFrame([
+        {"fixture_id": "F", "snapshot_ts": "2026-08-20T10:00:00Z", "minutes_to_kickoff": 600.0},
+        {"fixture_id": "F", "snapshot_ts": "2026-08-20T19:30:00Z", "minutes_to_kickoff": 30.0},
+        {"fixture_id": "F", "snapshot_ts": "2026-08-20T20:10:00Z", "minutes_to_kickoff": -10.0},
+    ])
+    cl = closing_snapshot(snaps)
+    check("close is the last PRE-kickoff row", cl["minutes_to_kickoff"].iloc[0] == 30.0,
+          str(cl["minutes_to_kickoff"].tolist()))
+    check("a post-kickoff row is never the close", (cl["minutes_to_kickoff"] > 0).all())
+    check("unknown kickoff is excluded from close selection",
+          closing_snapshot(pd.DataFrame([{"fixture_id": "G", "snapshot_ts": "t",
+                                          "minutes_to_kickoff": None}])).empty)
+    e4 = e.copy(); e4["minutes_to_kickoff"] = -5.0
+    check("post-kickoff ENTRY is flagged",
+          mv.compute(e4, c)["clv_quality"].iloc[0] == "POST_KICKOFF_ENTRY")
+    e5 = e.copy(); e5["minutes_to_kickoff"] = None
+    check("missing kickoff is flagged",
+          mv.compute(e5, c)["clv_quality"].iloc[0] == "MISSING_KICKOFF")
+
+    print("\n== movement: missing close and chronology ==")
+    d6 = mv.compute(e, pd.DataFrame(columns=c.columns))
+    check("no close at all -> no rows survive (never a fabricated close)", d6.empty, str(len(d6)))
+    c7 = c.copy(); c7["snapshot_ts"] = "2026-08-20T09:00:00Z"      # BEFORE entry
+    check("a close earlier than entry is dropped", mv.compute(e, c7).empty)
+    c8 = c.copy(); c8["snapshot_ts"] = e["snapshot_ts"].iloc[0]    # same instant
+    check("entry == close is dropped (zero-length window)", mv.compute(e, c8).empty)
+    e9 = e.copy(); e9["v11_p_market"] = None
+    check("missing entry price -> no signed move claimed",
+          pd.isna(mv.compute(e9, c)["signed_market_move_pp"].iloc[0]))
+
+    print("\n== movement: quality flags only where supported ==")
+    e10 = e.copy(); e10["odds_under25"] = None
+    check("missing opposite side is flagged",
+          mv.compute(e10, c)["clv_quality"].iloc[0] == "MISSING_OPPOSITE_SIDE")
+    e11 = e.copy(); e11["odds_over25"] = 1.10; e11["odds_under25"] = 1.10   # overround 1.82
+    check("incoherent pair -> INVALID_MARKET_MAPPING",
+          mv.compute(e11, c)["clv_quality"].iloc[0] == "INVALID_MARKET_MAPPING")
+    e12 = e.copy(); e12["n_books"] = 1
+    check("too few books is flagged",
+          mv.compute(e12, c)["clv_quality"].iloc[0] == "INSUFFICIENT_BOOKS")
+    e13 = e.copy(); e13["n_books"] = None
+    r13 = mv.compute(e13, c)
+    check("unknown book count is NOT a failure", r13["clv_quality"].iloc[0] == "OK")
+    check("...it is recorded as not assessed",
+          "INSUFFICIENT_BOOKS" in r13["quality_not_assessed"].iloc[0])
+    check("staleness/synthetic are declared unassessed, not invented",
+          all(f in r13["quality_not_assessed"].iloc[0]
+              for f in ("STALE_ENTRY_PRICE", "STALE_CLOSE_PRICE", "SYNTHETIC_ODDS")))
+
+    print("\n== movement: duplicate snapshots and fixture-level reduction ==")
+    dup = pd.concat([e, e], ignore_index=True)
+    check("duplicate identical snapshots both compute", len(mv.compute(dup, c)) == 2)
+    check("fixture_level collapses them to ONE observation",
+          len(mv.fixture_level(mv.compute(dup, c))) == 1)
+    multi = pd.concat([e, e.assign(snapshot_ts="2026-08-20T14:00:00Z",
+                                   minutes_to_kickoff=300.0)], ignore_index=True)
+    fl = mv.fixture_level(mv.compute(multi, c))
+    check("fixture_level default takes the EARLIEST entry",
+          fl["entry_ts"].iloc[0] == "2026-08-20T10:00:00Z", str(fl["entry_ts"].iloc[0]))
+    fl2 = mv.fixture_level(mv.compute(multi, c), at_minutes=300)
+    check("fixture_level(at_minutes) takes the nearest horizon",
+          abs(fl2["minutes_to_kickoff"].iloc[0] - 300.0) < 1e-9)
+
+    print("\n== movement: inference ==")
+    lo, hi = mv.wilson(55, 100)
+    check("Wilson CI brackets the point estimate", lo < 0.55 < hi, f"{lo:.3f}-{hi:.3f}")
+    check("Wilson CI at n=100 is ~+-10pp", 0.08 < (hi - lo) / 2 < 0.11, f"{(hi-lo)/2:.3f}")
+    check("Wilson handles k=0", mv.wilson(0, 10)[0] == 0.0)
+    check("Wilson handles k=n", mv.wilson(10, 10)[1] == 1.0)
+    check("Wilson on empty n is NaN", pd.isna(mv.wilson(0, 0)[0]))
+    w_narrow = mv.wilson(550, 1000)
+    check("more data -> narrower interval", (w_narrow[1] - w_narrow[0]) < (hi - lo))
+    # The whole point of clustering: 30 correlated copies of each fixture must NOT shrink the
+    # interval. The clusters must be HOMOGENEOUS for this to show anything — with each cluster
+    # holding 15 (+1) and 15 (-1) every cluster mean is exactly 0, resampling cannot vary, and
+    # the CI collapses to (0, 0). That is a degenerate test, not a passing one.
+    vals = pd.Series([1.0] * 30 + [-1.0] * 30)
+    few = pd.Series(list(range(60)))                 # 60 independent clusters of 1 row
+    many = pd.Series([i // 30 for i in range(60)])   # 2 clusters of 30 correlated rows
+    ci_few = mv.cluster_bootstrap_mean(vals, few)
+    ci_many = mv.cluster_bootstrap_mean(vals, many)
+    check("cluster bootstrap: 2 clusters give a WIDER CI than 60 rows",
+          (ci_many[1] - ci_many[0]) > (ci_few[1] - ci_few[0]),
+          f"many={ci_many} few={ci_few}")
+    check("cluster bootstrap is deterministic across runs",
+          mv.cluster_bootstrap_mean(vals, few) == ci_few)
+    check("sample_status uses FIXTURE counts", mv.sample_status(49) == "INSUFFICIENT_SAMPLE"
+          and mv.sample_status(50) == "EARLY_SIGNAL"
+          and mv.sample_status(150) == "RESEARCH"
+          and mv.sample_status(500) == "VALIDATABLE")
+    check("summarise rejects an unstated unit",
+          _raises(lambda: mv.summarise(mv.compute(e, c), "x", "rows")))
+
+    # The regression that matters most: the DIRECTIONAL interval must be clustered at snapshot
+    # level too. Reading the same fixtures ~30x each must not shrink it. Built as 12 fixtures x
+    # 20 identical snapshots — replication alone, zero new information.
+    rr = []
+    for i in range(12):
+        toward = (i % 2 == 0)   # 50% toward, so any narrowing is purely from replication
+        for j in range(20):
+            rr.append({"fixture_id": f"R{i}", "snapshot_ts": f"2026-08-20T{10+j//10:02d}:00:00Z",
+                       "p_model_over": 0.60, "v11_p_market": 0.52,
+                       "odds_over25": 2.0, "odds_under25": 2.0,
+                       "minutes_to_kickoff": 600.0 - j, "n_books": 8,
+                       "league": "L", "model_type": "standard", "_toward": toward})
+    ee2 = pd.DataFrame(rr)
+    cc2 = pd.DataFrame([{"fixture_id": f"R{i}", "snapshot_ts": "2026-08-20T23:00:00Z",
+                         "v11_p_market": 0.52 + (0.03 if i % 2 == 0 else -0.03),
+                         "odds_over25": 2.0, "odds_under25": 2.0,
+                         "minutes_to_kickoff": 30.0} for i in range(12)])
+    dd2 = mv.compute(ee2.drop(columns="_toward"), cc2)
+    s_snap = mv.summarise(dd2, "snap", "snapshot")
+    s_fix = mv.summarise(mv.fixture_level(dd2), "fix", "fixture")
+    w_snap = s_snap.toward_ci_hi - s_snap.toward_ci_lo
+    w_fix = s_fix.toward_ci_hi - s_fix.toward_ci_lo
+    check("240 snapshots of 12 fixtures do NOT narrow the directional CI below the "
+          "12-fixture CI", w_snap >= w_fix * 0.9,
+          f"snapshot width {w_snap:.3f} vs fixture width {w_fix:.3f}")
+    check("...and a raw Wilson interval on 240 rows WOULD have been much narrower "
+          "(this is the bug being guarded)",
+          (mv.wilson(120, 240)[1] - mv.wilson(120, 240)[0]) < w_fix * 0.6,
+          f"wilson240 {mv.wilson(120,240)}")
+
+    print("\n== movement: magnitude reporting ==")
+    # 3 toward at +0.2pp, 1 away at -5pp: 75% directional, but the MEAN is negative. This is the
+    # brief's central warning and the summary must show both, not resolve them into one verdict.
+    rows = []
+    for i, mvpp in enumerate([0.2, 0.2, 0.2, -5.0]):
+        rows.append({"fixture_id": f"X{i}", "snapshot_ts": "2026-08-20T10:00:00Z",
+                     "p_model_over": 0.60, "v11_p_market": 0.52,
+                     "odds_over25": 2.0, "odds_under25": 2.0, "minutes_to_kickoff": 600.0,
+                     "n_books": 8, "league": "L", "model_type": "standard"})
+    ee = pd.DataFrame(rows)
+    cc = pd.DataFrame([{"fixture_id": f"X{i}", "snapshot_ts": "2026-08-20T18:00:00Z",
+                        "v11_p_market": 0.52 + m / 100.0, "odds_over25": 2.0,
+                        "odds_under25": 2.0, "minutes_to_kickoff": 60.0}
+                       for i, m in enumerate([0.2, 0.2, 0.2, -5.0])])
+    s = mv.summarise(mv.compute(ee, cc), "trap", "fixture")
+    check("directional rate is 75%", abs(s.toward_rate - 0.75) < 1e-9, str(s.toward_rate))
+    check("...while the MEAN signed move is NEGATIVE", s.mean_signed_move_pp < 0,
+          str(s.mean_signed_move_pp))
+    check("mean move when correct is small", abs(s.mean_move_when_correct_pp - 0.2) < 1e-9)
+    check("mean move when wrong is large", abs(s.mean_move_when_wrong_pp + 5.0) < 1e-9)
+    check("P(|move| >= 1pp) reported", abs(s.p_move_ge_1pp - 0.25) < 1e-9, str(s.p_move_ge_1pp))
+    check("n_fixtures counts fixtures, not rows", s.n_fixtures == 4, str(s.n_fixtures))
+
+
+def _raises(fn) -> bool:
+    try:
+        fn()
+        return False
+    except Exception:
+        return True
 
 
 if __name__ == "__main__":

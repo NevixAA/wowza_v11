@@ -1,0 +1,8 @@
+segment,unit,n_obs,n_fixtures,n_moved,toward_rate,toward_ci_lo,toward_ci_hi,z_vs_chance,p_value,mean_signed_move_pp,median_signed_move_pp,signed_ci_lo,signed_ci_hi,mean_abs_move_pp,mean_move_when_correct_pp,mean_move_when_wrong_pp,p_move_ge_05pp,p_move_ge_1pp,p_move_ge_2pp,n_clv,mean_clv_pct,median_clv_pct,pct_positive_clv,mean_entry_odds,mean_close_odds,sample_status
+T->24h,snapshot,8929,167,5710,0.531,0.448,0.613,0.737,0.46131,0.2178,0.22,-0.0936,0.5495,1.3724,1.4974,-1.2309,0.7356,0.4816,0.2282,5710,0.1184,0.0,0.2394,2.1425,2.1421,RESEARCH
+T-12-24h,snapshot,157,18,101,0.3267,0.1347,0.5748,-1.544,0.12269,-0.3705,-0.93,-1.2416,0.6896,1.6408,1.9439,-1.4937,0.8317,0.6931,0.3366,101,-1.4366,0.0,0.1683,2.3735,2.4159,INSUFFICIENT_SAMPLE
+T-6-12h,snapshot,59,14,39,0.5641,0.1467,0.946,0.314,0.75323,0.0267,0.65,-0.975,0.8718,1.2969,1.1732,-1.4571,0.8718,0.4615,0.3333,39,0.1651,1.81,0.5385,2.1969,2.1903,INSUFFICIENT_SAMPLE
+T-3-6h,snapshot,52,10,25,0.4,0.0357,0.8214,-0.499,0.61786,-0.1916,-0.38,-1.4722,1.1323,1.4428,1.564,-1.362,0.8,0.56,0.4,25,-0.5241,-0.8403,0.4,2.1872,2.2004,INSUFFICIENT_SAMPLE
+T-1-3h,snapshot,55,13,38,0.3421,0.0732,0.6757,-1.027,0.30428,-0.0687,-0.67,-0.8384,0.7792,1.0761,1.4723,-0.87,0.7895,0.3947,0.1053,38,-0.7358,-1.3825,0.3421,2.2897,2.3079,INSUFFICIENT_SAMPLE
+T-30-60m,snapshot,12,10,6,0.8333,0.25,1.0,1.742,0.08147,1.0067,0.4,0.125,2.755,1.23,1.342,-0.67,0.5,0.3333,0.3333,6,2.3434,0.8584,0.8333,2.3733,2.315,INSUFFICIENT_SAMPLE
+T-10-30m,snapshot,1,1,0,,,,,,,,,,,,,,,,0,,,,,,INSUFFICIENT_SAMPLE
