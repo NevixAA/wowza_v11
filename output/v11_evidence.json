@@ -7,38 +7,38 @@
   },
   "global": {
     "brier": null,
-    "ece": 0.071637,
+    "ece": 0.05723,
     "logloss": null,
-    "n": 157,
-    "n_eff": 157,
+    "n": 244,
+    "n_eff": 244,
     "scope": "global",
     "source": "measured"
   },
   "segments": {
     "new_format": {
       "brier": null,
-      "ece": 0.071637,
+      "ece": 0.058083,
       "logloss": null,
-      "n": 124,
-      "n_eff": 124,
+      "n": 173,
+      "n_eff": 173,
       "scope": "new_format",
       "source": "shrunk"
     },
     "new_format|USA MLS": {
       "brier": null,
-      "ece": 0.071637,
+      "ece": 0.05723,
       "logloss": null,
-      "n": 30,
-      "n_eff": 30,
+      "n": 34,
+      "n_eff": 34,
       "scope": "new_format|USA MLS",
       "source": "shrunk"
     },
     "standard": {
       "brier": null,
-      "ece": 0.074088,
+      "ece": 0.057472,
       "logloss": null,
-      "n": 33,
-      "n_eff": 33,
+      "n": 71,
+      "n_eff": 71,
       "scope": "standard",
       "source": "shrunk"
     }
