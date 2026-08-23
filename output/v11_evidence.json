@@ -7,7 +7,7 @@
   },
   "global": {
     "brier": null,
-    "ece": 0.058416,
+    "ece": 0.05849,
     "logloss": null,
     "n": 245,
     "n_eff": 245,
@@ -17,7 +17,7 @@
   "segments": {
     "new_format": {
       "brier": null,
-      "ece": 0.059493,
+      "ece": 0.05958,
       "logloss": null,
       "n": 174,
       "n_eff": 174,
@@ -26,7 +26,7 @@
     },
     "new_format|USA MLS": {
       "brier": null,
-      "ece": 0.058416,
+      "ece": 0.05849,
       "logloss": null,
       "n": 34,
       "n_eff": 34,
@@ -35,7 +35,7 @@
     },
     "standard": {
       "brier": null,
-      "ece": 0.058416,
+      "ece": 0.05849,
       "logloss": null,
       "n": 71,
       "n_eff": 71,
