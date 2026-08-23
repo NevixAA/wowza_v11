@@ -8,6 +8,52 @@ Date: 2026-08-23 · v11 `c7b0b23` · Pro `4709d4a` · v9 `d61fbaf0`
 
 ---
 
+## 0. CORRECTION — this report supersedes its own first version
+
+Two claims in the first version of this report were wrong and are corrected below. Both were
+found by re-running on a larger snapshot file (25,708 rows vs the 9,971 the first run read) and
+by measuring coverage directly rather than inferring it.
+
+**0.1 The placebo verdict has INVERTED. This is now the headline finding.**
+
+| sample | model toward | placebo toward | model's excess |
+|---|---|---|---|
+| 181 fixtures (first run) | 54.7% | 46.7% | **+8.0pp** |
+| **281 fixtures (now)** | **55.7%** | **58.4%** | **−2.7pp** |
+
+I reported the +8.0pp excess as "the one genuinely encouraging element" and "the real good news".
+On 100 more fixtures — four extra days — an information-free constant now predicts the market's
+direction slightly *better* than Wowza's residual. The encouraging result was noise. Mean
+reversion toward the centre is now the better-supported explanation, and since Wowza's
+probabilities sit more centrally than the market's, "moved toward Wowza" and "moved toward the
+middle" are close to the same sentence.
+
+**0.2 Near-kickoff coverage is NOT the binding constraint.** I named it "the single
+highest-value next step". That was wrong. Measured on kicked-off fixtures only:
+
+| bucket | fixtures with a snapshot | | bucket | fixtures |
+|---|---|---|---|---|
+| 1–3h | 96.5% | | 30–60m | 81.7% |
+| 10–30m | 65.5% | | <10m | 16.2% |
+
+89.4% of fixtures have a snapshot within 60 minutes of kickoff; the median last pre-kickoff
+snapshot lands **19 minutes** out. What is thin is the count of *moved* observations in late
+buckets, and that is **mechanical**: a T-40m entry has only ~34 minutes left before the close, so
+there is little distance left to travel.
+
+| bucket | mean window to close | mean \|move\| | **\|move\| per hour** |
+|---|---|---|---|
+| >24h | 4,408 min | 1.674pp | 0.024 |
+| 6–12h | 493 min | 1.023pp | 0.131 |
+| 1–3h | 105 min | 0.674pp | 0.405 |
+| 30–60m | 35 min | 0.616pp | **1.100** |
+
+Per unit time the market moves ~45× faster near kickoff. Reading the absolute column alone states
+the opposite of the truth, so `mean_window_min` and `signed_move_per_hour_pp` are now computed and
+the time table prints both with an explicit note.
+
+---
+
 ## 1. What already existed (PHASE 0)
 
 `scripts/v11_market_movement.py` (224 lines) already computed:
@@ -160,75 +206,66 @@ bands (model prefers UNDER) look consistently better than positive ones — invi
 **This cannot answer the entry-timing question yet.** 96% of moved snapshots are `> 24h`. The
 `30–60m` row rests on **six observations**. Near-kickoff coverage is the binding constraint.
 
-## 7. The five questions, answered separately
+## 7. The five questions, answered separately (281 fixtures / 219 moved)
 
-**A. Is the directional effect statistically interesting?**
-Marginally, and **not significantly**. 54.7%, CI [46.4%, 62.8%] includes 50%, p = 0.267. The one
-genuinely encouraging element is the placebo: the market moves toward an information-free anchor
-only 46.7% of the time, so the +8.0pp excess is **not** mean reversion — which was the most
-likely benign explanation and it has been ruled out at this sample size. Worth continuing to
-collect. Not established.
+**A. Is the directional effect statistically interesting?** **No.** 55.7% [49.1%, 62.1%],
+p = 0.091 — includes 50%. And the **placebo beats it** (58.4%). No evidence the residual carries
+directional information beyond the market's own centrality.
 
-**B. Is the movement magnitude economically interesting?**
-**No.** +0.220pp mean with CI [−0.119, +0.559] including zero. At ~2.17 average odds that is
-worth roughly 0.1% in price terms. Wins and losses are near-symmetric (+1.535 vs −1.370pp), so
-the economics rest entirely on the thin directional edge rather than on winning big and losing
-small — exactly the case the brief's section 4 warns about.
+**B. Is the movement magnitude economically interesting?** **Statistically real, economically
+marginal, not attributable to Wowza.** +0.521pp, CI [+0.134, +0.908] excludes zero — a genuine
+change from the first run. But given A, mean reversion explains it without a model. At ~2.15
+average odds, +0.52pp is worth ~0.25% in price terms even if capturable.
 
-**C. Does it produce positive clean CLV?**
-**Not meaningfully.** +0.185% mean, **+0.000% median**, only **35.8%** positive. A mean lifted
-above zero by a minority of large moves, with the median exactly zero and two-thirds
-non-positive, is not a monetisable price edge. And note: signed movement and fair-probability CLV
-are algebraically the same measurement, so `clv_pct` is the only CLV figure that adds information
-— and it is ~0.
+**C. Does it produce positive clean CLV?** **No.** Median **+0.000%** at both units; mean +0.101%
+per fixture but **−0.024%** across snapshots; 42.5% / 34.3% positive. The best directional band
+(+6:+10, 63.6%) has *negative* CLV (−0.391%).
 
-**D. Is it chronologically stable?**
-**Cannot be assessed.** All eligible entries fall in a single ISO week — three days. Monthly and
-weekly rows are emitted as `NOT_ASSESSABLE` rather than as duplicates of the overall row. The
-halves split (48.5% / 56.7%) is a split *within* three days and is as likely fixture mix as
-drift. **The entire headline rests on three days of entries.**
+**D. Is it chronologically stable?** **No — demonstrably not.** Span grew 3 → 7 days, still one
+ISO week, so the formal test is unassessable. But the placebo verdict *inverted* across those four
+days. That is direct evidence of instability, not merely absence of evidence for stability.
 
-**E. Is the sample large enough for deployment?**
-**No.** 137 moved fixture-level observations against a 500–1,000 bar. Every residual band and
-every one of 16 leagues is `INSUFFICIENT_SAMPLE`. Not close.
+**E. Is the sample large enough for deployment?** **No.** 219 moved fixture-level observations
+against a 500–1,000 bar. All 19 leagues insufficient.
 
-## 8. Data-quality limitations that matter
+## 8. Data-quality limitations
 
-1. **Three days of eligible entries.** Everything else is secondary.
-2. **Time-to-kickoff unusable** — 96% of moved snapshots in one bucket.
-3. **Result/ROI coverage is biased, and the bias is in the variable under study.** v11 grades
-   from v9's public `bets_ledger.csv`, which holds only fixtures **v9 tipped** — 94/336 (28%).
-   League Two is 0/24, Serie B 0/11, Ireland 0/5. The graded subset is conditioned on v9 having
-   disagreed with the market enough to fire a tip. **Movement and CLV are unaffected** (prices
-   are unconditioned), but every result-based figure comes from that conditioned subset. Fix:
-   grade from actual results (football-data.co.uk covers E0–E3 and the European standard
-   leagues) rather than from a tip ledger. **Not yet done — recommended next.**
-4. **Dispersion analysis impossible** — `n_books` 8.3%, `market_prob_range` not stored at all
-   and left NULL rather than approximated from the std.
+1. **Seven days, one ISO week.** Binding.
+2. **Result grading — FIXED, awaiting first live run.** `src/results.py` fetches actual goals from
+   football-data.co.uk for all 31 mapped leagues; grading prefers them and keeps v9's tip ledger
+   only as a fallback for API-Football-only competitions. Every run prints the provenance split.
+   This machine cannot reach `football-data.co.uk` at all (TLS inspection; connection refused, not
+   a certificate error), so the fetch validates on the first CI run. Logic is unit-tested against
+   synthetic frames built to the real schema; a failed fetch degrades to "nothing newly graded"
+   with each unavailable league named, never to wrong results.
+3. **Time buckets readable but thin at the near end** — mechanical, not coverage. See section 0.2.
+4. **Dispersion analysis impossible** — `n_books` 8.3%, `market_prob_range` not stored.
 5. `market_move` uses **consensus**, not best executable price.
-6. **One market only** — O/U 2.5. Nothing extends to BTTS or side markets.
-7. `STALE_ENTRY_PRICE`, `STALE_CLOSE_PRICE`, `SYNTHETIC_ODDS` are declared **not assessable**;
-   the snapshots carry no per-book quote timestamps or provenance marker, and a proxy would
-   misclassify a genuinely settled market.
+6. **One market only** — O/U 2.5.
+7. `STALE_*` / `SYNTHETIC_ODDS` declared **not assessable**, not proxied.
+8. **Re-ingest overlap in the archive.** v11 recomputes over a growing history, so each ingest is
+   a superset: the canonical table holds 34,543 rows describing 25,052 distinct observations.
+   Correct for an immutable archive, but any aggregate must dedupe by `snapshot_id` keeping the
+   latest `ingested_at`. The audit reports the ratio every run.
 
 ## 9. Overall verdict
 
-The hypothesis in brief section 24 — *Wowza does not beat the closing market on outcomes, but may
-reach the future price first* — **is not refuted, and is not supported either.** What can be said
-after this work:
+**The hypothesis is now weakly disfavoured rather than merely unproven.**
 
-- The directional signal is positive but statistically indistinguishable from chance.
-- It **survives its most dangerous placebo**, which is the one real piece of good news: the +8pp
-  excess over an information-free anchor means the headline is not just mean reversion.
-- The magnitude is economically negligible and its interval includes zero.
-- Executable CLV is ~0 at the median with only a third of observations positive.
-- Stability is unassessable on three days of data.
+The measurement infrastructure is sound, tested (142 checks), archived with versioned provenance,
+and audited weekly. What it currently says:
 
-So: **keep collecting, change nothing.** The measurement infrastructure now exists, is tested,
-archives to canonical storage with versioned provenance, and is audited weekly. The single
-highest-value next step is not analysis — it is **near-kickoff snapshot coverage**, because the
-entry-timing question is the one that would make this actionable and it currently has 6–101
-observations per bucket. Second is unbiased result grading (limitation 3).
+- The directional signal is not distinguishable from chance, **and is beaten by a constant**.
+- Mean signed movement is statistically positive — but that is what mean reversion looks like when
+  the model's probabilities sit more centrally than the market's.
+- Executable CLV is zero at the median and negative across snapshots.
+- The one result that looked encouraging four days ago has inverted.
 
-Re-run this report at ≥500 fixture-level observations spanning ≥8 weeks. If the 54.7% decays
-toward 50% with more data, that is the answer and it should be accepted.
+**Keep collecting, change nothing, and do not build the movement model.** Section 10 of
+`MARKET_MOVEMENT_RESEARCH.md` sets prerequisites; the placebo criterion is now failing outright,
+which is a hard stop rather than a slow one.
+
+The honest reading is the one the brief asked for in advance: *"If the current ~58% effect
+disappears with more data, accept the result."* It has not fully disappeared — 55.7% — but the
+control that distinguishes skill from centrality has gone the wrong way, and that is the number
+that matters. Re-run at ≥500 fixture-level observations spanning ≥8 weeks.

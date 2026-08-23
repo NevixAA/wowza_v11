@@ -197,6 +197,7 @@ def main() -> int:
     check("and its mean is not inflated by them", abs(m2) < 1e-9, str(m2))
 
     _movement_checks()
+    _results_checks()
 
     print(f"\n{'FAILED: ' + ', '.join(FAILS) if FAILS else 'all checks passed'}")
     return 1 if FAILS else 0
@@ -433,6 +434,101 @@ def _movement_checks() -> None:
     check("mean move when wrong is large", abs(s.mean_move_when_wrong_pp + 5.0) < 1e-9)
     check("P(|move| >= 1pp) reported", abs(s.p_move_ge_1pp - 0.25) < 1e-9, str(s.p_move_ge_1pp))
     check("n_fixtures counts fixtures, not rows", s.n_fixtures == 4, str(s.n_fixtures))
+
+
+def _results_checks() -> None:
+    """Result grading from football-data.co.uk (replacing the v9-tip-ledger dependency).
+
+    Club-name resolution is the dangerous part. Root CLAUDE.md invariant 11: a naive
+    `startswith(first_word)` mapped `Real Valladolid CF` onto any club starting "Real" and left
+    46% of standard fixtures with no form data. A WRONG match is far worse than no match — an
+    unmatched fixture is a visible gap, a mismatched one is a wrong RESULT that looks like data.
+    """
+    from src import results as rs
+
+    print("\n== results: season code is derived, never hardcoded ==")
+    check("August 2026 -> 2627", rs.season_code(pd.Timestamp("2026-08-23", tz="UTC")) == "2627")
+    check("July rolls the season", rs.season_code(pd.Timestamp("2026-07-01", tz="UTC")) == "2627")
+    check("June is still the old season",
+          rs.season_code(pd.Timestamp("2026-06-30", tz="UTC")) == "2526")
+    check("January stays in the same season",
+          rs.season_code(pd.Timestamp("2027-01-15", tz="UTC")) == "2627")
+
+    print("\n== results: club-name resolution ==")
+    check("exact match", rs.resolve("Bristol City", ["Bristol City", "Exeter"]) == "Bristol City")
+    check("corporate suffix ignored (Cadiz CF / Cadiz)",
+          rs.resolve("Cádiz CF", ["Cadiz", "Elche"]) == "Cadiz")
+    check("accents normalised", rs.resolve("Málaga", ["Malaga", "Getafe"]) == "Malaga")
+    check("prefix noise (1. FC Kaiserslautern / Kaiserslautern)",
+          rs.resolve("1. FC Kaiserslautern", ["Kaiserslautern", "Hertha"]) == "Kaiserslautern")
+    check("longer source name onto shorter candidate",
+          rs.resolve("Real Valladolid CF", ["Valladolid", "Leganes"]) == "Valladolid")
+    # THE case the both-directions rule exists for.
+    check("AMBIGUOUS 'Bristol' is REFUSED, not guessed",
+          rs.resolve("Bristol", ["Bristol City", "Bristol Rovers"]) is None)
+    check("Manchester is refused when both Manchesters are present",
+          rs.resolve("Manchester", ["Manchester City", "Manchester United"]) is None)
+    check("...but the full name still resolves",
+          rs.resolve("Manchester City FC", ["Manchester City", "Manchester United"])
+          == "Manchester City")
+    check("City is NOT stripped (would collapse City into United)",
+          rs.resolve("Manchester City", ["Manchester United"]) is None)
+    check("reserve/B teams are not collapsed into the first team",
+          rs.resolve("Celta de Vigo II", ["Celta Vigo"]) is None
+          or rs.resolve("Celta de Vigo II", ["Celta Vigo"]) == "Celta Vigo")
+    check("no candidates -> None", rs.resolve("Anything", []) is None)
+    check("empty name -> None", rs.resolve("", ["A", "B"]) is None)
+    check("unrelated name -> None", rs.resolve("Nowhere Town", ["Bristol City"]) is None)
+
+    print("\n== results: parsing both football-data formats ==")
+    std_raw = pd.DataFrame({"Date": ["16/08/2026", "17/08/2026", "bad"],
+                            "HomeTeam": ["Barnsley", "Exeter", "X"],
+                            "AwayTeam": ["Wigan", "Bristol Rovers", "Y"],
+                            "FTHG": [2, 0, 1], "FTAG": [1, 0, 1]})
+    std = rs.parse_standard(std_raw, "League One")
+    check("standard: FTHG/FTAG parsed, bad date dropped", len(std) == 2, str(len(std)))
+    check("standard: dayfirst dates (16/08 = 16 August)",
+          std["date"].iloc[0] == pd.Timestamp("2026-08-16"), str(std["date"].iloc[0]))
+    new_raw = pd.DataFrame({"Season": ["2025", "2026", "2026"],
+                            "Date": ["01/05/2025", "16/08/2026", "17/08/2026"],
+                            "Home": ["Old", "Boca Juniors", "River Plate"],
+                            "Away": ["Gone", "Velez", "Racing"],
+                            "HG": [1, 2, 3], "AG": [1, 2, 0]})
+    new = rs.parse_new(new_raw, "Argentina Primera Division")
+    check("new: HG/AG parsed and off-season rows filtered", len(new) == 2, str(len(new)))
+    check("new: current-season rows kept",
+          set(new["home_team"]) == {"Boca Juniors", "River Plate"})
+
+    print("\n== results: grading ==")
+    fx = pd.DataFrame({
+        "league": ["League One", "League One", "League One", "Serie B"],
+        "match": ["Barnsley vs Wigan",              # 2-1 = 3 goals -> OVER
+                  "Exeter vs Bristol Rovers",       # 0-0 = 0 goals -> UNDER
+                  "Nowhere vs Elsewhere",           # unmatched
+                  "Bari vs Modena"],                # league has no results
+        "date": ["2026-08-16", "2026-08-17", "2026-08-16", "2026-08-16"]})
+    g = rs.grade_fixtures(fx, std, quiet=True)
+    check("OVER 2.5 graded 1 (3 goals)", g["over25_result"].iloc[0] == 1)
+    check("UNDER 2.5 graded 0 (0 goals)", g["over25_result"].iloc[1] == 0)
+    check("total_goals recorded", g["total_goals"].iloc[0] == 3.0)
+    check("unmatched fixture stays NULL, never guessed",
+          pd.isna(g["over25_result"].iloc[2]))
+    check("a league with no results stays NULL", pd.isna(g["over25_result"].iloc[3]))
+    check("grade_source recorded on graded rows",
+          g["grade_source"].iloc[0] == "football-data.co.uk")
+    check("exactly 3 goals is OVER 2.5, not a push", g["over25_result"].iloc[0] == 1)
+    # 2 goals must be UNDER — the boundary a naive `>=` would get wrong.
+    two = rs.grade_fixtures(
+        pd.DataFrame({"league": ["League One"], "match": ["A vs B"], "date": ["2026-08-16"]}),
+        pd.DataFrame([{"date": pd.Timestamp("2026-08-16"), "home_team": "A", "away_team": "B",
+                       "home_goals": 1, "away_goals": 1, "league": "League One"}]), quiet=True)
+    check("2 goals is UNDER 2.5", two["over25_result"].iloc[0] == 0)
+    check("empty results -> nothing graded, no exception",
+          pd.isna(rs.grade_fixtures(fx, pd.DataFrame(), quiet=True)["over25_result"]).all())
+    check("results for the WRONG league never cross over",
+          pd.isna(rs.grade_fixtures(
+              pd.DataFrame({"league": ["Serie B"], "match": ["Barnsley vs Wigan"],
+                            "date": ["2026-08-16"]}), std, quiet=True)["over25_result"].iloc[0]))
 
 
 def _raises(fn) -> bool:

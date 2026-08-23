@@ -56,7 +56,7 @@ DETAIL_COLS = [
     "league", "model_type",
     "p_model", "p_market_entry", "residual", "abs_residual_pp", "entry_odds", "bet_side",
     "n_books", "market_prob_std", "market_prob_range", "previous_market_move_pp",
-    "close_ts", "p_market_close", "close_odds",
+    "close_ts", "close_minutes_to_kickoff", "window_min", "p_market_close", "close_odds",
     "market_move_pp", "signed_market_move_pp", "toward_wowza",
     "entry_fair_probability", "close_fair_probability",
     "clv_pct", "clv_quality", "quality_not_assessed",
@@ -154,6 +154,10 @@ def build() -> tuple[pd.DataFrame, pd.DataFrame]:
     # Dispersion fields the brief asks for. book_dispersion is the per-snapshot std of book
     # probabilities where captured; range is not stored, so it stays NULL rather than being
     # approximated from the std (which would fabricate a number that looks measured).
+    # Minutes from entry to close. Without it the time-to-kickoff table cannot be read: a
+    # late entry has almost no window left, so its small absolute movement is mechanical.
+    d["window_min"] = (pd.to_numeric(d["minutes_to_kickoff"], errors="coerce")
+                       - pd.to_numeric(d["close_minutes_to_kickoff"], errors="coerce"))
     d["market_prob_std"] = d.get("book_dispersion")
     d["market_prob_range"] = pd.NA
     d = _attach_results(d)
@@ -269,7 +273,11 @@ def report(detail: pd.DataFrame, e: pd.DataFrame) -> dict[str, pd.DataFrame]:
     print(f"\n=== by model type (fixture-level) ===")
     _print_table(by_model)
     print(f"\n=== by time to kickoff (snapshot-level, clustered) ===")
-    _print_table(by_time)
+    print("  NOTE: mean |move| SHRINKS toward kickoff because the WINDOW to the close shrinks")
+    print("  with it — a T-40m entry has ~34 minutes left. `per hour` is the comparable figure,")
+    print("  and it rises ~45x: the market moves far FASTER per unit time near kickoff. Reading")
+    print("  the absolute column alone states the opposite of the truth.")
+    _print_time_table(by_time)
     print(f"\n=== by league (fixture-level) ===")
     _print_table(by_league)
 
@@ -294,6 +302,8 @@ def _print_summary(s: mv.Summary) -> None:
     print(f"             median signed move: {s.median_signed_move_pp:+.3f}pp")
     print(f"             when correct      : {s.mean_move_when_correct_pp:+.3f}pp   "
           f"when wrong: {s.mean_move_when_wrong_pp:+.3f}pp")
+    print(f"             window to close   : {s.mean_window_min:.0f} min   "
+          f"signed move per hour: {s.signed_move_per_hour_pp:+.4f}pp")
     print(f"             mean |move|       : {s.mean_abs_move_pp:.3f}pp   "
           f"P(>=0.5pp) {_pct(s.p_move_ge_05pp)}  P(>=1pp) {_pct(s.p_move_ge_1pp)}  "
           f"P(>=2pp) {_pct(s.p_move_ge_2pp)}")
@@ -301,6 +311,23 @@ def _print_summary(s: mv.Summary) -> None:
           f"median {s.median_clv_pct:+.3f}%  positive {_pct(s.pct_positive_clv)}")
     print(f"             mean entry / close odds: {s.mean_entry_odds:.3f} / "
           f"{s.mean_close_odds:.3f}")
+
+
+def _print_time_table(df: pd.DataFrame) -> None:
+    if df.empty:
+        print("  (no rows)")
+        return
+    print(f"  {'bucket':<12} {'fix':>4} {'movd':>5} {'toward':>7} {'window':>9} "
+          f"{'mean signed':>12} {'per hour':>9} {'mean clv':>9}  status")
+    for _, r in df.iterrows():
+        ms, ph, cl, w = (r["mean_signed_move_pp"], r["signed_move_per_hour_pp"],
+                         r["mean_clv_pct"], r["mean_window_min"])
+        print(f"  {str(r['segment'])[:12]:<12} {int(r['n_fixtures']):>4} "
+              f"{int(r['n_moved']):>5} {_pct(r['toward_rate']):>7} "
+              f"{'      n/a' if pd.isna(w) else f'{w:>6.0f}min':>9} "
+              f"{'    n/a' if pd.isna(ms) else f'{ms:>+11.3f}':>12} "
+              f"{'   n/a' if pd.isna(ph) else f'{ph:>+8.3f}':>9} "
+              f"{'   n/a' if pd.isna(cl) else f'{cl:>+8.3f}':>9}  {r['sample_status']}")
 
 
 def _pct(v) -> str:

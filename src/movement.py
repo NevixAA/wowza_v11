@@ -320,6 +320,15 @@ class Summary:
     signed_ci_lo: float
     signed_ci_hi: float
     mean_abs_move_pp: float
+    # The window from entry to close, and movement normalised by it. WITHOUT THESE THE
+    # TIME-TO-KICKOFF TABLE IS UNREADABLE: an entry at T-40m has only ~34 minutes left before the
+    # close, so its small absolute movement is MECHANICAL, not a weak signal and not missing data.
+    # Measured 2026-08-23, mean window and mean |move| per bucket:
+    #     >24h  4143min 1.674pp (0.024/h) ... 30-60m  34min 0.616pp (1.100/h)
+    # i.e. the market moves ~45x FASTER per unit time near kickoff, while the absolute distance
+    # left to travel shrinks. Reading the raw column alone says the opposite of the truth.
+    mean_window_min: float
+    signed_move_per_hour_pp: float
     mean_move_when_correct_pp: float
     mean_move_when_wrong_pp: float
     p_move_ge_05pp: float
@@ -391,6 +400,17 @@ def summarise(d: pd.DataFrame, segment: str, unit: str) -> Summary:
     absmove = moved["market_move_pp"].abs()
     clv = moved["clv_pct"].dropna()
 
+    # Window from entry to close, and signed movement per hour of it. Rate is computed from the
+    # AGGREGATE (mean move / mean window) rather than as the mean of per-row rates: a row whose
+    # window is two minutes would otherwise contribute a per-hour rate in the tens and dominate
+    # the average, reporting a market velocity nothing observed.
+    window = (pd.to_numeric(moved.get("minutes_to_kickoff"), errors="coerce")
+              - pd.to_numeric(moved.get("close_minutes_to_kickoff"), errors="coerce")) \
+        if "close_minutes_to_kickoff" in moved.columns else pd.Series(dtype=float)
+    mean_win = float(window.mean()) if len(window) and window.notna().any() else float("nan")
+    per_hour = (float(sm.mean()) / (mean_win / 60.0)
+                if n and pd.notna(mean_win) and mean_win > 0 else float("nan"))
+
     def _f(x):
         return float(x) if pd.notna(x) else float("nan")
 
@@ -405,6 +425,9 @@ def summarise(d: pd.DataFrame, segment: str, unit: str) -> Summary:
         signed_ci_lo=round(s_lo, 4) if pd.notna(s_lo) else float("nan"),
         signed_ci_hi=round(s_hi, 4) if pd.notna(s_hi) else float("nan"),
         mean_abs_move_pp=round(_f(absmove.mean()), 4) if n else float("nan"),
+        mean_window_min=round(_f(window.mean()), 1) if n and window.notna().any()
+        else float("nan"),
+        signed_move_per_hour_pp=round(_f(per_hour), 4) if pd.notna(per_hour) else float("nan"),
         mean_move_when_correct_pp=round(_f(correct.mean()), 4) if len(correct) else float("nan"),
         mean_move_when_wrong_pp=round(_f(wrong.mean()), 4) if len(wrong) else float("nan"),
         p_move_ge_05pp=round(float((absmove >= 0.5).mean()), 4) if n else float("nan"),

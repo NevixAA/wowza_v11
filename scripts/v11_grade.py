@@ -83,15 +83,53 @@ def run():
     if not log_f.exists():
         print("[grade] no v11_shadow_log.csv yet — run v11_shadow first"); return
     log = pd.read_csv(log_f)
+
+    # ── RESULTS: actual goals FIRST, v9's tip ledger only as a fallback ──────────────────
+    #
+    # The ledger holds only fixtures v9 TIPPED, so grading from it settled 94/336 (28%) and left
+    # whole leagues at zero: League Two 0/24, Serie B 0/11, Ireland 0/5. That is not merely thin
+    # — the graded subset is CONDITIONED ON v9 having disagreed with the market enough to fire a
+    # tip, which is the very variable the movement research studies. Every ROI figure drawn from
+    # it was selected on the independent variable.
+    #
+    # football-data.co.uk publishes full results for every league v11 shadows, free and
+    # unauthenticated, so the conditioning is removable. The ledger is kept as a fallback rather
+    # than deleted: it covers a handful of API-Football-only competitions football-data does not
+    # carry, and losing those would trade one gap for another.
+    fd_lookup: dict = {}
+    try:
+        from src import results as rs
+        leagues = sorted(log["league"].dropna().astype(str).unique())
+        res = rs.fetch_results(leagues)
+        if not res.empty:
+            graded_fx = rs.grade_fixtures(
+                log[["league", "match", "date"]].drop_duplicates(), res)
+            for _, g in graded_fx.iterrows():
+                if pd.notna(g.get("over25_result")):
+                    fd_lookup[(str(g["league"]), str(g["match"]),
+                               str(g["date"])[:10])] = int(g["over25_result"])
+    except Exception as e:                                             # noqa: BLE001
+        print(f"[grade] football-data results unavailable ({type(e).__name__}: {e}); "
+              f"falling back to v9's tip ledger, which is SELECTION-BIASED")
+
     try:
         lookup = _result_lookup(_load_v9("bets_ledger.csv"))
     except Exception as e:
         print(f"[grade] could not load v9 results: {e}"); lookup = {}
 
+    n_fd = n_ledger = 0
     rows = []
     for _, r in log.iterrows():
         h, a = str(r.get("match", "")).split(" vs ", 1) if " vs " in str(r.get("match", "")) else ("", "")
-        over = lookup.get((_norm(h), _norm(a), str(r.get("date", ""))[:10]))
+        # Actual goals win. A ledger value is only consulted where football-data has nothing.
+        over = fd_lookup.get((str(r.get("league")), str(r.get("match")),
+                              str(r.get("date", ""))[:10]))
+        if over is not None:
+            n_fd += 1
+        else:
+            over = lookup.get((_norm(h), _norm(a), str(r.get("date", ""))[:10]))
+            if over is not None:
+                n_ledger += 1
         o_over, o_under = r.get("odds_over25"), r.get("odds_under25")
         v9 = _grade(r.get("live_side"), over, o_over, o_under) if str(r.get("live_tier")) in BET_TIERS else None
         v11 = _grade(r.get("v11_side"), over, o_over, o_under) if str(r.get("v11_tier")) in BET_TIERS else None
@@ -119,6 +157,14 @@ def run():
 
     n_res = int(graded["over25_result"].notna().sum())
     print(f"[grade] graded {n_res}/{len(graded)} fixtures with known results")
+    # Provenance split, printed every run. The ledger share is the part that carries selection
+    # bias, so a reader must be able to see how much of the sample still depends on it rather
+    # than having to trust that the fix worked.
+    print(f"[grade]   from actual results (football-data): {n_fd:,}")
+    print(f"[grade]   from v9 tip ledger (SELECTION-BIASED, fallback only): {n_ledger:,}")
+    if n_ledger and not n_fd:
+        print("[grade]   WARNING: every graded row came from the tip ledger. Result-based "
+              "figures are conditioned on v9 having tipped the fixture.")
     ov = sb_df[sb_df["scope"] == "overall"]
     for _, r in ov.iterrows():
         hit = f"{r['hit']}%" if r["hit"] is not None else "-"
