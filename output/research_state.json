@@ -1,132 +1,132 @@
 {
-  "generated_at": "2026-08-25T12:00:08Z",
-  "git_sha": "c30a46b5cd27",
+  "generated_at": "2026-08-25T13:17:22Z",
+  "git_sha": "357e5bffa066",
   "calculation_version": "1.0.0",
   "source": {
     "v11_graded.csv": {
       "rows": 521,
-      "max_observation_ts": null,
-      "file_mtime": "2026-08-25T11:57:48Z"
+      "max_observation_ts": "2026-08-25T13:17:14Z",
+      "file_mtime": "2026-08-25T13:17:14Z"
     },
     "v11_shadow_log.csv": {
       "rows": 521,
-      "max_observation_ts": "2026-08-25T09:55:42Z",
-      "file_mtime": "2026-08-25T10:34:42Z"
+      "max_observation_ts": "2026-08-25T13:16:55Z",
+      "file_mtime": "2026-08-25T13:16:56Z"
     },
     "v11_shadow_snapshots.csv": {
-      "rows": 33868,
-      "max_observation_ts": "2026-08-25T09:55:42Z",
-      "file_mtime": "2026-08-25T10:34:42Z"
+      "rows": 34743,
+      "max_observation_ts": "2026-08-25T13:16:55Z",
+      "file_mtime": "2026-08-25T13:16:56Z"
     }
   },
   "derived": {
     "v11_graded.csv": {
-      "generated_at": "2026-08-25T11:57:48Z",
-      "source_max_ts": "2026-08-25T09:55:42Z",
-      "lag_hours": -2.04,
+      "generated_at": "2026-08-25T13:17:14Z",
+      "source_max_ts": "2026-08-25T13:16:55Z",
+      "lag_hours": -0.01,
       "sources": [
         "v11_shadow_log.csv"
       ],
-      "source_advanced_since_last_state": false,
+      "source_advanced_since_last_state": true,
       "freshness": "PASS",
-      "why": "source has not advanced; unchanged derived output is correct"
+      "why": "derived output -0.0h behind its source"
     },
     "v11_market_movement_detail.csv": {
-      "generated_at": "2026-08-25T11:59:21Z",
-      "source_max_ts": "2026-08-25T09:55:42Z",
-      "lag_hours": -2.06,
+      "generated_at": "2026-08-25T13:17:22Z",
+      "source_max_ts": "2026-08-25T13:16:55Z",
+      "lag_hours": -0.01,
       "sources": [
         "v11_shadow_snapshots.csv"
       ],
-      "source_advanced_since_last_state": false,
+      "source_advanced_since_last_state": true,
       "freshness": "PASS",
-      "why": "source has not advanced; unchanged derived output is correct"
+      "why": "derived output -0.0h behind its source"
     },
     "v11_movement_by_league.csv": {
-      "generated_at": "2026-08-25T11:59:21Z",
-      "source_max_ts": "2026-08-25T09:55:42Z",
-      "lag_hours": -2.06,
+      "generated_at": "2026-08-25T13:17:22Z",
+      "source_max_ts": "2026-08-25T13:16:55Z",
+      "lag_hours": -0.01,
       "sources": [
         "v11_shadow_snapshots.csv"
       ],
-      "source_advanced_since_last_state": false,
+      "source_advanced_since_last_state": true,
       "freshness": "PASS",
-      "why": "source has not advanced; unchanged derived output is correct"
+      "why": "derived output -0.0h behind its source"
     },
     "v11_movement_by_model.csv": {
-      "generated_at": "2026-08-25T11:59:21Z",
-      "source_max_ts": "2026-08-25T09:55:42Z",
-      "lag_hours": -2.06,
+      "generated_at": "2026-08-25T13:17:22Z",
+      "source_max_ts": "2026-08-25T13:16:55Z",
+      "lag_hours": -0.01,
       "sources": [
         "v11_shadow_snapshots.csv"
       ],
-      "source_advanced_since_last_state": false,
+      "source_advanced_since_last_state": true,
       "freshness": "PASS",
-      "why": "source has not advanced; unchanged derived output is correct"
+      "why": "derived output -0.0h behind its source"
     },
     "v11_movement_by_residual.csv": {
-      "generated_at": "2026-08-25T11:59:21Z",
-      "source_max_ts": "2026-08-25T09:55:42Z",
-      "lag_hours": -2.06,
+      "generated_at": "2026-08-25T13:17:22Z",
+      "source_max_ts": "2026-08-25T13:16:55Z",
+      "lag_hours": -0.01,
       "sources": [
         "v11_shadow_snapshots.csv"
       ],
-      "source_advanced_since_last_state": false,
+      "source_advanced_since_last_state": true,
       "freshness": "PASS",
-      "why": "source has not advanced; unchanged derived output is correct"
+      "why": "derived output -0.0h behind its source"
     },
     "v11_movement_by_time.csv": {
-      "generated_at": "2026-08-25T11:59:21Z",
-      "source_max_ts": "2026-08-25T09:55:42Z",
-      "lag_hours": -2.06,
+      "generated_at": "2026-08-25T13:17:22Z",
+      "source_max_ts": "2026-08-25T13:16:55Z",
+      "lag_hours": -0.01,
       "sources": [
         "v11_shadow_snapshots.csv"
       ],
-      "source_advanced_since_last_state": false,
+      "source_advanced_since_last_state": true,
       "freshness": "PASS",
-      "why": "source has not advanced; unchanged derived output is correct"
+      "why": "derived output -0.0h behind its source"
     },
     "v11_movement_summary.csv": {
-      "generated_at": "2026-08-25T11:59:21Z",
-      "source_max_ts": "2026-08-25T09:55:42Z",
-      "lag_hours": -2.06,
+      "generated_at": "2026-08-25T13:17:22Z",
+      "source_max_ts": "2026-08-25T13:16:55Z",
+      "lag_hours": -0.01,
       "sources": [
         "v11_shadow_snapshots.csv"
       ],
-      "source_advanced_since_last_state": false,
+      "source_advanced_since_last_state": true,
       "freshness": "PASS",
-      "why": "source has not advanced; unchanged derived output is correct"
+      "why": "derived output -0.0h behind its source"
     },
     "v11_residual.csv": {
-      "generated_at": "2026-08-25T11:56:29Z",
-      "source_max_ts": "2026-08-25T09:55:42Z",
-      "lag_hours": -2.01,
+      "generated_at": "2026-08-25T13:17:16Z",
+      "source_max_ts": "2026-08-25T13:17:14Z",
+      "lag_hours": -0.0,
       "sources": [
         "v11_shadow_log.csv",
         "v11_graded.csv"
       ],
-      "source_advanced_since_last_state": false,
+      "source_advanced_since_last_state": true,
       "freshness": "PASS",
-      "why": "source has not advanced; unchanged derived output is correct"
+      "why": "derived output -0.0h behind its source"
     },
     "v11_scoreboard.csv": {
-      "generated_at": "2026-08-25T11:57:48Z",
-      "source_max_ts": null,
-      "lag_hours": null,
+      "generated_at": "2026-08-25T13:17:14Z",
+      "source_max_ts": "2026-08-25T13:17:14Z",
+      "lag_hours": 0.0,
       "sources": [
         "v11_graded.csv"
       ],
-      "source_advanced_since_last_state": false,
-      "freshness": "WARN",
-      "why": "cannot judge freshness: the SOURCE has no usable write timestamp yet (it gains generated_at on its next CI write); this artifact itself is dated and present"
+      "source_advanced_since_last_state": true,
+      "freshness": "PASS",
+      "why": "derived output 0.0h behind its source"
     }
   },
   "counts": {
-    "movement_observations": 33094,
-    "movement_fixtures": 366,
-    "movement_summary_fixture_n": 363,
-    "movement_clv_n": 300,
-    "residual_n": 194,
+    "movement_observations": 33969,
+    "movement_fixtures": 367,
+    "movement_summary_fixture_n": 364,
+    "movement_clv_n": 305,
+    "residual_n": 343,
     "graded_settled": 521
   }
 }
