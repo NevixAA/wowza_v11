@@ -1,31 +1,31 @@
 {
-  "generated_at": "2026-08-25T19:06:18Z",
-  "git_sha": "de3a6fbb7f5b",
+  "generated_at": "2026-08-25T19:54:16Z",
+  "git_sha": "f668d16c977b",
   "calculation_version": "1.0.0",
   "raw": {
-    "snapshots_rows": 35967,
-    "latest_snapshot_ts": "2026-08-25T19:05:50Z"
+    "snapshots_rows": 36142,
+    "latest_snapshot_ts": "2026-08-25T19:53:45Z"
   },
   "grading": {
     "graded_rows": 522,
-    "latest_result_ts": "2026-08-25T19:06:09Z"
+    "latest_result_ts": "2026-08-25T19:54:07Z"
   },
   "movement": {
-    "n_distinct_observations": 35192,
+    "n_distinct_observations": 35367,
     "n_fixtures": 368,
     "published_fixture_n": 365,
-    "toward_rate": 0.5902,
-    "mean_signed_move_pp": 0.6435,
-    "clv_n": 305,
-    "mean_clv_pct": 0.5817,
-    "derived_generated_at": "2026-08-25T19:06:17Z",
+    "toward_rate": 0.5882,
+    "mean_signed_move_pp": 0.6605,
+    "clv_n": 306,
+    "mean_clv_pct": 0.5848,
+    "derived_generated_at": "2026-08-25T19:54:15Z",
     "lag_hours": -0.01,
     "freshness_status": "PASS",
     "delta_fixtures_since_previous": 0
   },
   "residual": {
     "n_fixtures": 344,
-    "derived_generated_at": "2026-08-25T19:06:11Z",
+    "derived_generated_at": "2026-08-25T19:54:09Z",
     "lag_hours": -0.0,
     "freshness_status": "PASS",
     "delta_n_since_previous": 0
