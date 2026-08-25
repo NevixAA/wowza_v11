@@ -74,7 +74,21 @@ jobs:
       # Does the market move TOWARD Wowza when they disagree (Prompt 3 section 16)? Only
       # computable since the snapshot history stopped being deleted every 30 minutes.
       - name: Market movement vs initial disagreement
+        id: movement
         run: python scripts/v11_market_movement.py
+
+      # FAIL LOUDLY (brief section 12). Raw collection succeeding while derived research stays
+      # frozen is exactly the failure this whole change addresses, and for two days it presented
+      # as a fully green workflow. The research clock compares each derived artifact's
+      # generated_at against its source's newest observation, so "no new eligible data" and
+      # "the analysis did not refresh" are distinguishable rather than both looking like an
+      # unchanged file.
+      #
+      # Runs BEFORE the commit so the state files are committed with everything else, and is
+      # NOT continue-on-error: a stale-research verdict must colour the run.
+      - name: Research freshness clock
+        id: research_clock
+        run: python -m src.research_state
 
       - name: Commit logs
         run: |
@@ -82,11 +96,35 @@ jobs:
           git config user.email "github-actions[bot]@users.noreply.github.com"
           # v11_shadow_snapshots.csv is the append-only research history and MUST be committed
           # — it is the season's actual product.
+          # THE DERIVED MOVEMENT FILES WERE MISSING FROM THIS LIST — the root cause of stale
+          # research (found 2026-08-25). The movement script was rewritten on 08-23 to emit six
+          # files instead of one, and this list was never updated, so CI recomputed all six on
+          # every run for two days and then DISCARDED them:
+          #
+          #     raw snapshots           last commit 2026-08-25 09:56  (CI, current)
+          #     the six movement files  last commit 2026-08-23 14:01  (me, by hand)
+          #
+          # It also still staged output/v11_market_movement.csv, a filename the rewritten script
+          # no longer writes — so the list pointed at a dead file while omitting the live ones.
+          # Nothing failed: `git add -f` on an unchanged path is a no-op, `|| true` swallowed it,
+          # and the workflow went green with fresh raw data and frozen conclusions.
+          #
+          # Adding a new derived output now means adding it HERE. research_state.json is the
+          # guard against forgetting again: it records every derived file's generated_at, and the
+          # freshness contract fails when one lags its source.
           for f in output/v11_shadow_snapshots.csv output/v11_shadow_log.csv \
                    output/v11_graded.csv output/v11_scoreboard.csv output/v11_residual.csv \
-                   output/v11_evidence.json output/v11_market_movement.csv; do
-            git add -f "$f" 2>/dev/null || true
+                   output/v11_evidence.json \
+                   output/v11_market_movement_detail.csv \
+                   output/v11_movement_summary.csv \
+                   output/v11_movement_by_residual.csv \
+                   output/v11_movement_by_model.csv \
+                   output/v11_movement_by_time.csv \
+                   output/v11_movement_by_league.csv \
+                   output/v11_research_health.json output/research_state.json; do
+            git add -f "$f" 2>/dev/null || echo "  (skip, not present: $f)"
           done
+          echo "staged: $(git diff --staged --name-only | wc -l) file(s)"
           git diff --staged --quiet || \
             git commit -m "auto: v11 collect+grade $(date -u '+%Y-%m-%d %H:%M UTC')"
           # A push failure used to be swallowed by `|| echo "nothing to push"`, so a run that
@@ -97,3 +135,24 @@ jobs:
           done
           echo "::error title=V11 push failed::Snapshots were collected but not persisted."
           exit 1
+
+      # LAST, and deliberately AFTER the commit. Placed before it, a stale verdict exited
+      # non-zero and the commit step never ran — so the freshly collected snapshots were
+      # DISCARDED as a side effect of reporting that the analysis was stale. Odds snapshots
+      # cannot be re-collected, so persisting always comes first; the run still goes red.
+      - name: Fail the run if research did not refresh
+        if: always() && steps.research_clock.outcome == 'success'
+        run: |
+          python - <<'PY'
+          import json, sys
+          h = json.load(open("output/v11_research_health.json", encoding="utf-8"))
+          print(f"research health: {h['overall']}")
+          for c in h.get("checks", []):
+              if c["status"] != "PASS":
+                  print(f"  [{c['status']}] {c['artifact']}: {c['why']}")
+          if h["overall"] == "FAIL":
+              # ::error makes it visible in the run summary, not just buried in a log.
+              print("::error title=V11 research stale::Raw collection advanced but derived "
+                    "research did not refresh. See output/v11_research_health.json")
+              sys.exit(1)
+          PY

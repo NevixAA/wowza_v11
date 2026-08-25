@@ -198,6 +198,7 @@ def main() -> int:
 
     _movement_checks()
     _results_checks()
+    _freshness_checks()
 
     print(f"\n{'FAILED: ' + ', '.join(FAILS) if FAILS else 'all checks passed'}")
     return 1 if FAILS else 0
@@ -434,6 +435,94 @@ def _movement_checks() -> None:
     check("mean move when wrong is large", abs(s.mean_move_when_wrong_pp + 5.0) < 1e-9)
     check("P(|move| >= 1pp) reported", abs(s.p_move_ge_1pp - 0.25) < 1e-9, str(s.p_move_ge_1pp))
     check("n_fixtures counts fixtures, not rows", s.n_fixtures == 4, str(s.n_fixtures))
+
+
+def _freshness_checks() -> None:
+    """The research clock (brief section 19).
+
+    Every check here encodes a way the 2026-08-25 failure could recur: raw data advancing while
+    derived research stays frozen, presenting as a fully green workflow.
+    """
+    from src import research_state as rs
+
+    print("\n== research clock: the core distinction ==")
+    # "No new eligible data" vs "analysis failed to refresh" — both look like an unchanged file.
+    st, why = rs._verdict(48.0, False)
+    check("source did NOT advance -> unchanged derived output is PASS", st == "PASS", why)
+    check("...and the reason says so", "has not advanced" in why)
+    st, why = rs._verdict(48.0, True)
+    check("source ADVANCED and derived is 48h behind -> FAIL", st == "FAIL", why)
+    check("...and the reason names the refresh failure", "not refreshing" in why)
+    check("13h behind with an advancing source -> WARN",
+          rs._verdict(13.0, True)[0] == "WARN")
+    check("2h behind with an advancing source -> PASS",
+          rs._verdict(2.0, True)[0] == "PASS")
+    check("thresholds cannot fire on one skipped 30-min run",
+          rs.LAG_WARN_H >= 1.0 and rs.LAG_FAIL_H > rs.LAG_WARN_H,
+          f"warn {rs.LAG_WARN_H} fail {rs.LAG_FAIL_H}")
+    # Blame attribution: the derived file vs its source.
+    check("an undated DERIVED artifact FAILs and says so",
+          rs._verdict(None, True, derived_dated=False)[0] == "FAIL")
+    check("an undated SOURCE is a WARN blamed on the SOURCE",
+          rs._verdict(None, True, derived_dated=True, source_dated=False)[0] == "WARN"
+          and "SOURCE" in rs._verdict(None, True, source_dated=False)[1])
+
+    print("\n== research clock: derivation graph is complete ==")
+    for f in ("v11_movement_summary.csv", "v11_market_movement_detail.csv",
+              "v11_movement_by_residual.csv", "v11_movement_by_model.csv",
+              "v11_movement_by_time.csv", "v11_movement_by_league.csv",
+              "v11_residual.csv", "v11_scoreboard.csv"):
+        check(f"{f} declares its sources", f in rs.DERIVATION and bool(rs.DERIVATION[f]))
+    check("no source is keyed on a FIXTURE date",
+          "date" not in rs.SOURCE_TS_COL.values(),
+          "keying v11_graded on `date` reported a FUTURE newest-observation and made every "
+          "downstream artifact look 133h stale")
+
+    print("\n== research clock: every derived file is in the workflow commit list ==")
+    wf = Path(PROJ / ".github" / "workflows" / "v11_collect.yml").read_text(encoding="utf-8")
+    # Only the actual `for f in ... ; do` list, NOT the surrounding comments. My first version
+    # searched the whole commit block and failed on the explanatory comment that NAMES the dead
+    # file it was checking for — a test that reads prose as configuration.
+    _blk = wf[wf.index("- name: Commit logs"):]
+    _for = _blk[_blk.index("for f in"):_blk.index("; do")]
+    commit_block = " ".join(
+        tok for tok in _for.replace("\\", " ").split() if tok.startswith("output/"))
+    for f in rs.DERIVATION:
+        check(f"workflow commits {f}", f in commit_block,
+              "THE ROOT CAUSE: a derived file computed but never staged is recomputed and "
+              "discarded on every run")
+    for f in ("v11_research_health.json", "research_state.json"):
+        check(f"workflow commits {f}", f in commit_block)
+    check("the dead v11_market_movement.csv is no longer staged",
+          "v11_market_movement.csv" not in commit_block.replace(
+              "v11_market_movement_detail.csv", ""),
+          "the rewritten script no longer writes it")
+
+    print("\n== research clock: sample size is DEDUPED, never a raw row count ==")
+    src = Path(PROJ / "src" / "research_state.py").read_text(encoding="utf-8")
+    check("observation count dedupes on snapshot_id", "drop_duplicates(\"snapshot_id\"" in src)
+    check("...keeping the latest ingest", 'keep="last"' in src)
+
+    print("\n== monotonicity + local-downgrade guard ==")
+    sys.path.insert(0, str(PROJ / "scripts"))
+    from v11_grade import _sample_size
+    import pandas as _pd
+    # over25_result is the meaningful size for graded, NOT the row count.
+    g = _pd.DataFrame({"over25_result": [1, 0, None, None], "match": list("abcd")})
+    check("graded sample size counts SETTLED rows, not all rows", _sample_size(g, "x") == 2,
+          str(_sample_size(g, "x")))
+    check("residual sample size is the overall scope's n",
+          _sample_size(_pd.DataFrame({"scope": ["overall", "L1"], "n": [344, 10]}), "x") == 344)
+    check("a frame with neither falls back to row count",
+          _sample_size(_pd.DataFrame({"x": [1, 2, 3]}), "x") == 3)
+    check("an empty frame has no comparable size",
+          _sample_size(_pd.DataFrame(), "x") is None)
+    check("mixed True/1 and False/0 result encodings both parse",
+          [__import__("v11_residual")._as_bool(v) for v in ("True", "1", "False", "0", 1.0, 0.0)]
+          == [True, True, False, False, True, False],
+          "int('True') raised in the first version")
+    check("an unrecognised result is EXCLUDED, not coerced",
+          __import__("v11_residual")._as_bool("maybe") is None)
 
 
 def _results_checks() -> None:

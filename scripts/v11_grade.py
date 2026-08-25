@@ -25,6 +25,89 @@ sys.path.insert(0, str(PROJ / "scripts"))
 import config
 from v11_shadow import _load_v9   # reuse the v9-public-data reader
 
+# PROVENANCE + ATOMIC WRITE for derived research artifacts.
+#
+# `generated_at` is stamped as a COLUMN, not left to the file mtime: `git checkout` resets mtime,
+# so on a fresh CI runner every artifact would look seconds old and a staleness check could never
+# fire. The column survives the checkout.
+#
+# Written temp -> read back -> os.replace, so an interrupted run leaves the previous good file
+# rather than a half-written CSV that pandas will happily parse as short.
+def _read_or_none(p):
+    import pandas as _pd
+    try:
+        return _pd.read_csv(p)
+    except Exception:
+        return None
+
+
+def _sample_size(df, name: str):
+    """The artifact's MEANINGFUL sample size, not its row count.
+
+    The first version of the shrink guard compared len(df) and never fired: v11_graded.csv has one
+    row per logged fixture (521) whether or not a result is known, so a collapse from 344 SETTLED
+    fixtures to 186 left the row count untouched. Row count is the wrong measure for every file
+    whose rows are placeholders until an outcome arrives.
+    """
+    if df is None or len(df) == 0:
+        return None
+    if "over25_result" in df.columns:
+        return int(df["over25_result"].notna().sum())
+    if {"scope", "n"} <= set(df.columns):
+        r = df[df["scope"] == "overall"]
+        if not r.empty:
+            try:
+                return int(r["n"].iloc[0])
+            except Exception:
+                pass
+    return len(df)
+
+
+def _write_derived(df, name: str, *, allow_shrink: bool = False):
+    """Stamp provenance, refuse a local downgrade, then write atomically.
+
+    THE LOCAL-DOWNGRADE GUARD, added after I caused exactly this. Running v11_grade.py on a
+    laptop that cannot reach football-data.co.uk falls back to v9's tip ledger and REWRITES
+    v11_graded.csv with a strictly worse sample — measured: 344 settled fixtures -> 186. CI can
+    reach football-data; a laptop generally cannot. So a local run silently replaced good CI
+    output with degraded output, and every downstream analysis then inherited the smaller sample.
+
+    Outside CI, a write that would SHRINK an existing artifact is refused. In CI it is allowed
+    (a real methodology change may legitimately reduce n) but printed, so section 7's
+    monotonicity contract is visible rather than assumed.
+    """
+    import os
+    import pandas as _pd
+    out = df.copy()
+    out["generated_at"] = _pd.Timestamp.now(tz="UTC").strftime("%Y-%m-%dT%H:%M:%SZ")
+    out["calculation_version"] = "1.0.0"
+    p = config.OUTPUT_DIR / name
+    p.parent.mkdir(parents=True, exist_ok=True)
+
+    in_ci = os.getenv("GITHUB_ACTIONS", "").lower() == "true"
+    if p.exists() and not allow_shrink:
+        prev_n, new_n = _sample_size(_read_or_none(p), name), _sample_size(out, name)
+        if prev_n is not None and new_n is not None and new_n < prev_n:
+            msg = f"{name}: would shrink sample {prev_n} -> {new_n}"
+            if not in_ci and os.getenv("V11_ALLOW_SHRINK") != "1":
+                raise RuntimeError(
+                    f"refusing local downgrade: {msg}. A local run often has less data than CI "
+                    f"(football-data.co.uk is unreachable from many networks), so this would "
+                    f"replace good CI output with a worse sample. Set V11_ALLOW_SHRINK=1 only if "
+                    f"the reduction is a deliberate methodology change.")
+            print(f"[write] MONOTONICITY WARNING {msg} (allowed in CI; record why)")
+
+    tmp = p.with_suffix(p.suffix + ".tmp")
+    out.to_csv(tmp, index=False)
+    back = _pd.read_csv(tmp)
+    if len(back) != len(out):
+        tmp.unlink(missing_ok=True)
+        raise ValueError(f"{name}: wrote {len(out)} rows, read back {len(back)}")
+    os.replace(tmp, p)
+    return p
+
+
+
 BET_TIERS = {"SNIPER", "MARKSMAN", "VALUABLE"}
 
 
@@ -142,7 +225,7 @@ def run():
             "v11_pnl": v11["pnl"] if v11 else None,
         })
     graded = pd.DataFrame(rows)
-    graded.to_csv(config.OUTPUT_DIR / "v11_graded.csv", index=False)
+    _write_derived(graded, "v11_graded.csv")
 
     # ── scoreboard: overall + per month ──
     sb = []
@@ -153,7 +236,7 @@ def run():
         sb.append({"scope": scope, "system": "v9", **v9a})
         sb.append({"scope": scope, "system": "v11", **v11a})
     sb_df = pd.DataFrame(sb)
-    sb_df.to_csv(config.OUTPUT_DIR / "v11_scoreboard.csv", index=False)
+    _write_derived(sb_df, "v11_scoreboard.csv")
 
     n_res = int(graded["over25_result"].notna().sum())
     print(f"[grade] graded {n_res}/{len(graded)} fixtures with known results")

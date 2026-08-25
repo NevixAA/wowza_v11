@@ -5,3 +5,5 @@ __pycache__/
 .api_keys
 # local v9-data overrides used only for offline testing (CI fetches from GitHub)
 output/_v9_*
+!output/research_state.json
+!output/v11_research_health.json

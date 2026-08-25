@@ -1,0 +1,91 @@
+{
+  "generated_at": "2026-08-25T12:00:08Z",
+  "git_sha": "c30a46b5cd27",
+  "calculation_version": "1.0.0",
+  "raw": {
+    "snapshots_rows": 33868,
+    "latest_snapshot_ts": "2026-08-25T09:55:42Z"
+  },
+  "grading": {
+    "graded_rows": 521,
+    "latest_result_ts": null
+  },
+  "movement": {
+    "n_distinct_observations": 33094,
+    "n_fixtures": 366,
+    "published_fixture_n": 363,
+    "toward_rate": 0.58,
+    "mean_signed_move_pp": 0.6105,
+    "clv_n": 300,
+    "mean_clv_pct": 0.5328,
+    "derived_generated_at": "2026-08-25T11:59:21Z",
+    "lag_hours": -2.06,
+    "freshness_status": "PASS",
+    "delta_fixtures_since_previous": 0
+  },
+  "residual": {
+    "n_fixtures": 194,
+    "derived_generated_at": "2026-08-25T11:56:29Z",
+    "lag_hours": -2.01,
+    "freshness_status": "PASS",
+    "delta_n_since_previous": 0
+  },
+  "monotonicity_warnings": [],
+  "checks": [
+    {
+      "artifact": "v11_graded.csv",
+      "status": "PASS",
+      "lag_hours": -2.04,
+      "why": "source has not advanced; unchanged derived output is correct"
+    },
+    {
+      "artifact": "v11_market_movement_detail.csv",
+      "status": "PASS",
+      "lag_hours": -2.06,
+      "why": "source has not advanced; unchanged derived output is correct"
+    },
+    {
+      "artifact": "v11_movement_by_league.csv",
+      "status": "PASS",
+      "lag_hours": -2.06,
+      "why": "source has not advanced; unchanged derived output is correct"
+    },
+    {
+      "artifact": "v11_movement_by_model.csv",
+      "status": "PASS",
+      "lag_hours": -2.06,
+      "why": "source has not advanced; unchanged derived output is correct"
+    },
+    {
+      "artifact": "v11_movement_by_residual.csv",
+      "status": "PASS",
+      "lag_hours": -2.06,
+      "why": "source has not advanced; unchanged derived output is correct"
+    },
+    {
+      "artifact": "v11_movement_by_time.csv",
+      "status": "PASS",
+      "lag_hours": -2.06,
+      "why": "source has not advanced; unchanged derived output is correct"
+    },
+    {
+      "artifact": "v11_movement_summary.csv",
+      "status": "PASS",
+      "lag_hours": -2.06,
+      "why": "source has not advanced; unchanged derived output is correct"
+    },
+    {
+      "artifact": "v11_residual.csv",
+      "status": "PASS",
+      "lag_hours": -2.01,
+      "why": "source has not advanced; unchanged derived output is correct"
+    },
+    {
+      "artifact": "v11_scoreboard.csv",
+      "status": "WARN",
+      "lag_hours": null,
+      "why": "cannot judge freshness: the SOURCE has no usable write timestamp yet (it gains generated_at on its next CI write); this artifact itself is dated and present"
+    }
+  ],
+  "overall": "WARN"
+}
