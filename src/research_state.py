@@ -70,6 +70,14 @@ DERIVATION = {
     "v11_residual.csv": ("v11_shadow_log.csv", "v11_graded.csv"),
     "v11_scoreboard.csv": ("v11_graded.csv",),
     "v11_graded.csv": ("v11_shadow_log.csv",),
+    # Microstructure. Registered HERE rather than only in the workflow's staging list, because
+    # this map drives two things at once: the commit-list test in scripts/v11_tests.py and the
+    # freshness clock below. A derived file that is only added to the workflow gets staged but
+    # never checked for staleness — which is the half-fix that let the six movement files sit
+    # two days behind their source while the run stayed green.
+    "v11_market_microstructure.csv": ("v11_shadow_snapshots.csv",),
+    "v11_microstructure_segments.csv": ("v11_shadow_snapshots.csv",),
+    "v11_microstructure_coverage.csv": ("v11_shadow_snapshots.csv",),
 }
 
 # Where each source's "newest observation" timestamp comes from.

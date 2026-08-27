@@ -77,6 +77,13 @@ jobs:
         id: movement
         run: python scripts/v11_market_movement.py
 
+      # Microstructure: backward-looking price context (velocity, momentum, dispersion) with
+      # every segment scored against a model-free placebo. Runs AFTER the movement step because
+      # it joins onto v11_market_movement_detail.csv by snapshot_id.
+      - name: Market microstructure + placebo controls
+        id: microstructure
+        run: python scripts/v11_microstructure.py
+
       # FAIL LOUDLY (brief section 12). Raw collection succeeding while derived research stays
       # frozen is exactly the failure this whole change addresses, and for two days it presented
       # as a fully green workflow. The research clock compares each derived artifact's
@@ -121,6 +128,9 @@ jobs:
                    output/v11_movement_by_model.csv \
                    output/v11_movement_by_time.csv \
                    output/v11_movement_by_league.csv \
+                   output/v11_market_microstructure.csv \
+                   output/v11_microstructure_segments.csv \
+                   output/v11_microstructure_coverage.csv \
                    output/v11_research_health.json output/research_state.json; do
             git add -f "$f" 2>/dev/null || echo "  (skip, not present: $f)"
           done

@@ -198,10 +198,142 @@ def main() -> int:
 
     _movement_checks()
     _results_checks()
+    _microstructure_checks()
     _freshness_checks()
 
     print(f"\n{'FAILED: ' + ', '.join(FAILS) if FAILS else 'all checks passed'}")
     return 1 if FAILS else 0
+
+
+def _microstructure_checks() -> None:
+    """Microstructure must be strictly BACKWARD-looking and must refuse to invent history.
+
+    Every check here is a defect that was either found during development or would silently
+    produce a plausible wrong number. Deterministic: no network, no randomness, no real files.
+    """
+    import numpy as np
+    import src.microstructure as ms
+
+    print("")
+    print("== microstructure ==")
+
+    def frame(prices, gaps_min, fid="F1", **extra):
+        """Synthetic fixture: prices at cumulative gaps, oldest first."""
+        ts = pd.Timestamp("2026-08-01T00:00:00Z")
+        rows = []
+        t = ts
+        for i, (pr, g) in enumerate(zip(prices, gaps_min)):
+            t = t + pd.Timedelta(minutes=g)
+            rows.append({"fixture_id": fid, "snapshot_id": f"{fid}-{i}",
+                         "snapshot_ts": t.strftime("%Y-%m-%dT%H:%M:%SZ"),
+                         "v11_p_market": pr, "minutes_to_kickoff": 600 - 0 * i,
+                         "n_books": extra.get("n_books", 8)})
+        return pd.DataFrame(rows)
+
+    # ── first snapshot must be NaN, never 0.0 ────────────────────────────────
+    d = ms.compute(frame([0.50, 0.52, 0.55], [0, 60, 60]))
+    check("first snapshot last_move_pp is NaN, not 0.0",
+          bool(pd.isna(d["last_move_pp"].iloc[0])), str(d["last_move_pp"].iloc[0]))
+    check("first snapshot move_from_open_pp is NaN too",
+          bool(pd.isna(d["move_from_open_pp"].iloc[0])))
+    check("second snapshot last_move_pp is +2.0pp",
+          abs(float(d["last_move_pp"].iloc[1]) - 2.0) < 1e-9,
+          str(d["last_move_pp"].iloc[1]))
+    check("move_from_open accumulates (+5.0pp by the third)",
+          abs(float(d["move_from_open_pp"].iloc[2]) - 5.0) < 1e-9,
+          str(d["move_from_open_pp"].iloc[2]))
+
+    # ── velocity is per HOUR, and refuses a too-short base ───────────────────
+    # 0.50 -> 0.53 over 120 minutes = +3pp / 2h = +1.5 pp/h
+    d = ms.compute(frame([0.50, 0.53], [0, 120]))
+    check("velocity_3h is pp per HOUR (+1.5 over 2h)",
+          abs(float(d["velocity_3h"].iloc[1]) - 1.5) < 1e-6,
+          str(d["velocity_3h"].iloc[1]))
+
+    # Two points 20 minutes apart must NOT yield a 6h velocity: extrapolating a 20-minute
+    # base across 6 hours multiplies it 18x and would dominate any distribution it entered.
+    d = ms.compute(frame([0.50, 0.56], [0, 20]))
+    check("a 20-minute base yields NO velocity_6h",
+          bool(pd.isna(d["velocity_6h"].iloc[1])), str(d["velocity_6h"].iloc[1]))
+    # ...and not velocity_1h either: 20 minutes is under HALF of the 60-minute window, so the
+    # same rule rejects it. The original expectation here was wrong, not the code.
+    check("a 20-minute base also fails the 1h window (needs >=30min)",
+          bool(pd.isna(d["velocity_1h"].iloc[1])), str(d["velocity_1h"].iloc[1]))
+    d40 = ms.compute(frame([0.50, 0.56], [0, 40]))
+    check("a 40-minute base DOES yield velocity_1h",
+          bool(pd.notna(d40["velocity_1h"].iloc[1])), str(d40["velocity_1h"].iloc[1]))
+
+    # ── velocity_30m is unavailable BY DESIGN, not by accident ───────────────
+    d = ms.compute(frame([0.50, 0.51, 0.52], [0, 45, 45]))
+    check("velocity_30m present as a column",
+          "velocity_30m" in d.columns)
+    check("velocity_30m is entirely null (median poll gap exceeds the window)",
+          int(d["velocity_30m"].notna().sum()) == 0)
+
+    # ── change counting uses the shared threshold, and counts polls ──────────
+    # moves of +0.1pp (below MIN_MOVE_PP) must not count as changes
+    d = ms.compute(frame([0.500, 0.501, 0.502], [0, 60, 60]))
+    check("a sub-threshold drift is not counted as a price change",
+          int(d["n_price_changes"].iloc[-1]) == 0, str(d["n_price_changes"].iloc[-1]))
+    d = ms.compute(frame([0.50, 0.53, 0.56], [0, 60, 60]))
+    check("supra-threshold moves are counted",
+          int(d["n_price_changes"].iloc[-1]) == 2, str(d["n_price_changes"].iloc[-1]))
+    check("n_polls_seen travels alongside so 0 changes on 2 polls is distinguishable",
+          int(d["n_polls_seen"].iloc[-1]) == 2, str(d["n_polls_seen"].iloc[-1]))
+
+    # ── reversals ────────────────────────────────────────────────────────────
+    d = ms.compute(frame([0.50, 0.54, 0.50, 0.54], [0, 60, 60, 60]))
+    check("direction reversals counted (up, down, up -> 2)",
+          int(d["reversal_count"].iloc[-1]) == 2, str(d["reversal_count"].iloc[-1]))
+    d = ms.compute(frame([0.50, 0.54, 0.58, 0.62], [0, 60, 60, 60]))
+    check("a monotone path has 0 reversals",
+          int(d["reversal_count"].iloc[-1]) == 0, str(d["reversal_count"].iloc[-1]))
+
+    # ── NO FORWARD LEAKAGE: the property the whole study rests on ───────────
+    base = frame([0.50, 0.52, 0.54, 0.56, 0.58], [0, 60, 60, 60, 60])
+    alt = base.copy()
+    alt.loc[3:, "v11_p_market"] = [0.95, 0.05]          # corrupt the future only
+    a, b = ms.compute(base), ms.compute(alt)
+    early = ["velocity_1h", "velocity_3h", "move_from_open_pp", "last_move_pp",
+             "n_price_changes", "reversal_count"]
+    same = all(
+        (pd.isna(a[c].iloc[i]) and pd.isna(b[c].iloc[i])) or
+        abs(float(a[c].iloc[i]) - float(b[c].iloc[i])) < 1e-9
+        for c in early for i in range(3))
+    check("corrupting FUTURE prices leaves earlier rows bit-identical (no leakage)", same)
+
+    # ── trend_alignment must not fold UNKNOWN into FLAT ──────────────────────
+    ta = ms.trend_alignment([5.0, 5.0, 5.0, 5.0], [None, 0.0, 2.0, -2.0])
+    check("no prior observation -> UNKNOWN, not MARKET_FLAT",
+          ta.iloc[0] == "UNKNOWN", ta.iloc[0])
+    check("prior move below threshold -> MARKET_FLAT",
+          ta.iloc[1] == "MARKET_FLAT", ta.iloc[1])
+    check("prior move same sign as residual -> ALIGNS",
+          ta.iloc[2] == "WOWZA_ALIGNS_WITH_TREND", ta.iloc[2])
+    check("prior move opposite sign -> OPPOSES",
+          ta.iloc[3] == "WOWZA_OPPOSES_TREND", ta.iloc[3])
+
+    # ── quality flags: unknown book count must NOT pass ─────────────────────
+    d = ms.compute(frame([0.50, 0.52, 0.54, 0.56], [0, 60, 60, 60], n_books=None))
+    check("unknown n_books flags INSUFFICIENT_BOOKS rather than passing",
+          ms.F_FEW_BOOKS in str(d["quality_flags"].iloc[-1]), str(d["quality_flags"].iloc[-1]))
+    d = ms.compute(frame([0.50, 0.52, 0.54, 0.56], [0, 60, 60, 60], n_books=2))
+    check("n_books below the minimum flags INSUFFICIENT_BOOKS",
+          ms.F_FEW_BOOKS in str(d["quality_flags"].iloc[-1]))
+    d = ms.compute(frame([0.50, 0.52, 0.54, 0.56], [0, 60, 60, 60], n_books=9))
+    check("a healthy row late in a fixture is OK",
+          d["quality_status"].iloc[-1] == ms.FLAG_OK, str(d["quality_flags"].iloc[-1]))
+
+    # ── fixtures do not bleed into each other ───────────────────────────────
+    two = pd.concat([frame([0.50, 0.60], [0, 60], fid="A"),
+                     frame([0.30, 0.31], [0, 60], fid="B")], ignore_index=True)
+    d = ms.compute(two)
+    firsts = d[d["snapshot_index"] == 0]
+    check("each fixture gets its own opening price",
+          len(firsts) == 2 and d["last_move_pp"].isna().sum() == 2,
+          str(d["last_move_pp"].tolist()))
+    check("fixture A's move is not attributed to fixture B",
+          abs(float(d[d.fixture_id == "B"]["last_move_pp"].iloc[-1]) - 1.0) < 1e-9)
 
 
 def _movement_checks() -> None:
