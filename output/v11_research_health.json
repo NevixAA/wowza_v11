@@ -1,43 +1,36 @@
 {
-  "generated_at": "2026-08-27T05:09:16Z",
-  "git_sha": "a0324849d66f",
+  "generated_at": "2026-08-27T19:09:52Z",
+  "git_sha": "477ae2371378",
   "calculation_version": "1.0.0",
   "raw": {
-    "snapshots_rows": 40003,
-    "latest_snapshot_ts": "2026-08-27T05:08:49Z"
+    "snapshots_rows": 40182,
+    "latest_snapshot_ts": "2026-08-27T19:09:10Z"
   },
   "grading": {
     "graded_rows": 526,
-    "latest_result_ts": "2026-08-27T05:09:07Z"
+    "latest_result_ts": "2026-08-27T19:09:36Z"
   },
   "movement": {
-    "n_distinct_observations": 39224,
-    "n_fixtures": 371,
-    "published_fixture_n": 369,
-    "toward_rate": 0.5836,
-    "mean_signed_move_pp": 0.682,
-    "clv_n": 317,
-    "mean_clv_pct": 0.6496,
-    "derived_generated_at": "2026-08-27T05:09:16Z",
+    "n_distinct_observations": 39403,
+    "n_fixtures": 372,
+    "published_fixture_n": 370,
+    "toward_rate": 0.5762,
+    "mean_signed_move_pp": 0.6608,
+    "clv_n": 328,
+    "mean_clv_pct": 0.5701,
+    "derived_generated_at": "2026-08-27T19:09:44Z",
     "lag_hours": -0.01,
     "freshness_status": "PASS",
-    "delta_fixtures_since_previous": 0
+    "delta_fixtures_since_previous": 1
   },
   "residual": {
     "n_fixtures": 346,
-    "derived_generated_at": "2026-08-27T05:09:09Z",
+    "derived_generated_at": "2026-08-27T19:09:38Z",
     "lag_hours": -0.0,
     "freshness_status": "PASS",
     "delta_n_since_previous": 0
   },
-  "monotonicity_warnings": [
-    {
-      "metric": "movement_clv_n",
-      "previous": 318,
-      "current": 317,
-      "delta": -1
-    }
-  ],
+  "monotonicity_warnings": [],
   "checks": [
     {
       "artifact": "v11_graded.csv",
@@ -46,7 +39,25 @@
       "why": "derived output -0.0h behind its source"
     },
     {
+      "artifact": "v11_market_microstructure.csv",
+      "status": "PASS",
+      "lag_hours": -0.01,
+      "why": "derived output -0.0h behind its source"
+    },
+    {
       "artifact": "v11_market_movement_detail.csv",
+      "status": "PASS",
+      "lag_hours": -0.01,
+      "why": "derived output -0.0h behind its source"
+    },
+    {
+      "artifact": "v11_microstructure_coverage.csv",
+      "status": "PASS",
+      "lag_hours": -0.01,
+      "why": "derived output -0.0h behind its source"
+    },
+    {
+      "artifact": "v11_microstructure_segments.csv",
       "status": "PASS",
       "lag_hours": -0.01,
       "why": "derived output -0.0h behind its source"
@@ -94,5 +105,5 @@
       "why": "derived output 0.0h behind its source"
     }
   ],
-  "overall": "WARN"
+  "overall": "PASS"
 }
