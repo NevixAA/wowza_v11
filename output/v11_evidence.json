@@ -7,26 +7,26 @@
   },
   "global": {
     "brier": null,
-    "ece": 0.031424,
+    "ece": 0.030032,
     "logloss": null,
-    "n": 408,
-    "n_eff": 408,
+    "n": 409,
+    "n_eff": 409,
     "scope": "global",
     "source": "measured"
   },
   "segments": {
     "new_format": {
       "brier": null,
-      "ece": 0.034124,
+      "ece": 0.032885,
       "logloss": null,
-      "n": 266,
-      "n_eff": 266,
+      "n": 267,
+      "n_eff": 267,
       "scope": "new_format",
       "source": "measured"
     },
     "new_format|Argentina Primera Division": {
       "brier": null,
-      "ece": 0.040055,
+      "ece": 0.038872,
       "logloss": null,
       "n": 31,
       "n_eff": 31,
@@ -35,16 +35,16 @@
     },
     "new_format|Mexico Liga MX": {
       "brier": null,
-      "ece": 0.035367,
+      "ece": 0.034825,
       "logloss": null,
-      "n": 31,
-      "n_eff": 31,
+      "n": 32,
+      "n_eff": 32,
       "scope": "new_format|Mexico Liga MX",
       "source": "shrunk"
     },
     "new_format|USA MLS": {
       "brier": null,
-      "ece": 0.034673,
+      "ece": 0.03355,
       "logloss": null,
       "n": 48,
       "n_eff": 48,
@@ -53,7 +53,7 @@
     },
     "standard": {
       "brier": null,
-      "ece": 0.031424,
+      "ece": 0.030032,
       "logloss": null,
       "n": 142,
       "n_eff": 142,
