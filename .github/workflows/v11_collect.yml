@@ -84,6 +84,21 @@ jobs:
         id: microstructure
         run: python scripts/v11_microstructure.py
 
+      # THE CONTROLLED VERSION OF THE HEADLINE (Prompt 02 section 2). The movement step above
+      # reports a 57.9% fixture-level toward-Wowza rate; this one asks whether that survives
+      # once prior momentum is in the model, and whether it survives a placebo residual at all.
+      #
+      # First run, 2026-08-30, 421 fixtures: it does not. The residual coefficient falls from
+      # +1.2033 uncontrolled to +0.0005 controlled, and a placebo built from SHUFFLED model
+      # probabilities still scores +0.7300 — because p_market(t) appears in both the residual and
+      # the future move with opposite signs, so its measurement noise alone produces a positive
+      # coefficient. Scheduled rather than run by hand precisely so that conclusion keeps being
+      # re-tested as the sample grows, instead of being remembered as settled.
+      - name: Momentum-controlled residual regression
+        id: momentum
+        run: python scripts/v11_momentum_control.py --write
+        continue-on-error: true
+
       # FAIL LOUDLY (brief section 12). Raw collection succeeding while derived research stays
       # frozen is exactly the failure this whole change addresses, and for two days it presented
       # as a fully green workflow. The research clock compares each derived artifact's
@@ -131,6 +146,8 @@ jobs:
                    output/v11_market_microstructure.csv \
                    output/v11_microstructure_segments.csv \
                    output/v11_microstructure_coverage.csv \
+                   output/v11_momentum_control.csv \
+                   output/v11_momentum_roles.csv \
                    output/v11_research_health.json output/research_state.json; do
             git add -f "$f" 2>/dev/null || echo "  (skip, not present: $f)"
           done
