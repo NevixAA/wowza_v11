@@ -11,7 +11,16 @@ name: V11 Collect
 
 on:
   schedule:
-    - cron: '25,55 8-23 * * *'   # twice/hour during match hours
+    # CUT 32/day -> 16/day on 2026-08-30. Twice an hour was never buying anything: v11 reads v9's
+    # COMMITTED output, so it can never observe faster than v9 publishes, and v9's predict was
+    # itself delivering only ~9 runs a day. Sampling a source twice as often as it updates just
+    # re-reads the same file.
+    #
+    # It was also not being honoured. Measured across the estate over 72h, configured vs delivered:
+    # anything at or below 8 runs/day landed essentially in full, anything at or above 26/day
+    # landed 8-38%. This workflow asked for 32 and delivered 3 — and every one of those dropped
+    # requests was competing with v9's odds capture, whose prices cannot be backfilled.
+    - cron: '25 8-23 * * *'   # hourly during match hours
   workflow_dispatch:
 
 concurrency:
