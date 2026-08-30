@@ -7,7 +7,7 @@
   },
   "global": {
     "brier": null,
-    "ece": 0.030032,
+    "ece": 0.030501,
     "logloss": null,
     "n": 409,
     "n_eff": 409,
@@ -17,7 +17,7 @@
   "segments": {
     "new_format": {
       "brier": null,
-      "ece": 0.032885,
+      "ece": 0.03703,
       "logloss": null,
       "n": 267,
       "n_eff": 267,
@@ -26,7 +26,7 @@
     },
     "new_format|Argentina Primera Division": {
       "brier": null,
-      "ece": 0.038872,
+      "ece": 0.039278,
       "logloss": null,
       "n": 31,
       "n_eff": 31,
@@ -35,7 +35,7 @@
     },
     "new_format|Mexico Liga MX": {
       "brier": null,
-      "ece": 0.034825,
+      "ece": 0.037488,
       "logloss": null,
       "n": 32,
       "n_eff": 32,
@@ -44,7 +44,7 @@
     },
     "new_format|USA MLS": {
       "brier": null,
-      "ece": 0.03355,
+      "ece": 0.033928,
       "logloss": null,
       "n": 48,
       "n_eff": 48,
@@ -53,7 +53,7 @@
     },
     "standard": {
       "brier": null,
-      "ece": 0.030032,
+      "ece": 0.030501,
       "logloss": null,
       "n": 142,
       "n_eff": 142,
