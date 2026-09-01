@@ -7,26 +7,26 @@
   },
   "global": {
     "brier": null,
-    "ece": 0.058512,
+    "ece": 0.059352,
     "logloss": null,
-    "n": 510,
-    "n_eff": 510,
+    "n": 511,
+    "n_eff": 511,
     "scope": "global",
     "source": "measured"
   },
   "segments": {
     "new_format": {
       "brier": null,
-      "ece": 0.060938,
+      "ece": 0.061183,
       "logloss": null,
-      "n": 327,
-      "n_eff": 327,
+      "n": 328,
+      "n_eff": 328,
       "scope": "new_format",
       "source": "measured"
     },
     "new_format|Argentina Primera Division": {
       "brier": null,
-      "ece": 0.064311,
+      "ece": 0.065014,
       "logloss": null,
       "n": 39,
       "n_eff": 39,
@@ -35,7 +35,7 @@
     },
     "new_format|Mexico Liga MX": {
       "brier": null,
-      "ece": 0.06395,
+      "ece": 0.064658,
       "logloss": null,
       "n": 33,
       "n_eff": 33,
@@ -44,7 +44,7 @@
     },
     "new_format|USA MLS": {
       "brier": null,
-      "ece": 0.059716,
+      "ece": 0.060364,
       "logloss": null,
       "n": 59,
       "n_eff": 59,
@@ -53,7 +53,7 @@
     },
     "standard": {
       "brier": null,
-      "ece": 0.058512,
+      "ece": 0.059352,
       "logloss": null,
       "n": 183,
       "n_eff": 183,
@@ -62,7 +62,7 @@
     },
     "standard|Championship": {
       "brier": null,
-      "ece": 0.081563,
+      "ece": 0.082293,
       "logloss": null,
       "n": 30,
       "n_eff": 30,
@@ -71,7 +71,7 @@
     },
     "standard|La Liga 2": {
       "brier": null,
-      "ece": 0.060564,
+      "ece": 0.061285,
       "logloss": null,
       "n": 33,
       "n_eff": 33,
@@ -80,7 +80,7 @@
     },
     "standard|League One": {
       "brier": null,
-      "ece": 0.06026,
+      "ece": 0.060984,
       "logloss": null,
       "n": 32,
       "n_eff": 32,
@@ -89,7 +89,7 @@
     },
     "standard|League Two": {
       "brier": null,
-      "ece": 0.058512,
+      "ece": 0.059352,
       "logloss": null,
       "n": 33,
       "n_eff": 33,
