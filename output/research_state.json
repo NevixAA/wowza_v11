@@ -1,28 +1,28 @@
 {
-  "generated_at": "2026-09-02T22:43:04Z",
-  "git_sha": "ece3006606e8",
+  "generated_at": "2026-09-03T01:11:55Z",
+  "git_sha": "2f4b3a91ee54",
   "calculation_version": "1.0.0",
   "source": {
     "v11_graded.csv": {
-      "rows": 755,
-      "max_observation_ts": "2026-09-02T22:42:39Z",
-      "file_mtime": "2026-09-02T22:42:39Z"
+      "rows": 765,
+      "max_observation_ts": "2026-09-03T01:11:26Z",
+      "file_mtime": "2026-09-03T01:11:26Z"
     },
     "v11_shadow_log.csv": {
-      "rows": 755,
-      "max_observation_ts": "2026-09-02T22:42:15Z",
-      "file_mtime": "2026-09-02T22:42:17Z"
+      "rows": 765,
+      "max_observation_ts": "2026-09-03T01:11:05Z",
+      "file_mtime": "2026-09-03T01:11:07Z"
     },
     "v11_shadow_snapshots.csv": {
-      "rows": 44385,
-      "max_observation_ts": "2026-09-02T22:42:15Z",
-      "file_mtime": "2026-09-02T22:42:17Z"
+      "rows": 44568,
+      "max_observation_ts": "2026-09-03T01:11:05Z",
+      "file_mtime": "2026-09-03T01:11:07Z"
     }
   },
   "derived": {
     "v11_graded.csv": {
-      "generated_at": "2026-09-02T22:42:39Z",
-      "source_max_ts": "2026-09-02T22:42:15Z",
+      "generated_at": "2026-09-03T01:11:26Z",
+      "source_max_ts": "2026-09-03T01:11:05Z",
       "lag_hours": -0.01,
       "sources": [
         "v11_shadow_log.csv"
@@ -32,8 +32,8 @@
       "why": "derived output -0.0h behind its source"
     },
     "v11_market_microstructure.csv": {
-      "generated_at": "2026-09-02T22:42:51Z",
-      "source_max_ts": "2026-09-02T22:42:15Z",
+      "generated_at": "2026-09-03T01:11:41Z",
+      "source_max_ts": "2026-09-03T01:11:05Z",
       "lag_hours": -0.01,
       "sources": [
         "v11_shadow_snapshots.csv"
@@ -43,8 +43,8 @@
       "why": "derived output -0.0h behind its source"
     },
     "v11_market_movement_detail.csv": {
-      "generated_at": "2026-09-02T22:42:48Z",
-      "source_max_ts": "2026-09-02T22:42:15Z",
+      "generated_at": "2026-09-03T01:11:37Z",
+      "source_max_ts": "2026-09-03T01:11:05Z",
       "lag_hours": -0.01,
       "sources": [
         "v11_shadow_snapshots.csv"
@@ -54,8 +54,8 @@
       "why": "derived output -0.0h behind its source"
     },
     "v11_microstructure_coverage.csv": {
-      "generated_at": "2026-09-02T22:42:53Z",
-      "source_max_ts": "2026-09-02T22:42:15Z",
+      "generated_at": "2026-09-03T01:11:42Z",
+      "source_max_ts": "2026-09-03T01:11:05Z",
       "lag_hours": -0.01,
       "sources": [
         "v11_shadow_snapshots.csv"
@@ -65,8 +65,8 @@
       "why": "derived output -0.0h behind its source"
     },
     "v11_microstructure_segments.csv": {
-      "generated_at": "2026-09-02T22:42:55Z",
-      "source_max_ts": "2026-09-02T22:42:15Z",
+      "generated_at": "2026-09-03T01:11:45Z",
+      "source_max_ts": "2026-09-03T01:11:05Z",
       "lag_hours": -0.01,
       "sources": [
         "v11_shadow_snapshots.csv"
@@ -76,8 +76,8 @@
       "why": "derived output -0.0h behind its source"
     },
     "v11_movement_by_league.csv": {
-      "generated_at": "2026-09-02T22:42:48Z",
-      "source_max_ts": "2026-09-02T22:42:15Z",
+      "generated_at": "2026-09-03T01:11:37Z",
+      "source_max_ts": "2026-09-03T01:11:05Z",
       "lag_hours": -0.01,
       "sources": [
         "v11_shadow_snapshots.csv"
@@ -87,8 +87,8 @@
       "why": "derived output -0.0h behind its source"
     },
     "v11_movement_by_model.csv": {
-      "generated_at": "2026-09-02T22:42:48Z",
-      "source_max_ts": "2026-09-02T22:42:15Z",
+      "generated_at": "2026-09-03T01:11:37Z",
+      "source_max_ts": "2026-09-03T01:11:05Z",
       "lag_hours": -0.01,
       "sources": [
         "v11_shadow_snapshots.csv"
@@ -98,8 +98,8 @@
       "why": "derived output -0.0h behind its source"
     },
     "v11_movement_by_residual.csv": {
-      "generated_at": "2026-09-02T22:42:48Z",
-      "source_max_ts": "2026-09-02T22:42:15Z",
+      "generated_at": "2026-09-03T01:11:37Z",
+      "source_max_ts": "2026-09-03T01:11:05Z",
       "lag_hours": -0.01,
       "sources": [
         "v11_shadow_snapshots.csv"
@@ -109,8 +109,8 @@
       "why": "derived output -0.0h behind its source"
     },
     "v11_movement_by_time.csv": {
-      "generated_at": "2026-09-02T22:42:48Z",
-      "source_max_ts": "2026-09-02T22:42:15Z",
+      "generated_at": "2026-09-03T01:11:37Z",
+      "source_max_ts": "2026-09-03T01:11:05Z",
       "lag_hours": -0.01,
       "sources": [
         "v11_shadow_snapshots.csv"
@@ -120,8 +120,8 @@
       "why": "derived output -0.0h behind its source"
     },
     "v11_movement_summary.csv": {
-      "generated_at": "2026-09-02T22:42:48Z",
-      "source_max_ts": "2026-09-02T22:42:15Z",
+      "generated_at": "2026-09-03T01:11:37Z",
+      "source_max_ts": "2026-09-03T01:11:05Z",
       "lag_hours": -0.01,
       "sources": [
         "v11_shadow_snapshots.csv"
@@ -131,8 +131,8 @@
       "why": "derived output -0.0h behind its source"
     },
     "v11_residual.csv": {
-      "generated_at": "2026-09-02T22:42:40Z",
-      "source_max_ts": "2026-09-02T22:42:39Z",
+      "generated_at": "2026-09-03T01:11:28Z",
+      "source_max_ts": "2026-09-03T01:11:26Z",
       "lag_hours": -0.0,
       "sources": [
         "v11_shadow_log.csv",
@@ -143,23 +143,23 @@
       "why": "derived output -0.0h behind its source"
     },
     "v11_scoreboard.csv": {
-      "generated_at": "2026-09-02T22:42:39Z",
-      "source_max_ts": "2026-09-02T22:42:39Z",
-      "lag_hours": 0.0,
+      "generated_at": "2026-09-03T01:11:27Z",
+      "source_max_ts": "2026-09-03T01:11:26Z",
+      "lag_hours": -0.0,
       "sources": [
         "v11_graded.csv"
       ],
       "source_advanced_since_last_state": true,
       "freshness": "PASS",
-      "why": "derived output 0.0h behind its source"
+      "why": "derived output -0.0h behind its source"
     }
   },
   "counts": {
-    "movement_observations": 43335,
+    "movement_observations": 43508,
     "movement_fixtures": 601,
     "movement_summary_fixture_n": 587,
-    "movement_clv_n": 518,
+    "movement_clv_n": 523,
     "residual_n": 521,
-    "graded_settled": 755
+    "graded_settled": 765
   }
 }
