@@ -7,26 +7,26 @@
   },
   "global": {
     "brier": null,
-    "ece": 0.057083,
+    "ece": 0.057957,
     "logloss": null,
-    "n": 556,
-    "n_eff": 556,
+    "n": 562,
+    "n_eff": 562,
     "scope": "global",
     "source": "measured"
   },
   "segments": {
     "new_format": {
       "brier": null,
-      "ece": 0.058277,
+      "ece": 0.059484,
       "logloss": null,
-      "n": 340,
-      "n_eff": 340,
+      "n": 346,
+      "n_eff": 346,
       "scope": "new_format",
       "source": "measured"
     },
     "new_format|Argentina Primera Division": {
       "brier": null,
-      "ece": 0.063115,
+      "ece": 0.063847,
       "logloss": null,
       "n": 39,
       "n_eff": 39,
@@ -35,16 +35,16 @@
     },
     "new_format|Japan J-League": {
       "brier": null,
-      "ece": 0.057785,
+      "ece": 0.059048,
       "logloss": null,
-      "n": 34,
-      "n_eff": 34,
+      "n": 39,
+      "n_eff": 39,
       "scope": "new_format|Japan J-League",
       "source": "shrunk"
     },
     "new_format|Mexico Liga MX": {
       "brier": null,
-      "ece": 0.062698,
+      "ece": 0.0635,
       "logloss": null,
       "n": 33,
       "n_eff": 33,
@@ -53,7 +53,7 @@
     },
     "new_format|USA MLS": {
       "brier": null,
-      "ece": 0.058612,
+      "ece": 0.059287,
       "logloss": null,
       "n": 59,
       "n_eff": 59,
@@ -62,7 +62,7 @@
     },
     "standard": {
       "brier": null,
-      "ece": 0.057083,
+      "ece": 0.057957,
       "logloss": null,
       "n": 216,
       "n_eff": 216,
@@ -71,7 +71,7 @@
     },
     "standard|Championship": {
       "brier": null,
-      "ece": 0.070724,
+      "ece": 0.07145,
       "logloss": null,
       "n": 41,
       "n_eff": 41,
@@ -80,7 +80,7 @@
     },
     "standard|La Liga 2": {
       "brier": null,
-      "ece": 0.059337,
+      "ece": 0.060088,
       "logloss": null,
       "n": 33,
       "n_eff": 33,
@@ -89,7 +89,7 @@
     },
     "standard|League One": {
       "brier": null,
-      "ece": 0.062702,
+      "ece": 0.063421,
       "logloss": null,
       "n": 43,
       "n_eff": 43,
@@ -98,7 +98,7 @@
     },
     "standard|League Two": {
       "brier": null,
-      "ece": 0.059011,
+      "ece": 0.059727,
       "logloss": null,
       "n": 44,
       "n_eff": 44,
