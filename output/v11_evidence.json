@@ -7,47 +7,56 @@
   },
   "global": {
     "brier": null,
-    "ece": 0.066564,
+    "ece": 0.059846,
     "logloss": null,
-    "n": 330,
-    "n_eff": 330,
+    "n": 364,
+    "n_eff": 364,
     "scope": "global",
     "source": "measured"
   },
   "segments": {
     "new_format": {
       "brier": null,
-      "ece": 0.066564,
+      "ece": 0.059846,
       "logloss": null,
-      "n": 238,
-      "n_eff": 238,
+      "n": 253,
+      "n_eff": 253,
       "scope": "new_format",
       "source": "measured"
     },
     "new_format|Argentina Primera Division": {
       "brier": null,
-      "ece": 0.076549,
+      "ece": 0.066403,
       "logloss": null,
-      "n": 31,
-      "n_eff": 31,
+      "n": 34,
+      "n_eff": 34,
       "scope": "new_format|Argentina Primera Division",
+      "source": "shrunk"
+    },
+    "new_format|Japan J-League": {
+      "brier": null,
+      "ece": 0.059846,
+      "logloss": null,
+      "n": 30,
+      "n_eff": 30,
+      "scope": "new_format|Japan J-League",
       "source": "shrunk"
     },
     "new_format|USA MLS": {
       "brier": null,
-      "ece": 0.072837,
+      "ece": 0.063816,
       "logloss": null,
-      "n": 46,
-      "n_eff": 46,
+      "n": 49,
+      "n_eff": 49,
       "scope": "new_format|USA MLS",
       "source": "shrunk"
     },
     "standard": {
       "brier": null,
-      "ece": 0.080232,
+      "ece": 0.079776,
       "logloss": null,
-      "n": 92,
-      "n_eff": 92,
+      "n": 111,
+      "n_eff": 111,
       "scope": "standard",
       "source": "shrunk"
     }
