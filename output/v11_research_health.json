@@ -1,31 +1,31 @@
 {
-  "generated_at": "2026-09-05T22:59:36Z",
-  "git_sha": "b5b7a0c1f49e",
+  "generated_at": "2026-09-06T01:04:48Z",
+  "git_sha": "584c8800a47f",
   "calculation_version": "1.0.0",
   "raw": {
-    "snapshots_rows": 47488,
-    "latest_snapshot_ts": "2026-09-05T22:59:08Z"
+    "snapshots_rows": 47623,
+    "latest_snapshot_ts": "2026-09-06T01:04:04Z"
   },
   "grading": {
     "graded_rows": 815,
-    "latest_result_ts": "2026-09-05T22:59:17Z"
+    "latest_result_ts": "2026-09-06T01:04:19Z"
   },
   "movement": {
-    "n_distinct_observations": 46317,
+    "n_distinct_observations": 46446,
     "n_fixtures": 661,
     "published_fixture_n": 642,
     "toward_rate": 0.5586,
     "mean_signed_move_pp": 0.6296,
     "clv_n": 555,
     "mean_clv_pct": 0.1314,
-    "derived_generated_at": "2026-09-05T22:59:25Z",
-    "lag_hours": -0.0,
+    "derived_generated_at": "2026-09-06T01:04:30Z",
+    "lag_hours": -0.01,
     "freshness_status": "PASS",
     "delta_fixtures_since_previous": 0
   },
   "residual": {
     "n_fixtures": 330,
-    "derived_generated_at": "2026-09-05T22:59:18Z",
+    "derived_generated_at": "2026-09-06T01:04:20Z",
     "lag_hours": -0.0,
     "freshness_status": "PASS",
     "delta_n_since_previous": 0
@@ -47,7 +47,7 @@
     {
       "artifact": "v11_market_movement_detail.csv",
       "status": "PASS",
-      "lag_hours": -0.0,
+      "lag_hours": -0.01,
       "why": "derived output -0.0h behind its source"
     },
     {
@@ -65,31 +65,31 @@
     {
       "artifact": "v11_movement_by_league.csv",
       "status": "PASS",
-      "lag_hours": -0.0,
+      "lag_hours": -0.01,
       "why": "derived output -0.0h behind its source"
     },
     {
       "artifact": "v11_movement_by_model.csv",
       "status": "PASS",
-      "lag_hours": -0.0,
+      "lag_hours": -0.01,
       "why": "derived output -0.0h behind its source"
     },
     {
       "artifact": "v11_movement_by_residual.csv",
       "status": "PASS",
-      "lag_hours": -0.0,
+      "lag_hours": -0.01,
       "why": "derived output -0.0h behind its source"
     },
     {
       "artifact": "v11_movement_by_time.csv",
       "status": "PASS",
-      "lag_hours": -0.0,
+      "lag_hours": -0.01,
       "why": "derived output -0.0h behind its source"
     },
     {
       "artifact": "v11_movement_summary.csv",
       "status": "PASS",
-      "lag_hours": -0.0,
+      "lag_hours": -0.01,
       "why": "derived output -0.0h behind its source"
     },
     {
@@ -101,8 +101,8 @@
     {
       "artifact": "v11_scoreboard.csv",
       "status": "PASS",
-      "lag_hours": -0.0,
-      "why": "derived output -0.0h behind its source"
+      "lag_hours": 0.0,
+      "why": "derived output 0.0h behind its source"
     }
   ],
   "overall": "PASS"
