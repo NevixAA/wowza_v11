@@ -87,6 +87,17 @@ MIN_FIXTURES = 100
 PRED_COLS = ["residual_pp", "prev_move_pp", "velocity_pp_h", "acceleration_pp_h2",
              "hours_to_kickoff", "dispersion"]
 
+# Prompt 2 section 9's fuller control set. Kept as a SEPARATE list rather than replacing the one
+# above, so the two models are reported side by side and the marginal effect of each block of
+# controls is visible instead of inferred.
+PRED_COLS_FULL = PRED_COLS + ["move_30m", "move_3h", "velocity_1h", "direction_streak",
+                              "dispersion_change", "n_books", "current_probability"]
+
+# Below this, a residual is smaller than the market's own tick and cannot lead anything. Used to
+# separate WOWZA_NEUTRAL from WOWZA_LEADS (section 11) — without it, quiet-market rows with a
+# trivial residual land in LEADS and inflate the one bucket the price-discovery claim rests on.
+MIN_RESIDUAL_PP = 2.0
+
 
 def _load() -> pd.DataFrame:
     p = config.OUTPUT_DIR / "v11_shadow_snapshots.csv"
@@ -112,6 +123,22 @@ def _load() -> pd.DataFrame:
     if "valid_odds" in d.columns:
         d = d[d["valid_odds"].astype(str).str.lower().isin(("true", "1"))]
     return d.sort_values(["fixture_id", "snapshot_ts"]).reset_index(drop=True)
+
+
+def _asof_col(d: pd.DataFrame, col: str, minutes: float) -> pd.Series:
+    """Value of `col` `minutes` before each row, per fixture. Used for dispersion change."""
+    if col not in d.columns:
+        return pd.Series(np.nan, index=d.index)
+    tol = pd.Timedelta(minutes=TOLERANCE_MIN.get(int(minutes), max(10, minutes * 0.4)))
+    left = d[["fixture_id", "snapshot_ts"]].copy()
+    left["target_ts"] = left["snapshot_ts"] - pd.Timedelta(minutes=minutes)
+    right = d[["fixture_id", "snapshot_ts", col]].rename(
+        columns={"snapshot_ts": "match_ts", col: "_v"})
+    right["_v"] = pd.to_numeric(right["_v"], errors="coerce")
+    out = pd.merge_asof(left.sort_values("target_ts"), right.sort_values("match_ts"),
+                        left_on="target_ts", right_on="match_ts", by="fixture_id",
+                        direction="nearest", tolerance=tol)
+    return out.sort_index()["_v"]
 
 
 def _asof(d: pd.DataFrame, minutes: float, direction: str) -> pd.Series:
@@ -174,15 +201,40 @@ def build(prior_window: int = 60, future_window: int = 60) -> pd.DataFrame:
     d["future_move_toward_pp"] = np.where(d["residual_pp"] >= 0,
                                           d["future_move_pp"], -d["future_move_pp"])
 
-    # --- section 2's three-way classification ------------------------------------------
-    # Requires knowing whether the market was ALREADY going where we point. A residual that
-    # merely agrees with a move in progress is not leadership, and the whole point of naming
-    # these separately is that they must never be pooled into one "toward" rate.
+    # --- Prompt 2 section 10: the full prior-movement feature set -----------------------
+    # Every one of these uses ONLY information available at t. The `backward` direction in
+    # `_asof` is what enforces that; a forward-looking window here would leak the answer into
+    # the predictors and produce a spectacular, meaningless result.
+    for w, name in ((10, "move_10m"), (30, "move_30m"), (60, "move_1h"), (180, "move_3h")):
+        d[name] = (d["v11_p_market"] - _asof(d, w, "backward")) * 100.0
+    for w, name in ((30, "velocity_30m"), (60, "velocity_1h"), (180, "velocity_3h")):
+        d[name] = d[f"move_{'30m' if w == 30 else ('1h' if w == 60 else '3h')}"] / (w / 60.0)
+
+    # DIRECTION STREAK: how many of the recent windows agree in sign. A market drifting one way
+    # for three hours is a different state from one that jittered to the same place, and pooling
+    # them is how momentum gets under-controlled.
+    signs = np.sign(d[["move_30m", "move_1h", "move_3h"]].fillna(0.0))
+    d["direction_streak"] = signs.sum(axis=1)
+
+    # Dispersion CHANGE, not level: books converging and books scattering are opposite states
+    # even at identical dispersion.
+    d["dispersion_change"] = d["dispersion"] - _asof_col(d, "book_dispersion", prior_window)
+    d["n_books"] = pd.to_numeric(d.get("n_books"), errors="coerce")
+    d["current_probability"] = d["v11_p_market"]
+
+    # --- section 11's FOUR-way classification ------------------------------------------
+    # Four, not three: NEUTRAL was missing and it is not a rounding detail. A residual smaller
+    # than the market's own tick size cannot lead anything, so pooling those rows into LEADS
+    # inflated the one bucket the whole price-discovery claim rests on. On the 2026-08-30 run
+    # WOWZA_LEADS held 414 observations; most of them were quiet-market rows with a residual too
+    # small to act on.
     same_sign = np.sign(d["prev_move_pp"]) == np.sign(d["residual_pp"])
     quiet = d["prev_move_pp"].abs() < mv.MIN_MOVE_PP
+    small_resid = d["residual_pp"].abs() < MIN_RESIDUAL_PP
     d["wowza_role"] = np.select(
-        [d["prev_move_pp"].isna(), quiet, same_sign],
-        ["UNKNOWN_NO_PRIOR", "WOWZA_LEADS", "WOWZA_AGREES_WITH_EXISTING_MOVE"],
+        [d["prev_move_pp"].isna(), small_resid, quiet, same_sign],
+        ["UNKNOWN_NO_PRIOR", "WOWZA_NEUTRAL", "WOWZA_LEADS",
+         "WOWZA_AGREES_WITH_EXISTING_MOVE"],
         default="WOWZA_OPPOSES_MARKET")
 
     d["prior_window_min"] = prior_window
@@ -303,6 +355,124 @@ def artifact_diagnostic(d: pd.DataFrame, *, n_boot: int = 400) -> pd.DataFrame:
     return out
 
 
+def placebo_table(d: pd.DataFrame, *, n_boot: int = 400, seed: int = 5) -> pd.DataFrame:
+    """Prompt 2 section 12: score the V9 residual against every alternative predictor.
+
+    THE COMPARISON THAT DECIDES THE PHASE. A toward-rate on its own cannot distinguish skill from
+    arithmetic, because several predictors that contain no football information at all point the
+    same way as the residual most of the time:
+
+      FIXED ANCHOR is the important one, and v11's own `movement.placebo_toward_rate` docstring
+      already explains why: the model's probabilities are systematically more CENTRAL than the
+      market's, so "moved toward the model" and "moved toward the middle" are frequently the
+      same sentence. Ordinary mean reversion in a noisy price then reproduces the headline with
+      no skill whatsoever. Prompt 2 section 8 reports this placebo at ~57.8% against a
+      toward-Wowza rate of ~57.1% — the placebo is BETTER.
+
+      MEAN REVERSION (-prev_move) is the same idea expressed as a direction rather than a level.
+
+      SHUFFLED RESIDUAL keeps the market price exactly where it is and attaches a model
+      probability drawn from a different fixture, so it isolates the part of the coefficient
+      produced by p_market(t) sitting on both sides of the regression.
+
+    Every variant is scored the SAME way on the SAME rows, so the numbers are comparable. A
+    residual that cannot beat these is not evidence of price discovery, whatever its p-value.
+    """
+    need = ["residual_pp", "future_move_pp", "v11_p_market", "prev_move_pp"]
+    sub = d.dropna(subset=need).copy()
+    if len(sub) < 100:
+        return pd.DataFrame()
+    rng = np.random.default_rng(seed)
+
+    anchor = float(sub["v11_p_market"].median())
+    variants = {
+        # The real thing.
+        "v9_residual": sub["residual_pp"],
+        # Section 12's controls, in order of how much they should worry us.
+        "PLACEBO_fixed_anchor": (anchor - sub["v11_p_market"]) * 100.0,
+        "PLACEBO_shuffled_residual": (pd.Series(rng.permutation(sub["p_model_over"].to_numpy()),
+                                                index=sub.index)
+                                      - sub["v11_p_market"]) * 100.0,
+        "PLACEBO_mean_reversion": -sub["prev_move_pp"],
+        "PLACEBO_momentum_continuation": sub["prev_move_pp"],
+        "PLACEBO_random_direction": pd.Series(rng.normal(size=len(sub)), index=sub.index),
+        "CONTROL_market_only": -sub["v11_p_market"] * 100.0,
+        "CONTROL_dispersion": sub["dispersion"].fillna(0.0),
+    }
+    if "velocity_3h" in sub.columns:
+        variants["PLACEBO_long_momentum"] = sub["velocity_3h"].fillna(0.0)
+
+    rows = []
+    for name, pred in variants.items():
+        s = sub.assign(_pred=pd.to_numeric(pred, errors="coerce")).dropna(subset=["_pred"])
+        if len(s) < 50:
+            continue
+        # DROP the real residual before renaming the variant onto its name. Renaming straight on
+        # top produced TWO columns called residual_pp, so `sub[c]` in the design matrix returned
+        # a 2-column frame instead of a Series and np.column_stack built a ragged array.
+        s2 = s.drop(columns=["residual_pp"]).rename(columns={"_pred": "residual_pp"})
+        f = fit(s2, ["residual_pp"], n_boot=n_boot)
+        if f.empty:
+            continue
+        r = f[f["term"] == "residual_pp"].iloc[0]
+        # Toward-rate, scored identically for every variant: did the market move in the direction
+        # this predictor pointed?
+        toward = float((np.sign(s["future_move_pp"]) == np.sign(s["_pred"])).mean())
+        rows.append({
+            "variant": name, "coef": r["coef"], "ci_lo": r["ci_lo"], "ci_hi": r["ci_hi"],
+            "p_value": r["p_value"], "toward_rate": round(toward, 4),
+            "n_obs": int(len(s)), "n_fixtures": int(s["fixture_id"].nunique()),
+            "excludes_zero": bool(r["excludes_zero"]),
+            "sample_status": mv.sample_status(int(s["fixture_id"].nunique())),
+        })
+    out = pd.DataFrame(rows)
+    if out.empty:
+        return out
+    real = out[out["variant"] == "v9_residual"]
+    if len(real):
+        rt = float(real["toward_rate"].iloc[0])
+        out["toward_rate_vs_v9_pp"] = ((out["toward_rate"] - rt) * 100).round(2)
+        # BEATS_V9 is the column to read first. Any placebo above zero here is a predictor with
+        # no football information that points the right way more often than the model does.
+        out["beats_v9"] = out["toward_rate"] > rt
+    out["calc_version"] = CALC_VERSION
+    return out.sort_values("toward_rate", ascending=False).reset_index(drop=True)
+
+
+def chronological(d: pd.DataFrame, *, folds: int = 4, n_boot: int = 200) -> pd.DataFrame:
+    """Prompt 2 section 13: expanding-window evaluation, never a random split.
+
+    Market data is time-dependent and every fixture's snapshots are adjacent in time, so a random
+    split trains on the same afternoon it tests on. Each fold here fits on everything before a cut
+    and evaluates after it, which is the only split that answers "would this have held going
+    forward".
+    """
+    sub = d.dropna(subset=PRED_COLS + ["future_move_pp"]).sort_values("snapshot_ts")
+    if len(sub) < 400:
+        return pd.DataFrame()
+    cuts = pd.qcut(sub["snapshot_ts"].rank(method="first"), folds + 1,
+                   labels=False, duplicates="drop")
+    rows = []
+    for k in range(1, folds + 1):
+        train, test = sub[cuts < k], sub[cuts == k]
+        if len(train) < 200 or len(test) < 100:
+            continue
+        f = fit(test, PRED_COLS, n_boot=n_boot)
+        if f.empty:
+            continue
+        r = f[f["term"] == "residual_pp"].iloc[0]
+        rows.append({"fold": k, "train_rows": int(len(train)), "test_rows": int(len(test)),
+                     "test_from": str(test["snapshot_ts"].min()),
+                     "test_to": str(test["snapshot_ts"].max()),
+                     "residual_coef": r["coef"], "ci_lo": r["ci_lo"], "ci_hi": r["ci_hi"],
+                     "p_value": r["p_value"], "excludes_zero": bool(r["excludes_zero"]),
+                     "n_fixtures": int(test["fixture_id"].nunique())})
+    out = pd.DataFrame(rows)
+    if not out.empty:
+        out["calc_version"] = CALC_VERSION
+    return out
+
+
 def run(prior: int, future: int, *, n_boot: int) -> tuple[pd.DataFrame, pd.DataFrame]:
     d = build(prior, future)
     if d.empty:
@@ -315,7 +485,8 @@ def run(prior: int, future: int, *, n_boot: int) -> tuple[pd.DataFrame, pd.DataF
     for label, cols in (("residual only", ["residual_pp"]),
                         ("+ momentum", ["residual_pp", "prev_move_pp", "velocity_pp_h",
                                         "acceleration_pp_h2"]),
-                        ("+ full controls", PRED_COLS)):
+                        ("+ full controls", PRED_COLS),
+                        ("+ section 9 controls", PRED_COLS_FULL)):
         f = fit(d, cols, n_boot=n_boot)
         if f.empty:
             continue
@@ -430,14 +601,53 @@ def main() -> int:
                       "DISCOVERY: a model probability that cannot know anything scores "
                       "almost the same.")
 
+    # ---- Prompt 2 sections 12 and 13 --------------------------------------------------
+    primary = build(a.prior, a.future)
+    plc = placebo_table(primary, n_boot=min(a.boot, 400))
+    chrono = chronological(primary, n_boot=min(a.boot, 200))
+
+    if not plc.empty:
+        print("\nPLACEBO / CONTROL TABLE (section 12) — sorted by toward-rate")
+        print(f"  {'variant':32} {'toward':>7} {'coef':>9} {'p':>6} {'vs v9':>7}  n_fx")
+        for _, r in plc.iterrows():
+            flag = "  <-- BEATS v9" if r.get("beats_v9") and r["variant"] != "v9_residual" else ""
+            print(f"  {r['variant']:32} {r['toward_rate']:>7.3f} {r['coef']:>+9.4f} "
+                  f"{r['p_value']:>6.3f} {r.get('toward_rate_vs_v9_pp', 0):>+7.2f} "
+                  f"{r['n_fixtures']:>5}{flag}")
+        beaten = plc[(plc["variant"] != "v9_residual") & (plc.get("beats_v9", False))]
+        if len(beaten):
+            print(f"  -> {len(beaten)} control(s) with NO football information point the right "
+                  f"way more often than the model. The toward-rate is not evidence of price "
+                  f"discovery.")
+
+    if not chrono.empty:
+        print("\nCHRONOLOGICAL FOLDS (section 13) — expanding window, never a random split")
+        for _, r in chrono.iterrows():
+            star = "*" if r["excludes_zero"] else " "
+            print(f"  fold {int(r['fold'])}  test {str(r['test_from'])[:10]}.."
+                  f"{str(r['test_to'])[:10]}  n_fx {int(r['n_fixtures']):>4}  "
+                  f"residual {r['residual_coef']:>+.4f}{star} p={r['p_value']:.3f}")
+        n_sig = int(chrono["excludes_zero"].sum())
+        print(f"  -> significant in {n_sig} of {len(chrono)} folds")
+
     if a.write:
         config.OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
         coefs.to_csv(config.OUTPUT_DIR / "v11_momentum_control.csv",
                      index=False, encoding="utf-8")
         roles.to_csv(config.OUTPUT_DIR / "v11_momentum_roles.csv",
                      index=False, encoding="utf-8")
-        print(f"[momentum] wrote v11_momentum_control.csv ({len(coefs)} rows) "
-              f"and v11_momentum_roles.csv ({len(roles)} rows)")
+        wrote = ["v11_momentum_control.csv", "v11_momentum_roles.csv"]
+        # Extending the existing two files with two more rather than one wide one: the grains
+        # differ (one row per variant vs one per fold), and section 53 asks not to sprawl.
+        if not plc.empty:
+            plc.to_csv(config.OUTPUT_DIR / "v11_placebo_table.csv", index=False,
+                       encoding="utf-8")
+            wrote.append("v11_placebo_table.csv")
+        if not chrono.empty:
+            chrono.to_csv(config.OUTPUT_DIR / "v11_chronological_folds.csv", index=False,
+                          encoding="utf-8")
+            wrote.append("v11_chronological_folds.csv")
+        print(f"[momentum] wrote {', '.join(wrote)}")
     return 0
 
 
