@@ -323,19 +323,62 @@ def build() -> tuple[dict, dict]:
     summ = _summary_n()
     res_n = _residual_n()
 
-    # Monotonicity: n should not shrink. A decrease is WARN with the delta, never an auto-FAIL.
+    # ── Monotonicity, split by whether the metric CAN legitimately fall ─────────────────
+    #
+    # INVESTIGATED 2026-09-08 after `movement_clv_n` was reported decreasing (670 -> 669, and
+    # several -1/-3 steps before that). It is NOT a bug, and forcing monotonicity would have
+    # hidden something worth understanding:
+    #
+    #   * CLV is only computed for fixtures whose price actually MOVED (|move| >= MIN_MOVE_PP,
+    #     currently 0.2pp).
+    #   * For a fixture that has not kicked off yet, the "close" is the latest snapshot SO FAR,
+    #     and it keeps updating with every collect.
+    #   * So when a still-open fixture's price RETRACES toward its entry, |move| falls back under
+    #     0.2pp, the fixture leaves the moved set, and its CLV row leaves with it.
+    #
+    # Verified on the 09-03 22:40 -> 09-04 01:05 pair, where clv_n went 546 -> 543. n_fixtures
+    # was 606 in BOTH, and at detail level the fixtures carrying a clv were 624 in both — nothing
+    # was lost. Four fixtures simply stopped qualifying as moved and one started:
+    #
+    #     ef11ebf4 (MLS)            -0.43pp -> 0.00pp   (close returned exactly to entry)
+    #     e49c11ff (MLS)            -0.22pp -> +0.03pp
+    #     4f589c89 (Brazil Serie A) -2.12pp -> -0.15pp
+    #     e536f76f (Bundesliga 2)   +0.42pp -> +0.03pp
+    #
+    # All four kicked off AFTER both readings, i.e. they were still open and still re-pricing.
+    #
+    # So the metric was fine and the WARNING was wrong: it treated a re-derived quantity as if it
+    # were an accumulating one. Counts that only ever grow (stored observations, graded fixtures)
+    # decreasing IS a real alarm — data loss, a broken join, an overwrite. Counts recomputed from
+    # a threshold against a moving close are expected to wobble, and a health signal that cries
+    # wolf on normal behaviour is one people learn to ignore.
+    CUMULATIVE = {"movement_observations", "movement_fixtures", "graded_settled"}
+    RE_DERIVED_WHY = ("recomputed each run from a movement threshold against a close that keeps "
+                      "updating until kickoff; a still-open fixture retracing under MIN_MOVE_PP "
+                      "leaves the moved set and takes its CLV row with it")
+
     prev_counts = (prev.get("counts") or {})
-    counts, monotonicity = {}, []
+    counts, monotonicity, expected_wobble = {}, [], []
     for key, cur in (("movement_observations", obs), ("movement_fixtures", fx),
                      ("movement_summary_fixture_n", summ["fixture_n"]),
                      ("movement_clv_n", summ["clv_n"]), ("residual_n", res_n),
                      ("graded_settled", sources.get("v11_graded.csv", {}).get("rows"))):
         old = prev_counts.get(key)
+        # `old` may be a scalar (older state files) or the {current,...} block written below.
+        if isinstance(old, dict):
+            old = old.get("current")
         delta = None if (cur is None or old is None) else cur - old
-        counts[key] = {"current": cur, "previous": old, "delta": delta}
+        counts[key] = {"current": cur, "previous": old, "delta": delta,
+                       "kind": "CUMULATIVE" if key in CUMULATIVE else "RE_DERIVED"}
         if delta is not None and delta < 0:
-            monotonicity.append({"metric": key, "previous": old, "current": cur, "delta": delta})
-            worst = WARN if _RANK[WARN] > _RANK[worst] else worst
+            rec = {"metric": key, "previous": old, "current": cur, "delta": delta}
+            if key in CUMULATIVE:
+                # A stored count going backwards is real. Alarm.
+                monotonicity.append(rec)
+                worst = WARN if _RANK[WARN] > _RANK[worst] else worst
+            else:
+                # Recorded, with its reason, so the next reader does not re-investigate it.
+                expected_wobble.append({**rec, "why": RE_DERIVED_WHY})
 
     state = {
         "generated_at": now.strftime("%Y-%m-%dT%H:%M:%SZ"),
@@ -376,6 +419,9 @@ def build() -> tuple[dict, dict]:
             "delta_n_since_previous": counts["residual_n"]["delta"],
         },
         "monotonicity_warnings": monotonicity,
+        # Decreases in RE_DERIVED counts, recorded with their cause rather than alarmed on.
+        # Present and empty is meaningful: it says the check ran and found nothing to explain.
+        "expected_recount_deltas": expected_wobble,
         "checks": checks,
         "overall": worst,
     }
@@ -404,8 +450,12 @@ def main() -> int:
             print(f"    movement.{k:30} {v}")
     print(f"    residual.n_fixtures{'':13} {health['residual']['n_fixtures']}")
     if health["monotonicity_warnings"]:
-        print("  MONOTONICITY WARNINGS (n decreased):")
+        print("  MONOTONICITY WARNINGS (a STORED count decreased — real, investigate):")
         for m in health["monotonicity_warnings"]:
+            print(f"    {m['metric']}: {m['previous']} -> {m['current']} ({m['delta']:+})")
+    if health.get("expected_recount_deltas"):
+        print("  recount deltas (re-derived metric fell — expected, see `why`):")
+        for m in health["expected_recount_deltas"]:
             print(f"    {m['metric']}: {m['previous']} -> {m['current']} ({m['delta']:+})")
     print(f"\n[research_state] overall: {health['overall']}")
 
