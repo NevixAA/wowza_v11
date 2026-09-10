@@ -1,34 +1,34 @@
 {
-  "generated_at": "2026-09-10T12:59:01Z",
-  "git_sha": "c36476355ce3",
+  "generated_at": "2026-09-10T17:03:52Z",
+  "git_sha": "ba21c4ce3d6a",
   "calculation_version": "1.0.0",
   "raw": {
-    "snapshots_rows": 51725,
-    "latest_snapshot_ts": "2026-09-10T12:58:00Z"
+    "snapshots_rows": 51909,
+    "latest_snapshot_ts": "2026-09-10T17:02:31Z"
   },
   "grading": {
     "graded_rows": 963,
-    "latest_result_ts": "2026-09-10T12:58:35Z"
+    "latest_result_ts": "2026-09-10T17:03:08Z"
   },
   "movement": {
-    "n_distinct_observations": 50379,
+    "n_distinct_observations": 50563,
     "n_fixtures": 809,
-    "published_fixture_n": 787,
-    "toward_rate": 0.5756,
-    "mean_signed_move_pp": 0.6978,
-    "clv_n": 714,
-    "mean_clv_pct": 0.3629,
-    "derived_generated_at": "2026-09-10T12:58:42Z",
+    "published_fixture_n": 791,
+    "toward_rate": 0.5748,
+    "mean_signed_move_pp": 0.7106,
+    "clv_n": 715,
+    "mean_clv_pct": 0.3833,
+    "derived_generated_at": "2026-09-10T17:03:20Z",
     "lag_hours": -0.01,
     "freshness_status": "PASS",
     "delta_fixtures_since_previous": 0
   },
   "residual": {
     "n_fixtures": 755,
-    "derived_generated_at": "2026-09-10T12:58:36Z",
+    "derived_generated_at": "2026-09-10T17:03:09Z",
     "lag_hours": -0.0,
     "freshness_status": "PASS",
-    "delta_n_since_previous": 347
+    "delta_n_since_previous": 0
   },
   "monotonicity_warnings": [],
   "expected_recount_deltas": [],
@@ -54,13 +54,13 @@
     {
       "artifact": "v11_microstructure_coverage.csv",
       "status": "PASS",
-      "lag_hours": -0.01,
+      "lag_hours": -0.02,
       "why": "derived output -0.0h behind its source"
     },
     {
       "artifact": "v11_microstructure_segments.csv",
       "status": "PASS",
-      "lag_hours": -0.01,
+      "lag_hours": -0.02,
       "why": "derived output -0.0h behind its source"
     },
     {
