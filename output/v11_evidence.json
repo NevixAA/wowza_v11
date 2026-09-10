@@ -7,66 +7,156 @@
   },
   "global": {
     "brier": null,
-    "ece": 0.051748,
+    "ece": 0.040539,
     "logloss": null,
-    "n": 408,
-    "n_eff": 408,
+    "n": 755,
+    "n_eff": 755,
     "scope": "global",
     "source": "measured"
   },
   "segments": {
     "new_format": {
       "brier": null,
-      "ece": 0.051748,
+      "ece": 0.050367,
       "logloss": null,
-      "n": 280,
-      "n_eff": 280,
+      "n": 462,
+      "n_eff": 462,
       "scope": "new_format",
       "source": "measured"
     },
     "new_format|Argentina Primera Division": {
       "brier": null,
-      "ece": 0.064011,
+      "ece": 0.046019,
+      "logloss": null,
+      "n": 51,
+      "n_eff": 51,
+      "scope": "new_format|Argentina Primera Division",
+      "source": "shrunk"
+    },
+    "new_format|Brazil Serie A": {
+      "brier": null,
+      "ece": 0.054227,
       "logloss": null,
       "n": 37,
       "n_eff": 37,
-      "scope": "new_format|Argentina Primera Division",
+      "scope": "new_format|Brazil Serie A",
+      "source": "shrunk"
+    },
+    "new_format|China Super League": {
+      "brier": null,
+      "ece": 0.050021,
+      "logloss": null,
+      "n": 32,
+      "n_eff": 32,
+      "scope": "new_format|China Super League",
+      "source": "shrunk"
+    },
+    "new_format|Denmark Superliga": {
+      "brier": null,
+      "ece": 0.044939,
+      "logloss": null,
+      "n": 31,
+      "n_eff": 31,
+      "scope": "new_format|Denmark Superliga",
+      "source": "shrunk"
+    },
+    "new_format|Finland Veikkausliiga": {
+      "brier": null,
+      "ece": 0.056797,
+      "logloss": null,
+      "n": 33,
+      "n_eff": 33,
+      "scope": "new_format|Finland Veikkausliiga",
       "source": "shrunk"
     },
     "new_format|Japan J-League": {
       "brier": null,
-      "ece": 0.051748,
+      "ece": 0.040539,
+      "logloss": null,
+      "n": 48,
+      "n_eff": 48,
+      "scope": "new_format|Japan J-League",
+      "source": "shrunk"
+    },
+    "new_format|Mexico Liga MX": {
+      "brier": null,
+      "ece": 0.061352,
+      "logloss": null,
+      "n": 44,
+      "n_eff": 44,
+      "scope": "new_format|Mexico Liga MX",
+      "source": "shrunk"
+    },
+    "new_format|Sweden Allsvenskan": {
+      "brier": null,
+      "ece": 0.056939,
       "logloss": null,
       "n": 34,
       "n_eff": 34,
-      "scope": "new_format|Japan J-League",
+      "scope": "new_format|Sweden Allsvenskan",
       "source": "shrunk"
     },
     "new_format|USA MLS": {
       "brier": null,
-      "ece": 0.060778,
+      "ece": 0.048866,
       "logloss": null,
-      "n": 54,
-      "n_eff": 54,
+      "n": 85,
+      "n_eff": 85,
       "scope": "new_format|USA MLS",
       "source": "shrunk"
     },
     "standard": {
       "brier": null,
-      "ece": 0.074026,
+      "ece": 0.046977,
       "logloss": null,
-      "n": 128,
-      "n_eff": 128,
+      "n": 293,
+      "n_eff": 293,
       "scope": "standard",
+      "source": "measured"
+    },
+    "standard|Championship": {
+      "brier": null,
+      "ece": 0.054158,
+      "logloss": null,
+      "n": 58,
+      "n_eff": 58,
+      "scope": "standard|Championship",
       "source": "shrunk"
     },
     "standard|La Liga 2": {
       "brier": null,
-      "ece": 0.057137,
+      "ece": 0.050673,
       "logloss": null,
-      "n": 30,
-      "n_eff": 30,
+      "n": 42,
+      "n_eff": 42,
       "scope": "standard|La Liga 2",
+      "source": "shrunk"
+    },
+    "standard|League One": {
+      "brier": null,
+      "ece": 0.054893,
+      "logloss": null,
+      "n": 55,
+      "n_eff": 55,
+      "scope": "standard|League One",
+      "source": "shrunk"
+    },
+    "standard|League Two": {
+      "brier": null,
+      "ece": 0.044105,
+      "logloss": null,
+      "n": 56,
+      "n_eff": 56,
+      "scope": "standard|League Two",
+      "source": "shrunk"
+    },
+    "standard|Serie B": {
+      "brier": null,
+      "ece": 0.055661,
+      "logloss": null,
+      "n": 31,
+      "n_eff": 31,
+      "scope": "standard|Serie B",
       "source": "shrunk"
     }
   }
