@@ -135,10 +135,13 @@ def _asof_col(d: pd.DataFrame, col: str, minutes: float) -> pd.Series:
     right = d[["fixture_id", "snapshot_ts", col]].rename(
         columns={"snapshot_ts": "match_ts", col: "_v"})
     right["_v"] = pd.to_numeric(right["_v"], errors="coerce")
+    # Carry the caller's index THROUGH the sort — see _asof below for why sort_index() cannot
+    # recover it afterwards.
+    left["_orig_idx"] = d.index
     out = pd.merge_asof(left.sort_values("target_ts"), right.sort_values("match_ts"),
                         left_on="target_ts", right_on="match_ts", by="fixture_id",
                         direction="nearest", tolerance=tol)
-    return out.sort_index()["_v"]
+    return out.set_index("_orig_idx")["_v"].reindex(d.index)
 
 
 def _asof(d: pd.DataFrame, minutes: float, direction: str) -> pd.Series:
@@ -151,11 +154,27 @@ def _asof(d: pd.DataFrame, minutes: float, direction: str) -> pd.Series:
                          else left["snapshot_ts"] + offset)
     right = d[["fixture_id", "snapshot_ts", "v11_p_market"]].rename(
         columns={"snapshot_ts": "match_ts", "v11_p_market": "p_at"})
+    # `pd.merge_asof` RESETS THE INDEX. The result carries a fresh RangeIndex in
+    # target_ts-sorted order, so the old `return out.sort_index()["p_at"]` was a no-op that
+    # returned the values in SORTED order while build() assigns them back onto `d` by index:
+    #
+    #     d[name] = (d["v11_p_market"] - _asof(d, w, "backward")) * 100.0
+    #
+    # Every movement value therefore landed on the wrong row. Reproduced in pandas 3.0.3: the
+    # broken form returns [0.1, 0.2, 0.3] where the correct answer is [0.3, 0.1, 0.2]. This
+    # silently voided every momentum, movement and placebo number this script has ever produced
+    # — including the widely quoted "mean reversion 0.995 / fixed anchor 0.753 / shuffled
+    # residual 0.711 all beat v9's 0.703 toward-rate", which was treated as settled for weeks
+    # and cited as PROVEN in downstream work. Those results are unmeasured, not proven.
+    #
+    # The fix is to carry the caller's index through the sort explicitly. Do not "restore" an
+    # index after merge_asof; there is nothing left to restore.
+    left["_orig_idx"] = d.index
     out = pd.merge_asof(
         left.sort_values("target_ts"), right.sort_values("match_ts"),
         left_on="target_ts", right_on="match_ts", by="fixture_id",
         direction="nearest", tolerance=tol)
-    return out.sort_index()["p_at"]
+    return out.set_index("_orig_idx")["p_at"].reindex(d.index)
 
 
 def build(prior_window: int = 60, future_window: int = 60) -> pd.DataFrame:

@@ -97,12 +97,27 @@ jobs:
       # reports a 57.9% fixture-level toward-Wowza rate; this one asks whether that survives
       # once prior momentum is in the model, and whether it survives a placebo residual at all.
       #
-      # First run, 2026-08-30, 421 fixtures: it does not. The residual coefficient falls from
-      # +1.2033 uncontrolled to +0.0005 controlled, and a placebo built from SHUFFLED model
-      # probabilities still scores +0.7300 — because p_market(t) appears in both the residual and
-      # the future move with opposite signs, so its measurement noise alone produces a positive
-      # coefficient. Scheduled rather than run by hand precisely so that conclusion keeps being
-      # re-tested as the sample grows, instead of being remembered as settled.
+      # EVERY NUMBER THIS COMMENT USED TO QUOTE WAS VOID. It cited "+1.2033 uncontrolled to
+      # +0.0005 controlled, placebo +0.7300" from the 2026-08-30 run. Those came from a
+      # `merge_asof` index-reset bug in `_asof`/`_asof_col` that put every movement value on the
+      # wrong row — see the comment at v11_momentum_control.py:_asof. Fixed 2026-09-10.
+      #
+      # Re-run on the corrected code, 36,107 snapshots / 368 fixtures, the answer is more
+      # interesting than either the broken version or the story built on it:
+      #
+      #   * The residual coefficient SURVIVES full controls: +0.0012, CI [+0.0003, +0.0022],
+      #     p=0.006 (uncontrolled +0.0009). So the model is not pure noise.
+      #   * But it is economically negligible — worth a fraction of a point of price against a
+      #     ~7% spread — and the shuffled-model placebo still reproduces 42% of it, so the
+      #     shared-p_market(t) artefact is real even if it is not the whole effect.
+      #   * The toward-rate framing is worthless: v9 scores 0.076 while FOUR controls carrying
+      #     no football information beat it (mean reversion 0.805, momentum continuation 0.795,
+      #     long momentum 0.708, dispersion 0.293).
+      #   * Chronologically, significant in 1 of 4 expanding-window folds.
+      #
+      # Scheduled rather than run by hand precisely so this keeps being re-tested as the sample
+      # grows instead of being remembered as settled — which is exactly what happened to the
+      # broken numbers above. Quote the CSVs, not a comment.
       - name: Momentum-controlled residual regression
         id: momentum
         run: python scripts/v11_momentum_control.py --write
@@ -157,6 +172,8 @@ jobs:
                    output/v11_microstructure_coverage.csv \
                    output/v11_momentum_control.csv \
                    output/v11_momentum_roles.csv \
+                   output/v11_placebo_table.csv \
+                   output/v11_chronological_folds.csv \
                    output/v11_research_health.json output/research_state.json; do
             git add -f "$f" 2>/dev/null || echo "  (skip, not present: $f)"
           done
