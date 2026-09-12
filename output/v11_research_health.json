@@ -1,31 +1,31 @@
 {
-  "generated_at": "2026-09-12T15:38:27Z",
-  "git_sha": "bc8bb353606e",
+  "generated_at": "2026-09-12T18:30:20Z",
+  "git_sha": "5803d41cfe26",
   "calculation_version": "1.0.0",
   "raw": {
-    "snapshots_rows": 53693,
-    "latest_snapshot_ts": "2026-09-12T15:37:16Z"
+    "snapshots_rows": 53863,
+    "latest_snapshot_ts": "2026-09-12T18:28:58Z"
   },
   "grading": {
-    "graded_rows": 1040,
-    "latest_result_ts": "2026-09-12T15:37:43Z"
+    "graded_rows": 1047,
+    "latest_result_ts": "2026-09-12T18:29:36Z"
   },
   "movement": {
-    "n_distinct_observations": 52263,
-    "n_fixtures": 845,
-    "published_fixture_n": 822,
-    "toward_rate": 0.5759,
-    "mean_signed_move_pp": 0.743,
-    "clv_n": 731,
-    "mean_clv_pct": 0.4396,
-    "derived_generated_at": "2026-09-12T15:37:56Z",
+    "n_distinct_observations": 52425,
+    "n_fixtures": 886,
+    "published_fixture_n": 862,
+    "toward_rate": 0.5699,
+    "mean_signed_move_pp": 0.7087,
+    "clv_n": 751,
+    "mean_clv_pct": 0.4047,
+    "derived_generated_at": "2026-09-12T18:29:49Z",
     "lag_hours": -0.01,
     "freshness_status": "PASS",
-    "delta_fixtures_since_previous": 19
+    "delta_fixtures_since_previous": 41
   },
   "residual": {
-    "n_fixtures": 782,
-    "derived_generated_at": "2026-09-12T15:37:44Z",
+    "n_fixtures": 783,
+    "derived_generated_at": "2026-09-12T18:29:37Z",
     "lag_hours": -0.0,
     "freshness_status": "PASS",
     "delta_n_since_previous": 1
@@ -42,7 +42,7 @@
     {
       "artifact": "v11_market_microstructure.csv",
       "status": "PASS",
-      "lag_hours": -0.01,
+      "lag_hours": -0.02,
       "why": "derived output -0.0h behind its source"
     },
     {
@@ -54,13 +54,13 @@
     {
       "artifact": "v11_microstructure_coverage.csv",
       "status": "PASS",
-      "lag_hours": -0.01,
+      "lag_hours": -0.02,
       "why": "derived output -0.0h behind its source"
     },
     {
       "artifact": "v11_microstructure_segments.csv",
       "status": "PASS",
-      "lag_hours": -0.01,
+      "lag_hours": -0.02,
       "why": "derived output -0.0h behind its source"
     },
     {
