@@ -1,45 +1,37 @@
 {
-  "generated_at": "2026-09-17T18:22:07Z",
-  "git_sha": "432af0edc0dc",
+  "generated_at": "2026-09-17T21:31:35Z",
+  "git_sha": "def23ff40e30",
   "calculation_version": "1.0.0",
   "raw": {
-    "snapshots_rows": 57599,
-    "latest_snapshot_ts": "2026-09-17T18:20:48Z"
+    "snapshots_rows": 57773,
+    "latest_snapshot_ts": "2026-09-17T21:29:46Z"
   },
   "grading": {
     "graded_rows": 1139,
-    "latest_result_ts": "2026-09-17T18:21:43Z"
+    "latest_result_ts": "2026-09-17T21:30:58Z"
   },
   "movement": {
-    "n_distinct_observations": 56049,
+    "n_distinct_observations": 56223,
     "n_fixtures": 985,
     "published_fixture_n": 962,
-    "toward_rate": 0.5664,
-    "mean_signed_move_pp": 0.647,
-    "clv_n": 874,
-    "mean_clv_pct": 0.4016,
-    "derived_generated_at": "2026-09-17T18:21:51Z",
+    "toward_rate": 0.569,
+    "mean_signed_move_pp": 0.6573,
+    "clv_n": 877,
+    "mean_clv_pct": 0.4082,
+    "derived_generated_at": "2026-09-17T21:31:10Z",
     "lag_hours": -0.02,
     "freshness_status": "PASS",
-    "delta_fixtures_since_previous": 1
+    "delta_fixtures_since_previous": 0
   },
   "residual": {
     "n_fixtures": 928,
-    "derived_generated_at": "2026-09-17T18:21:44Z",
+    "derived_generated_at": "2026-09-17T21:30:59Z",
     "lag_hours": -0.0,
     "freshness_status": "PASS",
-    "delta_n_since_previous": 383
+    "delta_n_since_previous": 0
   },
   "monotonicity_warnings": [],
-  "expected_recount_deltas": [
-    {
-      "metric": "movement_clv_n",
-      "previous": 878,
-      "current": 874,
-      "delta": -4,
-      "why": "recomputed each run from a movement threshold against a close that keeps updating until kickoff; a still-open fixture retracing under MIN_MOVE_PP leaves the moved set and takes its CLV row with it"
-    }
-  ],
+  "expected_recount_deltas": [],
   "checks": [
     {
       "artifact": "v11_graded.csv",
@@ -68,7 +60,7 @@
     {
       "artifact": "v11_microstructure_segments.csv",
       "status": "PASS",
-      "lag_hours": -0.02,
+      "lag_hours": -0.03,
       "why": "derived output -0.0h behind its source"
     },
     {
