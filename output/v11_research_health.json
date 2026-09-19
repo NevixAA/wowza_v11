@@ -1,45 +1,37 @@
 {
-  "generated_at": "2026-09-19T12:35:12Z",
-  "git_sha": "1ea75d0be102",
+  "generated_at": "2026-09-19T16:34:47Z",
+  "git_sha": "3a67d748d05a",
   "calculation_version": "1.0.0",
   "raw": {
-    "snapshots_rows": 58870,
-    "latest_snapshot_ts": "2026-09-19T12:33:48Z"
+    "snapshots_rows": 58984,
+    "latest_snapshot_ts": "2026-09-19T16:33:34Z"
   },
   "grading": {
-    "graded_rows": 1144,
-    "latest_result_ts": "2026-09-19T12:34:25Z"
+    "graded_rows": 1167,
+    "latest_result_ts": "2026-09-19T16:34:11Z"
   },
   "movement": {
-    "n_distinct_observations": 57313,
-    "n_fixtures": 987,
-    "published_fixture_n": 964,
-    "toward_rate": 0.5583,
-    "mean_signed_move_pp": 0.6018,
-    "clv_n": 883,
-    "mean_clv_pct": 0.3713,
-    "derived_generated_at": "2026-09-19T12:34:40Z",
+    "n_distinct_observations": 57402,
+    "n_fixtures": 990,
+    "published_fixture_n": 967,
+    "toward_rate": 0.5616,
+    "mean_signed_move_pp": 0.6019,
+    "clv_n": 885,
+    "mean_clv_pct": 0.379,
+    "derived_generated_at": "2026-09-19T16:34:22Z",
     "lag_hours": -0.01,
     "freshness_status": "PASS",
-    "delta_fixtures_since_previous": 0
+    "delta_fixtures_since_previous": 3
   },
   "residual": {
     "n_fixtures": 945,
-    "derived_generated_at": "2026-09-19T12:34:27Z",
+    "derived_generated_at": "2026-09-19T16:34:12Z",
     "lag_hours": -0.0,
     "freshness_status": "PASS",
-    "delta_n_since_previous": 13
+    "delta_n_since_previous": 0
   },
   "monotonicity_warnings": [],
-  "expected_recount_deltas": [
-    {
-      "metric": "movement_clv_n",
-      "previous": 884,
-      "current": 883,
-      "delta": -1,
-      "why": "recomputed each run from a movement threshold against a close that keeps updating until kickoff; a still-open fixture retracing under MIN_MOVE_PP leaves the moved set and takes its CLV row with it"
-    }
-  ],
+  "expected_recount_deltas": [],
   "checks": [
     {
       "artifact": "v11_graded.csv",
@@ -50,7 +42,7 @@
     {
       "artifact": "v11_market_microstructure.csv",
       "status": "PASS",
-      "lag_hours": -0.02,
+      "lag_hours": -0.01,
       "why": "derived output -0.0h behind its source"
     },
     {
@@ -62,7 +54,7 @@
     {
       "artifact": "v11_microstructure_coverage.csv",
       "status": "PASS",
-      "lag_hours": -0.02,
+      "lag_hours": -0.01,
       "why": "derived output -0.0h behind its source"
     },
     {
