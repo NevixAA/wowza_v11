@@ -1,45 +1,37 @@
 {
-  "generated_at": "2026-09-21T15:10:58Z",
-  "git_sha": "4b7bf0010197",
+  "generated_at": "2026-09-21T20:02:39Z",
+  "git_sha": "49ca392110f3",
   "calculation_version": "1.0.0",
   "raw": {
-    "snapshots_rows": 59681,
-    "latest_snapshot_ts": "2026-09-21T15:10:01Z"
+    "snapshots_rows": 59741,
+    "latest_snapshot_ts": "2026-09-21T20:01:21Z"
   },
   "grading": {
-    "graded_rows": 1198,
-    "latest_result_ts": "2026-09-21T15:10:28Z"
+    "graded_rows": 1199,
+    "latest_result_ts": "2026-09-21T20:01:51Z"
   },
   "movement": {
-    "n_distinct_observations": 58058,
-    "n_fixtures": 1040,
-    "published_fixture_n": 1015,
-    "toward_rate": 0.5646,
-    "mean_signed_move_pp": 0.6023,
-    "clv_n": 921,
-    "mean_clv_pct": 0.3656,
-    "derived_generated_at": "2026-09-21T15:10:37Z",
+    "n_distinct_observations": 58117,
+    "n_fixtures": 1043,
+    "published_fixture_n": 1019,
+    "toward_rate": 0.5651,
+    "mean_signed_move_pp": 0.6036,
+    "clv_n": 922,
+    "mean_clv_pct": 0.3688,
+    "derived_generated_at": "2026-09-21T20:02:06Z",
     "lag_hours": -0.01,
     "freshness_status": "PASS",
     "delta_fixtures_since_previous": 3
   },
   "residual": {
-    "n_fixtures": 976,
-    "derived_generated_at": "2026-09-21T15:10:29Z",
+    "n_fixtures": 1046,
+    "derived_generated_at": "2026-09-21T20:01:53Z",
     "lag_hours": -0.0,
     "freshness_status": "PASS",
-    "delta_n_since_previous": -15
+    "delta_n_since_previous": 70
   },
   "monotonicity_warnings": [],
-  "expected_recount_deltas": [
-    {
-      "metric": "residual_n",
-      "previous": 991,
-      "current": 976,
-      "delta": -15,
-      "why": "recomputed each run from a movement threshold against a close that keeps updating until kickoff; a still-open fixture retracing under MIN_MOVE_PP leaves the moved set and takes its CLV row with it"
-    }
-  ],
+  "expected_recount_deltas": [],
   "checks": [
     {
       "artifact": "v11_graded.csv",
@@ -68,7 +60,7 @@
     {
       "artifact": "v11_microstructure_segments.csv",
       "status": "PASS",
-      "lag_hours": -0.01,
+      "lag_hours": -0.02,
       "why": "derived output -0.0h behind its source"
     },
     {
