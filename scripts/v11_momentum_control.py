@@ -144,6 +144,43 @@ def _asof_col(d: pd.DataFrame, col: str, minutes: float) -> pd.Series:
     return out.set_index("_orig_idx")["_v"].reindex(d.index)
 
 
+def observed_cadence(d: pd.DataFrame) -> float:
+    """Median minutes between consecutive snapshots OF THE SAME FIXTURE.
+
+    This is the number that decides whether any movement measurement is possible at all, and
+    nothing in this script used to look at it. `_asof` matches a target time within
+    `TOLERANCE_MIN[window]`; if the real gap between snapshots is wider than that tolerance,
+    every match misses and every movement column comes back all-NaN.
+    """
+    ts = pd.to_datetime(d["snapshot_ts"], errors="coerce", utc=True)
+    per = (pd.DataFrame({"fixture_id": d["fixture_id"], "ts": ts}).dropna()
+           .sort_values("ts").groupby("fixture_id")["ts"]
+           .apply(lambda s: s.diff().dt.total_seconds().div(60).median()).dropna())
+    return float(per.median()) if len(per) else float("nan")
+
+
+def choose_window(gap_min: float) -> int:
+    """Smallest configured window whose tolerance can actually match at this cadence.
+
+    WHY THIS EXISTS. The 60-minute default was chosen in August 2026 when snapshots arrived
+    every ~33 minutes, comfortably inside TOLERANCE_MIN[60] = 35. After the 2026-08-27..08-30
+    schedule cut the median gap went to 170-246 minutes, so a 60-minute window could never find
+    a match again. The script kept running, kept printing, and kept writing a placebo table with
+    byte-identical contents — so git had nothing to commit and the whole thing looked healthy
+    while measuring a frozen 9-day sample for four weeks.
+
+    Picking the window from the data means the instrument degrades in RESOLUTION as cadence
+    degrades, instead of silently dying. A 6-hour window is a worse measurement than a 1-hour
+    one, but it is a measurement.
+    """
+    if not np.isfinite(gap_min):
+        return 60
+    for w in sorted(TOLERANCE_MIN):
+        if TOLERANCE_MIN[w] >= gap_min:
+            return w
+    return max(TOLERANCE_MIN)
+
+
 def _asof(d: pd.DataFrame, minutes: float, direction: str) -> pd.Series:
     """Market probability `minutes` before (direction='backward') or after ('forward') each row,
     matched within tolerance, per fixture."""
@@ -534,16 +571,37 @@ def run(prior: int, future: int, *, n_boot: int) -> tuple[pd.DataFrame, pd.DataF
 
 def main() -> int:
     ap = argparse.ArgumentParser()
-    ap.add_argument("--prior", type=int, default=60)
-    ap.add_argument("--future", type=int, default=60)
+    # prior/future default to None = pick from the data. Pass them explicitly to force a window
+    # (and to reproduce an older run, whose window is stamped in its own CSV).
+    ap.add_argument("--prior", type=int, default=None)
+    ap.add_argument("--future", type=int, default=None)
     ap.add_argument("--boot", type=int, default=1000)
     ap.add_argument("--all-windows", action="store_true",
                     help="sweep every prior x future pair")
     ap.add_argument("--write", action="store_true")
     a = ap.parse_args()
 
+    # ---- pick the measurement window from the cadence the collector actually achieved -------
+    # Hardcoding 60m is what killed this script for four weeks: the collector slowed from a
+    # ~33-minute gap to 170-246 minutes, TOLERANCE_MIN[60]=35 could never match, every movement
+    # column went all-NaN, and the placebo table froze on a 9-day sample while still printing
+    # and still exiting 0.
+    _gap = observed_cadence(_load())
+    _auto = choose_window(_gap)
+    prior_w = a.prior if a.prior is not None else _auto
+    future_w = a.future if a.future is not None else _auto
+    print(f"[momentum] observed snapshot cadence: median gap {_gap:.1f} min per fixture")
+    print(f"[momentum] window: prior={prior_w}m future={future_w}m "
+          f"(tolerance {TOLERANCE_MIN.get(prior_w, '?')}m) — "
+          f"{'FORCED by --prior/--future' if a.prior is not None else 'chosen from cadence'}")
+    if _auto > 60:
+        print(f"[momentum] NOTE: cadence cannot support the 60m window this analysis was "
+              f"designed around. Resolution is degraded to {_auto}m. Results are NOT comparable "
+              f"to runs stamped with a different window_min — check that column before "
+              f"comparing anything.")
+
     pairs = ([(p, f) for p in PRIOR_WINDOWS for f in FUTURE_WINDOWS] if a.all_windows
-             else [(a.prior, a.future)])
+             else [(prior_w, future_w)])
 
     all_coefs, all_roles = [], []
     for prior, future in pairs:
@@ -603,7 +661,7 @@ def main() -> int:
 
     # The artefact control, run on the primary window only — it answers whether ANY of the above
     # is interpretable, so it is printed last and read first.
-    diag = artifact_diagnostic(build(a.prior, a.future), n_boot=min(a.boot, 400))
+    diag = artifact_diagnostic(build(prior_w, future_w), n_boot=min(a.boot, 400))
     if not diag.empty:
         print("\nARTEFACT CONTROL — is p_market(t) on both sides producing this?")
         for _, r in diag.iterrows():
@@ -621,9 +679,40 @@ def main() -> int:
                       "almost the same.")
 
     # ---- Prompt 2 sections 12 and 13 --------------------------------------------------
-    primary = build(a.prior, a.future)
+    primary = build(prior_w, future_w)
+
+    # LOUD FAILURE IF THE INSTRUMENT IS DEAD.
+    # This is the guard whose absence let the script run for four weeks on a frozen sample. If
+    # the movement columns cannot be computed at this cadence there is nothing to measure, and
+    # saying so with a non-zero exit is the whole point — a red step in the run log is what makes
+    # it visible. Printing a table anyway is how this hid.
+    _mv_ok = int(primary[["prev_move_pp", "future_move_pp"]].notna().all(axis=1).sum())
+    _fx_ok = int(primary.loc[primary[["prev_move_pp", "future_move_pp"]].notna().all(axis=1),
+                             "fixture_id"].nunique()) if _mv_ok else 0
+    print(f"\n[momentum] usable movement rows: {_mv_ok} of {len(primary)} "
+          f"({_fx_ok} fixtures)")
+    if _mv_ok == 0:
+        print("=" * 78)
+        print("MOVEMENT MEASUREMENT IMPOSSIBLE AT THIS CADENCE — NOTHING WAS MEASURED.")
+        print(f"  median snapshot gap : {_gap:.1f} min")
+        print(f"  window / tolerance  : {prior_w}m / {TOLERANCE_MIN.get(prior_w)}m")
+        print("  Every movement column is all-NaN, so the placebo battery, the chronological")
+        print("  folds and the residual regression have no rows. Fix the COLLECTOR cadence or")
+        print("  widen the window; do not read any number above as a result.")
+        print("=" * 78)
+        return 2
+
     plc = placebo_table(primary, n_boot=min(a.boot, 400))
     chrono = chronological(primary, n_boot=min(a.boot, 200))
+
+    # Stamp the measurement conditions onto every row. Without these a reader cannot tell a
+    # 60-minute result from a 360-minute one, and the two are not comparable.
+    for _df in (plc, chrono):
+        if not _df.empty:
+            _df["window_min"] = prior_w
+            _df["future_min"] = future_w
+            _df["tolerance_min"] = TOLERANCE_MIN.get(prior_w)
+            _df["median_gap_min"] = round(_gap, 1)
 
     if not plc.empty:
         print("\nPLACEBO / CONTROL TABLE (section 12) — sorted by toward-rate")
