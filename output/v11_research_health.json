@@ -1,37 +1,45 @@
 {
-  "generated_at": "2026-09-23T22:23:48Z",
-  "git_sha": "1afc1345c2e1",
+  "generated_at": "2026-09-24T00:37:39Z",
+  "git_sha": "e6086327f458",
   "calculation_version": "1.0.0",
   "raw": {
-    "snapshots_rows": 60265,
-    "latest_snapshot_ts": "2026-09-23T22:22:00Z"
+    "snapshots_rows": 60323,
+    "latest_snapshot_ts": "2026-09-24T00:35:50Z"
   },
   "grading": {
     "graded_rows": 1199,
-    "latest_result_ts": "2026-09-23T22:22:32Z"
+    "latest_result_ts": "2026-09-24T00:36:17Z"
   },
   "movement": {
-    "n_distinct_observations": 58640,
+    "n_distinct_observations": 58698,
     "n_fixtures": 1044,
     "published_fixture_n": 1021,
-    "toward_rate": 0.5655,
-    "mean_signed_move_pp": 0.6054,
-    "clv_n": 932,
-    "mean_clv_pct": 0.386,
-    "derived_generated_at": "2026-09-23T22:22:46Z",
+    "toward_rate": 0.5667,
+    "mean_signed_move_pp": 0.6079,
+    "clv_n": 930,
+    "mean_clv_pct": 0.3833,
+    "derived_generated_at": "2026-09-24T00:36:32Z",
     "lag_hours": -0.01,
     "freshness_status": "PASS",
     "delta_fixtures_since_previous": 0
   },
   "residual": {
     "n_fixtures": 1071,
-    "derived_generated_at": "2026-09-23T22:22:34Z",
+    "derived_generated_at": "2026-09-24T00:36:18Z",
     "lag_hours": -0.0,
     "freshness_status": "PASS",
     "delta_n_since_previous": 0
   },
   "monotonicity_warnings": [],
-  "expected_recount_deltas": [],
+  "expected_recount_deltas": [
+    {
+      "metric": "movement_clv_n",
+      "previous": 932,
+      "current": 930,
+      "delta": -2,
+      "why": "recomputed each run from a movement threshold against a close that keeps updating until kickoff; a still-open fixture retracing under MIN_MOVE_PP leaves the moved set and takes its CLV row with it"
+    }
+  ],
   "checks": [
     {
       "artifact": "v11_graded.csv",
@@ -60,7 +68,7 @@
     {
       "artifact": "v11_microstructure_segments.csv",
       "status": "PASS",
-      "lag_hours": -0.02,
+      "lag_hours": -0.01,
       "why": "derived output -0.0h behind its source"
     },
     {
