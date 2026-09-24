@@ -1,45 +1,37 @@
 {
-  "generated_at": "2026-09-24T18:29:43Z",
-  "git_sha": "27aa9139e81b",
+  "generated_at": "2026-09-24T22:32:10Z",
+  "git_sha": "464897db7851",
   "calculation_version": "1.0.0",
   "raw": {
-    "snapshots_rows": 60437,
-    "latest_snapshot_ts": "2026-09-24T18:27:52Z"
+    "snapshots_rows": 60494,
+    "latest_snapshot_ts": "2026-09-24T22:30:25Z"
   },
   "grading": {
     "graded_rows": 1199,
-    "latest_result_ts": "2026-09-24T18:28:21Z"
+    "latest_result_ts": "2026-09-24T22:30:53Z"
   },
   "movement": {
-    "n_distinct_observations": 58812,
+    "n_distinct_observations": 58869,
     "n_fixtures": 1044,
     "published_fixture_n": 1021,
-    "toward_rate": 0.5644,
-    "mean_signed_move_pp": 0.6053,
-    "clv_n": 932,
-    "mean_clv_pct": 0.3933,
-    "derived_generated_at": "2026-09-24T18:28:37Z",
+    "toward_rate": 0.5636,
+    "mean_signed_move_pp": 0.5993,
+    "clv_n": 935,
+    "mean_clv_pct": 0.3932,
+    "derived_generated_at": "2026-09-24T22:31:06Z",
     "lag_hours": -0.01,
     "freshness_status": "PASS",
     "delta_fixtures_since_previous": 0
   },
   "residual": {
     "n_fixtures": 1072,
-    "derived_generated_at": "2026-09-24T18:28:23Z",
+    "derived_generated_at": "2026-09-24T22:30:54Z",
     "lag_hours": -0.0,
     "freshness_status": "PASS",
-    "delta_n_since_previous": 58
+    "delta_n_since_previous": 0
   },
   "monotonicity_warnings": [],
-  "expected_recount_deltas": [
-    {
-      "metric": "movement_clv_n",
-      "previous": 934,
-      "current": 932,
-      "delta": -2,
-      "why": "recomputed each run from a movement threshold against a close that keeps updating until kickoff; a still-open fixture retracing under MIN_MOVE_PP leaves the moved set and takes its CLV row with it"
-    }
-  ],
+  "expected_recount_deltas": [],
   "checks": [
     {
       "artifact": "v11_graded.csv",
@@ -68,7 +60,7 @@
     {
       "artifact": "v11_microstructure_segments.csv",
       "status": "PASS",
-      "lag_hours": -0.02,
+      "lag_hours": -0.01,
       "why": "derived output -0.0h behind its source"
     },
     {
