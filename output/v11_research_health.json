@@ -1,34 +1,34 @@
 {
-  "generated_at": "2026-09-25T18:46:31Z",
-  "git_sha": "c6cbf245ab5d",
+  "generated_at": "2026-09-25T22:31:22Z",
+  "git_sha": "be3572352c9b",
   "calculation_version": "1.0.0",
   "raw": {
-    "snapshots_rows": 60653,
-    "latest_snapshot_ts": "2026-09-25T18:44:39Z"
+    "snapshots_rows": 60704,
+    "latest_snapshot_ts": "2026-09-25T22:29:21Z"
   },
   "grading": {
-    "graded_rows": 1200,
-    "latest_result_ts": "2026-09-25T18:45:07Z"
+    "graded_rows": 1202,
+    "latest_result_ts": "2026-09-25T22:29:59Z"
   },
   "movement": {
-    "n_distinct_observations": 59026,
+    "n_distinct_observations": 59075,
     "n_fixtures": 1045,
     "published_fixture_n": 1022,
-    "toward_rate": 0.5684,
-    "mean_signed_move_pp": 0.6124,
-    "clv_n": 936,
-    "mean_clv_pct": 0.3839,
-    "derived_generated_at": "2026-09-25T18:45:23Z",
+    "toward_rate": 0.5667,
+    "mean_signed_move_pp": 0.6108,
+    "clv_n": 937,
+    "mean_clv_pct": 0.379,
+    "derived_generated_at": "2026-09-25T22:30:14Z",
     "lag_hours": -0.01,
     "freshness_status": "PASS",
-    "delta_fixtures_since_previous": 1
+    "delta_fixtures_since_previous": 0
   },
   "residual": {
-    "n_fixtures": 1072,
-    "derived_generated_at": "2026-09-25T18:45:09Z",
+    "n_fixtures": 1073,
+    "derived_generated_at": "2026-09-25T22:30:01Z",
     "lag_hours": -0.0,
     "freshness_status": "PASS",
-    "delta_n_since_previous": 0
+    "delta_n_since_previous": 1
   },
   "monotonicity_warnings": [],
   "expected_recount_deltas": [],
@@ -42,7 +42,7 @@
     {
       "artifact": "v11_market_microstructure.csv",
       "status": "PASS",
-      "lag_hours": -0.01,
+      "lag_hours": -0.02,
       "why": "derived output -0.0h behind its source"
     },
     {
@@ -54,7 +54,7 @@
     {
       "artifact": "v11_microstructure_coverage.csv",
       "status": "PASS",
-      "lag_hours": -0.01,
+      "lag_hours": -0.02,
       "why": "derived output -0.0h behind its source"
     },
     {
