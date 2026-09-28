@@ -7,17 +7,17 @@
   },
   "global": {
     "brier": null,
-    "ece": 0.030995,
+    "ece": 0.031363,
     "logloss": null,
-    "n": 1095,
-    "n_eff": 1095,
+    "n": 1101,
+    "n_eff": 1101,
     "scope": "global",
     "source": "measured"
   },
   "segments": {
     "new_format": {
       "brier": null,
-      "ece": 0.032326,
+      "ece": 0.033384,
       "logloss": null,
       "n": 640,
       "n_eff": 640,
@@ -26,7 +26,7 @@
     },
     "new_format|Argentina Primera Division": {
       "brier": null,
-      "ece": 0.030995,
+      "ece": 0.031363,
       "logloss": null,
       "n": 75,
       "n_eff": 75,
@@ -35,7 +35,7 @@
     },
     "new_format|Brazil Serie A": {
       "brier": null,
-      "ece": 0.05872,
+      "ece": 0.059006,
       "logloss": null,
       "n": 57,
       "n_eff": 57,
@@ -44,7 +44,7 @@
     },
     "new_format|China Super League": {
       "brier": null,
-      "ece": 0.044183,
+      "ece": 0.044496,
       "logloss": null,
       "n": 35,
       "n_eff": 35,
@@ -53,7 +53,7 @@
     },
     "new_format|Denmark Superliga": {
       "brier": null,
-      "ece": 0.0392,
+      "ece": 0.039507,
       "logloss": null,
       "n": 40,
       "n_eff": 40,
@@ -62,7 +62,7 @@
     },
     "new_format|Finland Veikkausliiga": {
       "brier": null,
-      "ece": 0.044096,
+      "ece": 0.044404,
       "logloss": null,
       "n": 39,
       "n_eff": 39,
@@ -71,7 +71,7 @@
     },
     "new_format|Japan J-League": {
       "brier": null,
-      "ece": 0.038297,
+      "ece": 0.038574,
       "logloss": null,
       "n": 66,
       "n_eff": 66,
@@ -80,7 +80,7 @@
     },
     "new_format|Mexico Liga MX": {
       "brier": null,
-      "ece": 0.044923,
+      "ece": 0.045267,
       "logloss": null,
       "n": 61,
       "n_eff": 61,
@@ -89,7 +89,7 @@
     },
     "new_format|Norway Eliteserien": {
       "brier": null,
-      "ece": 0.048137,
+      "ece": 0.048442,
       "logloss": null,
       "n": 41,
       "n_eff": 41,
@@ -98,7 +98,7 @@
     },
     "new_format|Sweden Allsvenskan": {
       "brier": null,
-      "ece": 0.050382,
+      "ece": 0.050676,
       "logloss": null,
       "n": 51,
       "n_eff": 51,
@@ -107,7 +107,7 @@
     },
     "new_format|USA MLS": {
       "brier": null,
-      "ece": 0.050841,
+      "ece": 0.051071,
       "logloss": null,
       "n": 120,
       "n_eff": 120,
@@ -116,16 +116,16 @@
     },
     "standard": {
       "brier": null,
-      "ece": 0.033769,
+      "ece": 0.033291,
       "logloss": null,
-      "n": 455,
-      "n_eff": 455,
+      "n": 461,
+      "n_eff": 461,
       "scope": "standard",
       "source": "measured"
     },
     "standard|Bundesliga 2": {
       "brier": null,
-      "ece": 0.047363,
+      "ece": 0.047664,
       "logloss": null,
       "n": 45,
       "n_eff": 45,
@@ -134,7 +134,7 @@
     },
     "standard|Championship": {
       "brier": null,
-      "ece": 0.060688,
+      "ece": 0.060946,
       "logloss": null,
       "n": 85,
       "n_eff": 85,
@@ -143,25 +143,25 @@
     },
     "standard|La Liga 2": {
       "brier": null,
-      "ece": 0.051947,
+      "ece": 0.046313,
       "logloss": null,
-      "n": 65,
-      "n_eff": 65,
+      "n": 70,
+      "n_eff": 70,
       "scope": "standard|La Liga 2",
       "source": "shrunk"
     },
     "standard|League One": {
       "brier": null,
-      "ece": 0.040439,
+      "ece": 0.042564,
       "logloss": null,
-      "n": 80,
-      "n_eff": 80,
+      "n": 81,
+      "n_eff": 81,
       "scope": "standard|League One",
       "source": "shrunk"
     },
     "standard|League Two": {
       "brier": null,
-      "ece": 0.032893,
+      "ece": 0.033147,
       "logloss": null,
       "n": 89,
       "n_eff": 89,
@@ -170,7 +170,7 @@
     },
     "standard|Ligue 2": {
       "brier": null,
-      "ece": 0.038163,
+      "ece": 0.038469,
       "logloss": null,
       "n": 40,
       "n_eff": 40,
@@ -179,7 +179,7 @@
     },
     "standard|Serie B": {
       "brier": null,
-      "ece": 0.05343,
+      "ece": 0.053724,
       "logloss": null,
       "n": 51,
       "n_eff": 51,
