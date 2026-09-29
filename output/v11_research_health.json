@@ -1,37 +1,45 @@
 {
-  "generated_at": "2026-09-29T14:54:56Z",
-  "git_sha": "d270caaf91b1",
+  "generated_at": "2026-09-29T20:04:29Z",
+  "git_sha": "41597dc31b1d",
   "calculation_version": "1.0.0",
   "raw": {
-    "snapshots_rows": 61429,
-    "latest_snapshot_ts": "2026-09-29T14:53:45Z"
+    "snapshots_rows": 61479,
+    "latest_snapshot_ts": "2026-09-29T20:02:36Z"
   },
   "grading": {
     "graded_rows": 1251,
-    "latest_result_ts": "2026-09-29T14:54:13Z"
+    "latest_result_ts": "2026-09-29T20:03:03Z"
   },
   "movement": {
-    "n_distinct_observations": 59748,
-    "n_fixtures": 1095,
+    "n_distinct_observations": 59798,
+    "n_fixtures": 1096,
     "published_fixture_n": 1065,
-    "toward_rate": 0.5624,
-    "mean_signed_move_pp": 0.5884,
-    "clv_n": 969,
-    "mean_clv_pct": 0.3504,
-    "derived_generated_at": "2026-09-29T14:54:22Z",
+    "toward_rate": 0.563,
+    "mean_signed_move_pp": 0.5886,
+    "clv_n": 968,
+    "mean_clv_pct": 0.3571,
+    "derived_generated_at": "2026-09-29T20:03:19Z",
     "lag_hours": -0.01,
     "freshness_status": "PASS",
     "delta_fixtures_since_previous": 1
   },
   "residual": {
     "n_fixtures": 1111,
-    "derived_generated_at": "2026-09-29T14:54:15Z",
+    "derived_generated_at": "2026-09-29T20:03:05Z",
     "lag_hours": -0.0,
     "freshness_status": "PASS",
-    "delta_n_since_previous": 1
+    "delta_n_since_previous": 0
   },
   "monotonicity_warnings": [],
-  "expected_recount_deltas": [],
+  "expected_recount_deltas": [
+    {
+      "metric": "movement_clv_n",
+      "previous": 969,
+      "current": 968,
+      "delta": -1,
+      "why": "recomputed each run from a movement threshold against a close that keeps updating until kickoff; a still-open fixture retracing under MIN_MOVE_PP leaves the moved set and takes its CLV row with it"
+    }
+  ],
   "checks": [
     {
       "artifact": "v11_graded.csv",
@@ -60,7 +68,7 @@
     {
       "artifact": "v11_microstructure_segments.csv",
       "status": "PASS",
-      "lag_hours": -0.01,
+      "lag_hours": -0.02,
       "why": "derived output -0.0h behind its source"
     },
     {
