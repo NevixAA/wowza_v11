@@ -1,37 +1,45 @@
 {
-  "generated_at": "2026-09-30T20:09:03Z",
-  "git_sha": "6760efb53e8b",
+  "generated_at": "2026-09-30T23:59:17Z",
+  "git_sha": "ac3fca61e88d",
   "calculation_version": "1.0.0",
   "raw": {
-    "snapshots_rows": 61626,
-    "latest_snapshot_ts": "2026-09-30T20:07:11Z"
+    "snapshots_rows": 61682,
+    "latest_snapshot_ts": "2026-09-30T23:57:17Z"
   },
   "grading": {
-    "graded_rows": 1253,
-    "latest_result_ts": "2026-09-30T20:07:37Z"
+    "graded_rows": 1258,
+    "latest_result_ts": "2026-09-30T23:57:45Z"
   },
   "movement": {
-    "n_distinct_observations": 59943,
-    "n_fixtures": 1097,
-    "published_fixture_n": 1065,
-    "toward_rate": 0.5585,
-    "mean_signed_move_pp": 0.5808,
-    "clv_n": 974,
-    "mean_clv_pct": 0.362,
-    "derived_generated_at": "2026-09-30T20:07:53Z",
+    "n_distinct_observations": 59994,
+    "n_fixtures": 1098,
+    "published_fixture_n": 1066,
+    "toward_rate": 0.5591,
+    "mean_signed_move_pp": 0.5816,
+    "clv_n": 973,
+    "mean_clv_pct": 0.3626,
+    "derived_generated_at": "2026-09-30T23:58:01Z",
     "lag_hours": -0.01,
     "freshness_status": "PASS",
     "delta_fixtures_since_previous": 1
   },
   "residual": {
     "n_fixtures": 1112,
-    "derived_generated_at": "2026-09-30T20:07:39Z",
+    "derived_generated_at": "2026-09-30T23:57:46Z",
     "lag_hours": -0.0,
     "freshness_status": "PASS",
-    "delta_n_since_previous": 1
+    "delta_n_since_previous": 0
   },
   "monotonicity_warnings": [],
-  "expected_recount_deltas": [],
+  "expected_recount_deltas": [
+    {
+      "metric": "movement_clv_n",
+      "previous": 974,
+      "current": 973,
+      "delta": -1,
+      "why": "recomputed each run from a movement threshold against a close that keeps updating until kickoff; a still-open fixture retracing under MIN_MOVE_PP leaves the moved set and takes its CLV row with it"
+    }
+  ],
   "checks": [
     {
       "artifact": "v11_graded.csv",
@@ -60,7 +68,7 @@
     {
       "artifact": "v11_microstructure_segments.csv",
       "status": "PASS",
-      "lag_hours": -0.01,
+      "lag_hours": -0.02,
       "why": "derived output -0.0h behind its source"
     },
     {
