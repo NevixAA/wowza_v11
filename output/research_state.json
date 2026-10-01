@@ -1,28 +1,28 @@
 {
-  "generated_at": "2026-09-30T23:59:17Z",
-  "git_sha": "ac3fca61e88d",
+  "generated_at": "2026-10-01T15:33:07Z",
+  "git_sha": "35b8fc850828",
   "calculation_version": "1.0.0",
   "source": {
     "v11_graded.csv": {
-      "rows": 1258,
-      "max_observation_ts": "2026-09-30T23:57:45Z",
-      "file_mtime": "2026-09-30T23:57:45Z"
+      "rows": 1260,
+      "max_observation_ts": "2026-10-01T15:31:41Z",
+      "file_mtime": "2026-10-01T15:31:41Z"
     },
     "v11_shadow_log.csv": {
-      "rows": 1258,
-      "max_observation_ts": "2026-09-30T23:57:17Z",
-      "file_mtime": "2026-09-30T23:57:21Z"
+      "rows": 1260,
+      "max_observation_ts": "2026-10-01T15:31:13Z",
+      "file_mtime": "2026-10-01T15:31:17Z"
     },
     "v11_shadow_snapshots.csv": {
-      "rows": 61682,
-      "max_observation_ts": "2026-09-30T23:57:17Z",
-      "file_mtime": "2026-09-30T23:57:21Z"
+      "rows": 61732,
+      "max_observation_ts": "2026-10-01T15:31:13Z",
+      "file_mtime": "2026-10-01T15:31:17Z"
     }
   },
   "derived": {
     "v11_graded.csv": {
-      "generated_at": "2026-09-30T23:57:45Z",
-      "source_max_ts": "2026-09-30T23:57:17Z",
+      "generated_at": "2026-10-01T15:31:41Z",
+      "source_max_ts": "2026-10-01T15:31:13Z",
       "lag_hours": -0.01,
       "sources": [
         "v11_shadow_log.csv"
@@ -32,8 +32,8 @@
       "why": "derived output -0.0h behind its source"
     },
     "v11_market_microstructure.csv": {
-      "generated_at": "2026-09-30T23:58:06Z",
-      "source_max_ts": "2026-09-30T23:57:17Z",
+      "generated_at": "2026-10-01T15:32:03Z",
+      "source_max_ts": "2026-10-01T15:31:13Z",
       "lag_hours": -0.01,
       "sources": [
         "v11_shadow_snapshots.csv"
@@ -43,8 +43,8 @@
       "why": "derived output -0.0h behind its source"
     },
     "v11_market_movement_detail.csv": {
-      "generated_at": "2026-09-30T23:58:01Z",
-      "source_max_ts": "2026-09-30T23:57:17Z",
+      "generated_at": "2026-10-01T15:31:58Z",
+      "source_max_ts": "2026-10-01T15:31:13Z",
       "lag_hours": -0.01,
       "sources": [
         "v11_shadow_snapshots.csv"
@@ -54,8 +54,8 @@
       "why": "derived output -0.0h behind its source"
     },
     "v11_microstructure_coverage.csv": {
-      "generated_at": "2026-09-30T23:58:09Z",
-      "source_max_ts": "2026-09-30T23:57:17Z",
+      "generated_at": "2026-10-01T15:32:05Z",
+      "source_max_ts": "2026-10-01T15:31:13Z",
       "lag_hours": -0.01,
       "sources": [
         "v11_shadow_snapshots.csv"
@@ -65,8 +65,8 @@
       "why": "derived output -0.0h behind its source"
     },
     "v11_microstructure_segments.csv": {
-      "generated_at": "2026-09-30T23:58:14Z",
-      "source_max_ts": "2026-09-30T23:57:17Z",
+      "generated_at": "2026-10-01T15:32:10Z",
+      "source_max_ts": "2026-10-01T15:31:13Z",
       "lag_hours": -0.02,
       "sources": [
         "v11_shadow_snapshots.csv"
@@ -76,8 +76,8 @@
       "why": "derived output -0.0h behind its source"
     },
     "v11_movement_by_league.csv": {
-      "generated_at": "2026-09-30T23:58:02Z",
-      "source_max_ts": "2026-09-30T23:57:17Z",
+      "generated_at": "2026-10-01T15:31:58Z",
+      "source_max_ts": "2026-10-01T15:31:13Z",
       "lag_hours": -0.01,
       "sources": [
         "v11_shadow_snapshots.csv"
@@ -87,8 +87,8 @@
       "why": "derived output -0.0h behind its source"
     },
     "v11_movement_by_model.csv": {
-      "generated_at": "2026-09-30T23:58:02Z",
-      "source_max_ts": "2026-09-30T23:57:17Z",
+      "generated_at": "2026-10-01T15:31:58Z",
+      "source_max_ts": "2026-10-01T15:31:13Z",
       "lag_hours": -0.01,
       "sources": [
         "v11_shadow_snapshots.csv"
@@ -98,8 +98,8 @@
       "why": "derived output -0.0h behind its source"
     },
     "v11_movement_by_residual.csv": {
-      "generated_at": "2026-09-30T23:58:02Z",
-      "source_max_ts": "2026-09-30T23:57:17Z",
+      "generated_at": "2026-10-01T15:31:58Z",
+      "source_max_ts": "2026-10-01T15:31:13Z",
       "lag_hours": -0.01,
       "sources": [
         "v11_shadow_snapshots.csv"
@@ -109,8 +109,8 @@
       "why": "derived output -0.0h behind its source"
     },
     "v11_movement_by_time.csv": {
-      "generated_at": "2026-09-30T23:58:02Z",
-      "source_max_ts": "2026-09-30T23:57:17Z",
+      "generated_at": "2026-10-01T15:31:58Z",
+      "source_max_ts": "2026-10-01T15:31:13Z",
       "lag_hours": -0.01,
       "sources": [
         "v11_shadow_snapshots.csv"
@@ -120,8 +120,8 @@
       "why": "derived output -0.0h behind its source"
     },
     "v11_movement_summary.csv": {
-      "generated_at": "2026-09-30T23:58:01Z",
-      "source_max_ts": "2026-09-30T23:57:17Z",
+      "generated_at": "2026-10-01T15:31:58Z",
+      "source_max_ts": "2026-10-01T15:31:13Z",
       "lag_hours": -0.01,
       "sources": [
         "v11_shadow_snapshots.csv"
@@ -131,8 +131,8 @@
       "why": "derived output -0.0h behind its source"
     },
     "v11_residual.csv": {
-      "generated_at": "2026-09-30T23:57:46Z",
-      "source_max_ts": "2026-09-30T23:57:45Z",
+      "generated_at": "2026-10-01T15:31:43Z",
+      "source_max_ts": "2026-10-01T15:31:41Z",
       "lag_hours": -0.0,
       "sources": [
         "v11_shadow_log.csv",
@@ -143,8 +143,8 @@
       "why": "derived output -0.0h behind its source"
     },
     "v11_scoreboard.csv": {
-      "generated_at": "2026-09-30T23:57:45Z",
-      "source_max_ts": "2026-09-30T23:57:45Z",
+      "generated_at": "2026-10-01T15:31:41Z",
+      "source_max_ts": "2026-10-01T15:31:41Z",
       "lag_hours": 0.0,
       "sources": [
         "v11_graded.csv"
@@ -155,11 +155,11 @@
     }
   },
   "counts": {
-    "movement_observations": 59994,
-    "movement_fixtures": 1098,
-    "movement_summary_fixture_n": 1066,
-    "movement_clv_n": 973,
-    "residual_n": 1112,
-    "graded_settled": 1258
+    "movement_observations": 60042,
+    "movement_fixtures": 1103,
+    "movement_summary_fixture_n": 1071,
+    "movement_clv_n": 978,
+    "residual_n": 1115,
+    "graded_settled": 1260
   }
 }
