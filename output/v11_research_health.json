@@ -1,31 +1,31 @@
 {
-  "generated_at": "2026-10-06T20:27:16Z",
-  "git_sha": "038e885238e5",
+  "generated_at": "2026-10-06T23:55:23Z",
+  "git_sha": "35bb4c2c8245",
   "calculation_version": "1.0.0",
   "raw": {
-    "snapshots_rows": 64145,
-    "latest_snapshot_ts": "2026-10-06T20:25:10Z"
+    "snapshots_rows": 64329,
+    "latest_snapshot_ts": "2026-10-06T23:54:07Z"
   },
   "grading": {
     "graded_rows": 1454,
-    "latest_result_ts": "2026-10-06T20:25:39Z"
+    "latest_result_ts": "2026-10-06T23:54:35Z"
   },
   "movement": {
-    "n_distinct_observations": 62258,
-    "n_fixtures": 1292,
-    "published_fixture_n": 1255,
+    "n_distinct_observations": 62442,
+    "n_fixtures": 1298,
+    "published_fixture_n": 1261,
     "toward_rate": 0.559,
     "mean_signed_move_pp": 0.5285,
     "clv_n": 1102,
     "mean_clv_pct": 0.2726,
-    "derived_generated_at": "2026-10-06T20:25:56Z",
+    "derived_generated_at": "2026-10-06T23:54:44Z",
     "lag_hours": -0.01,
     "freshness_status": "PASS",
-    "delta_fixtures_since_previous": 0
+    "delta_fixtures_since_previous": 6
   },
   "residual": {
     "n_fixtures": 1176,
-    "derived_generated_at": "2026-10-06T20:25:41Z",
+    "derived_generated_at": "2026-10-06T23:54:36Z",
     "lag_hours": -0.0,
     "freshness_status": "PASS",
     "delta_n_since_previous": 0
@@ -60,7 +60,7 @@
     {
       "artifact": "v11_microstructure_segments.csv",
       "status": "PASS",
-      "lag_hours": -0.02,
+      "lag_hours": -0.01,
       "why": "derived output -0.0h behind its source"
     },
     {
