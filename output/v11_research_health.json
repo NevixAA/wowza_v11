@@ -1,45 +1,37 @@
 {
-  "generated_at": "2026-10-09T15:24:24Z",
-  "git_sha": "f714614dda64",
+  "generated_at": "2026-10-09T20:10:45Z",
+  "git_sha": "af258bcd1e51",
   "calculation_version": "1.0.0",
   "raw": {
-    "snapshots_rows": 65756,
-    "latest_snapshot_ts": "2026-10-09T15:22:06Z"
+    "snapshots_rows": 65955,
+    "latest_snapshot_ts": "2026-10-09T20:09:26Z"
   },
   "grading": {
     "graded_rows": 1475,
-    "latest_result_ts": "2026-10-09T15:22:47Z"
+    "latest_result_ts": "2026-10-09T20:09:56Z"
   },
   "movement": {
-    "n_distinct_observations": 63848,
-    "n_fixtures": 1318,
+    "n_distinct_observations": 64033,
+    "n_fixtures": 1319,
     "published_fixture_n": 1275,
     "toward_rate": 0.5552,
     "mean_signed_move_pp": 0.5071,
     "clv_n": 1133,
     "mean_clv_pct": 0.197,
-    "derived_generated_at": "2026-10-09T15:23:04Z",
-    "lag_hours": -0.02,
+    "derived_generated_at": "2026-10-09T20:10:05Z",
+    "lag_hours": -0.01,
     "freshness_status": "PASS",
-    "delta_fixtures_since_previous": 0
+    "delta_fixtures_since_previous": 1
   },
   "residual": {
     "n_fixtures": 1186,
-    "derived_generated_at": "2026-10-09T15:22:48Z",
+    "derived_generated_at": "2026-10-09T20:09:57Z",
     "lag_hours": -0.0,
     "freshness_status": "PASS",
-    "delta_n_since_previous": 5
+    "delta_n_since_previous": 0
   },
   "monotonicity_warnings": [],
-  "expected_recount_deltas": [
-    {
-      "metric": "movement_clv_n",
-      "previous": 1136,
-      "current": 1133,
-      "delta": -3,
-      "why": "recomputed each run from a movement threshold against a close that keeps updating until kickoff; a still-open fixture retracing under MIN_MOVE_PP leaves the moved set and takes its CLV row with it"
-    }
-  ],
+  "expected_recount_deltas": [],
   "checks": [
     {
       "artifact": "v11_graded.csv",
@@ -50,55 +42,55 @@
     {
       "artifact": "v11_market_microstructure.csv",
       "status": "PASS",
-      "lag_hours": -0.02,
+      "lag_hours": -0.01,
       "why": "derived output -0.0h behind its source"
     },
     {
       "artifact": "v11_market_movement_detail.csv",
       "status": "PASS",
-      "lag_hours": -0.02,
+      "lag_hours": -0.01,
       "why": "derived output -0.0h behind its source"
     },
     {
       "artifact": "v11_microstructure_coverage.csv",
       "status": "PASS",
-      "lag_hours": -0.02,
+      "lag_hours": -0.01,
       "why": "derived output -0.0h behind its source"
     },
     {
       "artifact": "v11_microstructure_segments.csv",
       "status": "PASS",
-      "lag_hours": -0.02,
+      "lag_hours": -0.01,
       "why": "derived output -0.0h behind its source"
     },
     {
       "artifact": "v11_movement_by_league.csv",
       "status": "PASS",
-      "lag_hours": -0.02,
+      "lag_hours": -0.01,
       "why": "derived output -0.0h behind its source"
     },
     {
       "artifact": "v11_movement_by_model.csv",
       "status": "PASS",
-      "lag_hours": -0.02,
+      "lag_hours": -0.01,
       "why": "derived output -0.0h behind its source"
     },
     {
       "artifact": "v11_movement_by_residual.csv",
       "status": "PASS",
-      "lag_hours": -0.02,
+      "lag_hours": -0.01,
       "why": "derived output -0.0h behind its source"
     },
     {
       "artifact": "v11_movement_by_time.csv",
       "status": "PASS",
-      "lag_hours": -0.02,
+      "lag_hours": -0.01,
       "why": "derived output -0.0h behind its source"
     },
     {
       "artifact": "v11_movement_summary.csv",
       "status": "PASS",
-      "lag_hours": -0.02,
+      "lag_hours": -0.01,
       "why": "derived output -0.0h behind its source"
     },
     {
