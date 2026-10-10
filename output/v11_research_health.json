@@ -1,34 +1,34 @@
 {
-  "generated_at": "2026-10-10T14:33:54Z",
-  "git_sha": "b0816492f0c9",
+  "generated_at": "2026-10-10T19:22:17Z",
+  "git_sha": "67f5437ac0b3",
   "calculation_version": "1.0.0",
   "raw": {
-    "snapshots_rows": 66328,
-    "latest_snapshot_ts": "2026-10-10T14:31:36Z"
+    "snapshots_rows": 66518,
+    "latest_snapshot_ts": "2026-10-10T19:20:58Z"
   },
   "grading": {
-    "graded_rows": 1527,
-    "latest_result_ts": "2026-10-10T14:32:13Z"
+    "graded_rows": 1553,
+    "latest_result_ts": "2026-10-10T19:21:28Z"
   },
   "movement": {
-    "n_distinct_observations": 64354,
-    "n_fixtures": 1331,
-    "published_fixture_n": 1286,
-    "toward_rate": 0.5499,
-    "mean_signed_move_pp": 0.4912,
-    "clv_n": 1153,
-    "mean_clv_pct": 0.1876,
-    "derived_generated_at": "2026-10-10T14:32:29Z",
+    "n_distinct_observations": 64517,
+    "n_fixtures": 1371,
+    "published_fixture_n": 1323,
+    "toward_rate": 0.5473,
+    "mean_signed_move_pp": 0.4867,
+    "clv_n": 1173,
+    "mean_clv_pct": 0.1914,
+    "derived_generated_at": "2026-10-10T19:21:37Z",
     "lag_hours": -0.01,
     "freshness_status": "PASS",
-    "delta_fixtures_since_previous": 12
+    "delta_fixtures_since_previous": 40
   },
   "residual": {
-    "n_fixtures": 1204,
-    "derived_generated_at": "2026-10-10T14:32:15Z",
+    "n_fixtures": 1207,
+    "derived_generated_at": "2026-10-10T19:21:29Z",
     "lag_hours": -0.0,
     "freshness_status": "PASS",
-    "delta_n_since_previous": 14
+    "delta_n_since_previous": 3
   },
   "monotonicity_warnings": [],
   "expected_recount_deltas": [],
@@ -42,7 +42,7 @@
     {
       "artifact": "v11_market_microstructure.csv",
       "status": "PASS",
-      "lag_hours": -0.02,
+      "lag_hours": -0.01,
       "why": "derived output -0.0h behind its source"
     },
     {
@@ -54,13 +54,13 @@
     {
       "artifact": "v11_microstructure_coverage.csv",
       "status": "PASS",
-      "lag_hours": -0.02,
+      "lag_hours": -0.01,
       "why": "derived output -0.0h behind its source"
     },
     {
       "artifact": "v11_microstructure_segments.csv",
       "status": "PASS",
-      "lag_hours": -0.02,
+      "lag_hours": -0.01,
       "why": "derived output -0.0h behind its source"
     },
     {
