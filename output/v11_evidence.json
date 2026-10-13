@@ -7,62 +7,62 @@
   },
   "global": {
     "brier": null,
-    "ece": 0.026431,
+    "ece": 0.025528,
     "logloss": null,
-    "n": 1330,
-    "n_eff": 1330,
+    "n": 1351,
+    "n_eff": 1351,
     "scope": "global",
     "source": "measured"
   },
   "segments": {
     "new_format": {
       "brier": null,
-      "ece": 0.035438,
+      "ece": 0.033843,
       "logloss": null,
-      "n": 775,
-      "n_eff": 775,
+      "n": 796,
+      "n_eff": 796,
       "scope": "new_format",
       "source": "measured"
     },
     "new_format|Argentina Primera Division": {
       "brier": null,
-      "ece": 0.026431,
+      "ece": 0.025528,
       "logloss": null,
-      "n": 89,
-      "n_eff": 89,
+      "n": 95,
+      "n_eff": 95,
       "scope": "new_format|Argentina Primera Division",
       "source": "shrunk"
     },
     "new_format|Austrian Bundesliga": {
       "brier": null,
-      "ece": 0.04781,
+      "ece": 0.048779,
       "logloss": null,
-      "n": 36,
-      "n_eff": 36,
+      "n": 37,
+      "n_eff": 37,
       "scope": "new_format|Austrian Bundesliga",
       "source": "shrunk"
     },
     "new_format|Brazil Serie A": {
       "brier": null,
-      "ece": 0.052464,
+      "ece": 0.055441,
       "logloss": null,
-      "n": 72,
-      "n_eff": 72,
+      "n": 76,
+      "n_eff": 76,
       "scope": "new_format|Brazil Serie A",
       "source": "shrunk"
     },
     "new_format|China Super League": {
       "brier": null,
-      "ece": 0.03788,
+      "ece": 0.034745,
       "logloss": null,
-      "n": 40,
-      "n_eff": 40,
+      "n": 41,
+      "n_eff": 41,
       "scope": "new_format|China Super League",
       "source": "shrunk"
     },
     "new_format|Denmark Superliga": {
       "brier": null,
-      "ece": 0.050017,
+      "ece": 0.041302,
       "logloss": null,
       "n": 50,
       "n_eff": 50,
@@ -71,7 +71,7 @@
     },
     "new_format|Finland Veikkausliiga": {
       "brier": null,
-      "ece": 0.033343,
+      "ece": 0.040487,
       "logloss": null,
       "n": 54,
       "n_eff": 54,
@@ -80,7 +80,7 @@
     },
     "new_format|Ireland Premier Division": {
       "brier": null,
-      "ece": 0.034101,
+      "ece": 0.030572,
       "logloss": null,
       "n": 39,
       "n_eff": 39,
@@ -89,16 +89,16 @@
     },
     "new_format|Japan J-League": {
       "brier": null,
-      "ece": 0.031232,
+      "ece": 0.032344,
       "logloss": null,
-      "n": 72,
-      "n_eff": 72,
+      "n": 75,
+      "n_eff": 75,
       "scope": "new_format|Japan J-League",
       "source": "shrunk"
     },
     "new_format|Mexico Liga MX": {
       "brier": null,
-      "ece": 0.044972,
+      "ece": 0.042042,
       "logloss": null,
       "n": 76,
       "n_eff": 76,
@@ -107,34 +107,34 @@
     },
     "new_format|Norway Eliteserien": {
       "brier": null,
-      "ece": 0.043742,
+      "ece": 0.043464,
       "logloss": null,
-      "n": 47,
-      "n_eff": 47,
+      "n": 49,
+      "n_eff": 49,
       "scope": "new_format|Norway Eliteserien",
       "source": "shrunk"
     },
     "new_format|Sweden Allsvenskan": {
       "brier": null,
-      "ece": 0.042837,
+      "ece": 0.042296,
       "logloss": null,
-      "n": 57,
-      "n_eff": 57,
+      "n": 59,
+      "n_eff": 59,
       "scope": "new_format|Sweden Allsvenskan",
       "source": "shrunk"
     },
     "new_format|USA MLS": {
       "brier": null,
-      "ece": 0.059683,
+      "ece": 0.061248,
       "logloss": null,
-      "n": 143,
-      "n_eff": 143,
+      "n": 145,
+      "n_eff": 145,
       "scope": "new_format|USA MLS",
       "source": "shrunk"
     },
     "standard": {
       "brier": null,
-      "ece": 0.026431,
+      "ece": 0.025528,
       "logloss": null,
       "n": 555,
       "n_eff": 555,
@@ -143,7 +143,7 @@
     },
     "standard|Bundesliga 2": {
       "brier": null,
-      "ece": 0.044091,
+      "ece": 0.04338,
       "logloss": null,
       "n": 54,
       "n_eff": 54,
@@ -152,7 +152,7 @@
     },
     "standard|Championship": {
       "brier": null,
-      "ece": 0.051362,
+      "ece": 0.050752,
       "logloss": null,
       "n": 96,
       "n_eff": 96,
@@ -161,7 +161,7 @@
     },
     "standard|La Liga 2": {
       "brier": null,
-      "ece": 0.044386,
+      "ece": 0.04377,
       "logloss": null,
       "n": 93,
       "n_eff": 93,
@@ -170,7 +170,7 @@
     },
     "standard|League One": {
       "brier": null,
-      "ece": 0.042177,
+      "ece": 0.041565,
       "logloss": null,
       "n": 95,
       "n_eff": 95,
@@ -179,7 +179,7 @@
     },
     "standard|League Two": {
       "brier": null,
-      "ece": 0.043637,
+      "ece": 0.043051,
       "logloss": null,
       "n": 108,
       "n_eff": 108,
@@ -188,7 +188,7 @@
     },
     "standard|Ligue 2": {
       "brier": null,
-      "ece": 0.034602,
+      "ece": 0.033873,
       "logloss": null,
       "n": 48,
       "n_eff": 48,
@@ -197,7 +197,7 @@
     },
     "standard|Serie B": {
       "brier": null,
-      "ece": 0.042825,
+      "ece": 0.042133,
       "logloss": null,
       "n": 61,
       "n_eff": 61,
