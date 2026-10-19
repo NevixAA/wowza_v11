@@ -495,6 +495,65 @@ def placebo_table(d: pd.DataFrame, *, n_boot: int = 400, seed: int = 5) -> pd.Da
     return out.sort_values("toward_rate", ascending=False).reset_index(drop=True)
 
 
+#: How every movement number in this script is matched (owner brief 2026-10-19 §12). Stamped on
+#: every output and written to v11_research_metadata.json so any CSV is traceable to its rules.
+MERGE_DIRECTION = "nearest"
+ALLOW_EXACT_MATCHES = True          # pandas merge_asof default; not overridden in _asof
+
+
+def research_metadata(d: pd.DataFrame, prior_w: int, future_w: int) -> dict:
+    return {"CALC_VERSION": CALC_VERSION,
+            "DATA_WINDOW_START": str(d["snapshot_ts"].min())[:19] if len(d) else None,
+            "DATA_WINDOW_END": str(d["snapshot_ts"].max())[:19] if len(d) else None,
+            "ENTRY_DEFINITION": (f"every pre-kickoff snapshot with a model AND market probability; the "
+                                 f"prior move is the market change over the previous {prior_w} min"),
+            "FUTURE_WINDOW_DEFINITION": f"market change over the next {future_w} min, same fixture",
+            "MERGE_DIRECTION": MERGE_DIRECTION, "ALLOW_EXACT_MATCHES": ALLOW_EXACT_MATCHES,
+            "TOLERANCE": {"prior_min": TOLERANCE_MIN.get(prior_w), "future_min": TOLERANCE_MIN.get(future_w)},
+            "MERGE_BY": "fixture_id (never across fixtures)",
+            "INDEX_PRESERVED": "yes - _orig_idx carried through merge_asof (regression test in v11_tests.py)",
+            "n_rows": int(len(d)), "n_fixtures": int(d["fixture_id"].nunique()) if len(d) else 0}
+
+
+def placebo_by_league(d: pd.DataFrame, *, n_boot: int = 400, seed: int = 11) -> pd.DataFrame:
+    """Per-league controls (brief §12): a league's toward-rate is compared with ITS OWN fixed anchor
+    (the league's median market probability), not a single global one, and with a random direction.
+    Uncertainty is clustered by FIXTURE: snapshots of one fixture are not independent. Never used to
+    promote a league on its own."""
+    need = ["residual_pp", "future_move_pp", "v11_p_market"]
+    if "league" not in d.columns:
+        return pd.DataFrame()
+    sub = d.dropna(subset=need + ["league"]).copy()
+    rng = np.random.default_rng(seed)
+    rows = []
+    for lg, g in sub.groupby("league"):
+        fut = np.sign(g["future_move_pp"].to_numpy())
+        anchor = float(g["v11_p_market"].median())
+        w = (fut == np.sign(g["residual_pp"].to_numpy())).astype(float)
+        fx = (fut == np.sign((anchor - g["v11_p_market"]).to_numpy())).astype(float)
+        rd = (fut == np.sign(rng.normal(size=len(g)))).astype(float)
+        per = pd.DataFrame({"f": g["fixture_id"].to_numpy(), "w": w, "fx": fx, "rd": rd}).groupby("f").mean()
+        n = len(per)
+        diff = (per["w"] - per["fx"]).to_numpy()
+        ci = [None, None]
+        if n >= 10:
+            idx = rng.integers(0, n, size=(n_boot, n))
+            boots = diff[idx].mean(axis=1)
+            ci = [round(float(np.quantile(boots, 0.05)), 4), round(float(np.quantile(boots, 0.95)), 4)]
+        rows.append({"league": lg, "n": n, "n_obs": int(len(g)),
+                     "wowza_toward": round(float(per["w"].mean()), 4),
+                     "placebo_fixed": round(float(per["fx"].mean()), 4),
+                     "placebo_random": round(float(per["rd"].mean()), 4),
+                     "wowza_minus_fixed": round(float(diff.mean()), 4), "CI": ci,
+                     "sample_status": mv.sample_status(n)})
+    out = pd.DataFrame(rows)
+    if len(out):
+        out["calc_version"] = CALC_VERSION
+        out["merge_direction"] = MERGE_DIRECTION
+        out = out.sort_values("n", ascending=False).reset_index(drop=True)
+    return out
+
+
 def chronological(d: pd.DataFrame, *, folds: int = 4, n_boot: int = 200) -> pd.DataFrame:
     """Prompt 2 section 13: expanding-window evaluation, never a random split.
 
@@ -704,15 +763,18 @@ def main() -> int:
 
     plc = placebo_table(primary, n_boot=min(a.boot, 400))
     chrono = chronological(primary, n_boot=min(a.boot, 200))
+    plc_lg = placebo_by_league(primary, n_boot=min(a.boot, 400))
 
     # Stamp the measurement conditions onto every row. Without these a reader cannot tell a
     # 60-minute result from a 360-minute one, and the two are not comparable.
-    for _df in (plc, chrono):
+    for _df in (plc, chrono, plc_lg):
         if not _df.empty:
             _df["window_min"] = prior_w
             _df["future_min"] = future_w
             _df["tolerance_min"] = TOLERANCE_MIN.get(prior_w)
             _df["median_gap_min"] = round(_gap, 1)
+            _df["merge_direction"] = MERGE_DIRECTION
+            _df["allow_exact_matches"] = ALLOW_EXACT_MATCHES
 
     if not plc.empty:
         print("\nPLACEBO / CONTROL TABLE (section 12) — sorted by toward-rate")
@@ -755,6 +817,14 @@ def main() -> int:
             chrono.to_csv(config.OUTPUT_DIR / "v11_chronological_folds.csv", index=False,
                           encoding="utf-8")
             wrote.append("v11_chronological_folds.csv")
+        if not plc_lg.empty:
+            plc_lg.to_csv(config.OUTPUT_DIR / "v11_placebo_by_league.csv", index=False,
+                          encoding="utf-8")
+            wrote.append("v11_placebo_by_league.csv")
+        import json as _json
+        (config.OUTPUT_DIR / "v11_research_metadata.json").write_text(
+            _json.dumps(research_metadata(primary, prior_w, future_w), indent=1), encoding="utf-8")
+        wrote.append("v11_research_metadata.json")
         print(f"[momentum] wrote {', '.join(wrote)}")
     return 0
 

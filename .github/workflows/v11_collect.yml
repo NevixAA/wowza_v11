@@ -122,6 +122,10 @@ jobs:
         id: momentum
         run: python scripts/v11_momentum_control.py --write
         continue-on-error: true
+      # Invariant tests (incl. the merge_asof index regression). Visible, never blocks collection.
+      - name: v11 invariant tests
+        continue-on-error: true
+        run: python scripts/v11_tests.py
 
       # FAIL LOUDLY (brief section 12). Raw collection succeeding while derived research stays
       # frozen is exactly the failure this whole change addresses, and for two days it presented
@@ -174,6 +178,7 @@ jobs:
                    output/v11_momentum_roles.csv \
                    output/v11_placebo_table.csv \
                    output/v11_chronological_folds.csv \
+                   output/v11_placebo_by_league.csv output/v11_research_metadata.json \
                    output/v11_research_health.json output/research_state.json; do
             git add -f "$f" 2>/dev/null || echo "  (skip, not present: $f)"
           done

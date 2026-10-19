@@ -200,9 +200,38 @@ def main() -> int:
     _results_checks()
     _microstructure_checks()
     _freshness_checks()
+    _asof_checks()
 
     print(f"\n{'FAILED: ' + ', '.join(FAILS) if FAILS else 'all checks passed'}")
     return 1 if FAILS else 0
+
+
+def _asof_checks() -> None:
+    """REGRESSION for the merge_asof index-reset bug (fixed 2026-09-10, ba21c4c).
+
+    `pd.merge_asof` returns a fresh RangeIndex in sorted-key order. The old `_asof` handed that back
+    and build() assigned it onto `d` by index, so every movement value landed on the wrong row —
+    voiding the 08-30 and 09-08 momentum/placebo results. The fixture below is deliberately in a
+    NON-chronological row order (the condition that exposed the bug) and checks each row's value.
+    """
+    print("\n== merge_asof index regression ==")
+    from scripts.v11_momentum_control import _asof
+    t0 = pd.Timestamp("2026-10-01 12:00", tz="UTC")
+    d = pd.DataFrame({
+        "fixture_id": ["A", "A", "A", "B", "B"],
+        "snapshot_ts": [t0 + pd.Timedelta(minutes=m) for m in (120, 0, 60, 60, 0)],
+        "v11_p_market": [0.30, 0.10, 0.20, 0.55, 0.50],
+    }, index=[7, 3, 5, 9, 1])                       # scrambled, non-zero-based index
+    back = _asof(d, 60, "backward")
+    # row 7 (A @ +120) -> A @ +60 = 0.20 ; row 5 (A @ +60) -> A @ 0 = 0.10 ; row 9 (B @ +60) -> 0.50
+    check("index preserved after merge_asof", list(back.index) == [7, 3, 5, 9, 1], str(list(back.index)))
+    check("value lands on ITS row (A +120 -> 0.20)", abs(back.loc[7] - 0.20) < 1e-12, str(back.loc[7]))
+    check("value lands on ITS row (A +60 -> 0.10)", abs(back.loc[5] - 0.10) < 1e-12, str(back.loc[5]))
+    check("other fixture never borrowed (B +60 -> 0.50)", abs(back.loc[9] - 0.50) < 1e-12, str(back.loc[9]))
+    fwd = _asof(d, 60, "forward")
+    check("forward lookup also row-aligned (A 0 -> 0.20)", abs(fwd.loc[3] - 0.20) < 1e-12, str(fwd.loc[3]))
+    # the broken form, reproduced: sorted values assigned by position would put 0.10 on row 7
+    check("broken form would differ (guard is meaningful)", abs(back.loc[7] - 0.10) > 1e-6)
 
 
 def _microstructure_checks() -> None:
