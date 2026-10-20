@@ -1,7 +1,7 @@
 {
  "CALC_VERSION": "1.0.0",
  "DATA_WINDOW_START": "2026-08-17 14:14:24",
- "DATA_WINDOW_END": "2026-10-20 13:40:00",
+ "DATA_WINDOW_END": "2026-10-20 18:32:28",
  "ENTRY_DEFINITION": "every pre-kickoff snapshot with a model AND market probability; the prior move is the market change over the previous 720 min",
  "FUTURE_WINDOW_DEFINITION": "market change over the next 720 min, same fixture",
  "MERGE_DIRECTION": "nearest",
@@ -12,6 +12,6 @@
  },
  "MERGE_BY": "fixture_id (never across fixtures)",
  "INDEX_PRESERVED": "yes - _orig_idx carried through merge_asof (regression test in v11_tests.py)",
- "n_rows": 73199,
- "n_fixtures": 1726
+ "n_rows": 73422,
+ "n_fixtures": 1728
 }
