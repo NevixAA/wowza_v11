@@ -17,7 +17,7 @@
   "segments": {
     "new_format": {
       "brier": null,
-      "ece": 0.042078,
+      "ece": 0.042079,
       "logloss": null,
       "n": 916,
       "n_eff": 916,
@@ -98,7 +98,7 @@
     },
     "new_format|Mexico Liga MX": {
       "brier": null,
-      "ece": 0.047879,
+      "ece": 0.047876,
       "logloss": null,
       "n": 95,
       "n_eff": 95,
