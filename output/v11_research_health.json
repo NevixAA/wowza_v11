@@ -1,37 +1,45 @@
 {
-  "generated_at": "2026-10-23T22:22:54Z",
-  "git_sha": "b60b1a521077",
+  "generated_at": "2026-10-24T00:50:27Z",
+  "git_sha": "d36f1c012902",
   "calculation_version": "1.0.0",
   "raw": {
-    "snapshots_rows": 77102,
-    "latest_snapshot_ts": "2026-10-23T22:20:31Z"
+    "snapshots_rows": 77304,
+    "latest_snapshot_ts": "2026-10-24T00:48:09Z"
   },
   "grading": {
-    "graded_rows": 1928,
-    "latest_result_ts": "2026-10-23T22:20:56Z"
+    "graded_rows": 1931,
+    "latest_result_ts": "2026-10-24T00:48:34Z"
   },
   "movement": {
-    "n_distinct_observations": 74689,
-    "n_fixtures": 1763,
-    "published_fixture_n": 1720,
-    "toward_rate": 0.5521,
-    "mean_signed_move_pp": 0.504,
-    "clv_n": 1536,
-    "mean_clv_pct": 0.1519,
-    "derived_generated_at": "2026-10-23T22:21:18Z",
+    "n_distinct_observations": 74887,
+    "n_fixtures": 1772,
+    "published_fixture_n": 1729,
+    "toward_rate": 0.5531,
+    "mean_signed_move_pp": 0.5046,
+    "clv_n": 1535,
+    "mean_clv_pct": 0.1512,
+    "derived_generated_at": "2026-10-24T00:48:55Z",
     "lag_hours": -0.01,
     "freshness_status": "PASS",
-    "delta_fixtures_since_previous": 2
+    "delta_fixtures_since_previous": 9
   },
   "residual": {
     "n_fixtures": 1582,
-    "derived_generated_at": "2026-10-23T22:20:58Z",
+    "derived_generated_at": "2026-10-24T00:48:36Z",
     "lag_hours": -0.0,
     "freshness_status": "PASS",
-    "delta_n_since_previous": 6
+    "delta_n_since_previous": 0
   },
   "monotonicity_warnings": [],
-  "expected_recount_deltas": [],
+  "expected_recount_deltas": [
+    {
+      "metric": "movement_clv_n",
+      "previous": 1536,
+      "current": 1535,
+      "delta": -1,
+      "why": "recomputed each run from a movement threshold against a close that keeps updating until kickoff; a still-open fixture retracing under MIN_MOVE_PP leaves the moved set and takes its CLV row with it"
+    }
+  ],
   "checks": [
     {
       "artifact": "v11_graded.csv",
@@ -54,7 +62,7 @@
     {
       "artifact": "v11_microstructure_coverage.csv",
       "status": "PASS",
-      "lag_hours": -0.02,
+      "lag_hours": -0.01,
       "why": "derived output -0.0h behind its source"
     },
     {
