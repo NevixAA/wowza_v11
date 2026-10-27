@@ -7,7 +7,7 @@
   },
   "global": {
     "brier": null,
-    "ece": 0.029076,
+    "ece": 0.029151,
     "logloss": null,
     "n": 1738,
     "n_eff": 1738,
@@ -17,7 +17,7 @@
   "segments": {
     "new_format": {
       "brier": null,
-      "ece": 0.044888,
+      "ece": 0.045008,
       "logloss": null,
       "n": 1010,
       "n_eff": 1010,
@@ -26,7 +26,7 @@
     },
     "new_format|Argentina Primera Division": {
       "brier": null,
-      "ece": 0.029076,
+      "ece": 0.029151,
       "logloss": null,
       "n": 114,
       "n_eff": 114,
@@ -35,7 +35,7 @@
     },
     "new_format|Austrian Bundesliga": {
       "brier": null,
-      "ece": 0.05173,
+      "ece": 0.051831,
       "logloss": null,
       "n": 47,
       "n_eff": 47,
@@ -44,7 +44,7 @@
     },
     "new_format|Brazil Serie A": {
       "brier": null,
-      "ece": 0.052898,
+      "ece": 0.052949,
       "logloss": null,
       "n": 93,
       "n_eff": 93,
@@ -53,7 +53,7 @@
     },
     "new_format|China Super League": {
       "brier": null,
-      "ece": 0.032985,
+      "ece": 0.033044,
       "logloss": null,
       "n": 54,
       "n_eff": 54,
@@ -62,7 +62,7 @@
     },
     "new_format|Denmark Superliga": {
       "brier": null,
-      "ece": 0.054211,
+      "ece": 0.054226,
       "logloss": null,
       "n": 62,
       "n_eff": 62,
@@ -71,7 +71,7 @@
     },
     "new_format|Finland Veikkausliiga": {
       "brier": null,
-      "ece": 0.051266,
+      "ece": 0.051042,
       "logloss": null,
       "n": 64,
       "n_eff": 64,
@@ -80,7 +80,7 @@
     },
     "new_format|Ireland Premier Division": {
       "brier": null,
-      "ece": 0.041483,
+      "ece": 0.041515,
       "logloss": null,
       "n": 49,
       "n_eff": 49,
@@ -89,7 +89,7 @@
     },
     "new_format|Japan J-League": {
       "brier": null,
-      "ece": 0.050394,
+      "ece": 0.050444,
       "logloss": null,
       "n": 100,
       "n_eff": 100,
@@ -98,7 +98,7 @@
     },
     "new_format|Mexico Liga MX": {
       "brier": null,
-      "ece": 0.03907,
+      "ece": 0.039001,
       "logloss": null,
       "n": 103,
       "n_eff": 103,
@@ -107,7 +107,7 @@
     },
     "new_format|Norway Eliteserien": {
       "brier": null,
-      "ece": 0.049046,
+      "ece": 0.049103,
       "logloss": null,
       "n": 65,
       "n_eff": 65,
@@ -116,7 +116,7 @@
     },
     "new_format|Sweden Allsvenskan": {
       "brier": null,
-      "ece": 0.044644,
+      "ece": 0.044699,
       "logloss": null,
       "n": 75,
       "n_eff": 75,
@@ -125,7 +125,7 @@
     },
     "new_format|USA MLS": {
       "brier": null,
-      "ece": 0.063232,
+      "ece": 0.063271,
       "logloss": null,
       "n": 184,
       "n_eff": 184,
@@ -134,7 +134,7 @@
     },
     "standard": {
       "brier": null,
-      "ece": 0.029076,
+      "ece": 0.029151,
       "logloss": null,
       "n": 728,
       "n_eff": 728,
@@ -143,7 +143,7 @@
     },
     "standard|Bundesliga 2": {
       "brier": null,
-      "ece": 0.053526,
+      "ece": 0.053582,
       "logloss": null,
       "n": 72,
       "n_eff": 72,
@@ -152,7 +152,7 @@
     },
     "standard|Championship": {
       "brier": null,
-      "ece": 0.050222,
+      "ece": 0.050268,
       "logloss": null,
       "n": 129,
       "n_eff": 129,
@@ -161,7 +161,7 @@
     },
     "standard|La Liga 2": {
       "brier": null,
-      "ece": 0.047065,
+      "ece": 0.047113,
       "logloss": null,
       "n": 112,
       "n_eff": 112,
@@ -170,7 +170,7 @@
     },
     "standard|League One": {
       "brier": null,
-      "ece": 0.043156,
+      "ece": 0.043202,
       "logloss": null,
       "n": 128,
       "n_eff": 128,
@@ -179,7 +179,7 @@
     },
     "standard|League Two": {
       "brier": null,
-      "ece": 0.041215,
+      "ece": 0.041259,
       "logloss": null,
       "n": 141,
       "n_eff": 141,
@@ -188,7 +188,7 @@
     },
     "standard|Ligue 2": {
       "brier": null,
-      "ece": 0.039967,
+      "ece": 0.040023,
       "logloss": null,
       "n": 65,
       "n_eff": 65,
@@ -197,7 +197,7 @@
     },
     "standard|Serie B": {
       "brier": null,
-      "ece": 0.036869,
+      "ece": 0.036922,
       "logloss": null,
       "n": 81,
       "n_eff": 81,
