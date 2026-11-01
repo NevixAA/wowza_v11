@@ -789,30 +789,23 @@ def _results_checks() -> None:
 
 
 # ── R2 2026-11-01: canonical league registry, derived seasons, no 0.5 default ─────────────
-def _v9_config_text() -> str | None:
-    """v9 config.py: local checkout (V9_LOCAL, as in CI, or a sibling ../v9), else public raw."""
+def _v9_registry() -> dict | None:
+    """v9's CANONICAL league registry, config/leagues.json (v9 R2-A, 2026-11-01): local checkout
+    (V9_LOCAL, as in CI, or a sibling ../v9), else public raw. Since R2-A, v9 config.py DERIVES its
+    league tables from this file, so it is the single source v11 must equal (R2 finding 28)."""
+    import json
     import os
     for c in (os.getenv("V9_LOCAL", ""), str(PROJ.parent / "v9")):
-        p = Path(c) / "config.py" if c else None
+        p = Path(c) / "config" / "leagues.json" if c else None
         if p is not None and p.exists():
-            return p.read_text(encoding="utf-8")
+            return json.loads(p.read_text(encoding="utf-8"))
     try:
         import requests
-        r = requests.get("https://raw.githubusercontent.com/NevixAA/wowza-betting/main/config.py",
+        r = requests.get("https://raw.githubusercontent.com/NevixAA/wowza-betting/main/config/leagues.json",
                          timeout=20)
-        return r.text if r.status_code == 200 else None
+        return r.json() if r.status_code == 200 else None
     except Exception:                                                   # noqa: BLE001
         return None
-
-
-def _literal(text: str, name: str):
-    import ast
-    for node in ast.parse(text).body:
-        tgt = (node.target if isinstance(node, ast.AnnAssign) else
-               node.targets[0] if isinstance(node, ast.Assign) else None)
-        if isinstance(tgt, ast.Name) and tgt.id == name:
-            return ast.literal_eval(node.value)
-    raise KeyError(name)
 
 
 def _r2_registry_and_seasons() -> None:
@@ -837,12 +830,18 @@ def _r2_registry_and_seasons() -> None:
     check("unknown / near-name league is not guessed",
           LR.canonical_league("USA  MLS") is None and LR.model_type("Mystery") == "unknown")
 
-    txt = _v9_config_text()
-    if txt is None:
+    reg = _v9_registry()
+    if reg is None:
         print("  SKIP  v9 equality checks (no v9 checkout and no network)")
     else:
-        v9_std, v9_nf = _literal(txt, "STANDARD_FORMAT_LEAGUES"), _literal(txt, "NEW_FORMAT_LEAGUES")
-        v9_fd = _literal(txt, "FOOTBALL_DATA_LEAGUES")
+        v9_std = [x["name"] for x in reg["leagues"] if x.get("model_type") == "standard"]
+        v9_nf = [x["name"] for x in reg["leagues"] if x.get("model_type") == "new_format"]
+        v9_fd = {x["name"]: x["football_data_code"] for x in reg["leagues"]
+                 if x.get("football_data_code") and not x.get("api_football_only")}
+        for x in reg["leagues"]:                       # registry aliases resolve like the old alias keys
+            for al in x.get("aliases") or []:
+                if x["name"] in v9_fd:
+                    v9_fd[al] = v9_fd[x["name"]]
         check("EQUAL to v9: standard leagues",
               set(v9_std) == {lg for lg, v in LR.LEAGUES.items() if v[0] == "standard"},
               str(set(v9_std) ^ {lg for lg, v in LR.LEAGUES.items() if v[0] == "standard"}))
