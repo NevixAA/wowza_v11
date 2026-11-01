@@ -113,16 +113,12 @@ def _attach_results(d: pd.DataFrame) -> pd.DataFrame:
         g = pd.read_csv(p)
     except Exception:
         return d
-    if "over25_result" not in g.columns or "match" not in g.columns:
+    # Joined on fixture_id, which v11_graded.csv now carries (built from the canonical league).
+    # The old bridge on (match, date) had no league in the key.
+    if "over25_result" not in g.columns or "fixture_id" not in g.columns:
+        print("[movement] v11_graded.csv has no fixture_id/over25_result; results not attached")
         return d
-    # v11_graded is keyed by match+date, the snapshots by fixture_id; bridge on the pair the
-    # snapshot file also carries.
-    snaps = _load_snapshots()
-    if snaps.empty or "match" not in snaps.columns:
-        return d
-    bridge = snaps.drop_duplicates("fixture_id")[["fixture_id", "match", "date"]]
-    g2 = g[["match", "date", "over25_result", "v11_pnl"]].dropna(subset=["over25_result"])
-    m = bridge.merge(g2, on=["match", "date"], how="inner")
+    m = g[["fixture_id", "over25_result", "v11_pnl"]].dropna(subset=["over25_result", "fixture_id"])
     if m.empty:
         return d
     res = dict(zip(m["fixture_id"], m["over25_result"]))

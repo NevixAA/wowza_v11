@@ -1,150 +1,213 @@
 """
-Canonical league registry for v11 (R2 findings 28 + 29, 2026-11-01).
-=====================================================================
-v11's result mapping had DRIFTED from v9: it was a hand copy of v9 `FOOTBALL_DATA_LEAGUES`, so the
-two API-Football-only new-format leagues (Saudi Pro League, K-League 1 -- football-data.co.uk
-publishes neither) had no result source at all and could never be graded, and the old
-"Austria Bundesliga" spelling sat in the table as a SECOND KEY for one league instead of as an
-alias. The NF season filter was the literal ("2026", "2027").
+League registry for v11 -- READ from v9's config/leagues.json, never typed here.
+================================================================================
+v11's result mapping used to be a hand table in this file (canonical name -> model type,
+football-data code, aliases) plus a byte copy of Pro's season calendar. Both duplicated v9's
+canonical registry and could drift: the hand table once lacked Saudi Pro League and K-League 1, and
+kept "Austria Bundesliga" as a second key instead of an alias. Data Truth 2026-11-01: there is now
+ONE source, wowza-betting `config/leagues.json`, read from a v9 checkout exactly as Pro does:
 
-One table now says, per canonical league: model type, where its results come from, its aliases,
-and its season calendar. Everything else in v11 derives from it:
+    V9_LOCAL (CI checks wowza-betting out and points this at it)
+    -> a sibling ../v9 or ../wowza-betting clone
+    -> the same file over public raw HTTP
+
+If none of them is readable this raises RegistryUnavailable. There is no built-in fallback table:
+grading against a guessed league list is worse than not grading.
+
+Derived per canonical league that has a model (model_type standard / new_format):
 
     STD_RESULT_CODES   football-data mmz4281 code          (standard leagues)
     NEW_RESULT_CODES   football-data /new/ code            (new-format leagues it publishes)
     AF_RESULT_LEAGUES  v9's committed af_history.parquet   (API-Football-only leagues)
 
-scripts/v11_tests.py checks it for EQUALITY against v9 (config.py STANDARD/NEW_FORMAT_LEAGUES and
-FOOTBALL_DATA_LEAGUES), so the next drift fails a test instead of silently leaving leagues
-ungraded.
+SEASONS come from each league's `season_rule` (start_year / calendar_year / end_year / fixed /
+eras), with the league's own `start_month` -- never an assumed July rollover.
 
-SEASONS. `src/league_season_calendar.json` is a byte copy of Pro's
-`registry/league_season_calendar.json` (season-calendar/1.0). TODO(R2 registry): switch both to
-v9 `config/leagues.json` once branch r2/registry-season-failclosed lands.
+Module attributes (LEAGUES, ALIASES, ...) are loaded lazily on first use, so importing this module
+never needs the network; only reading a league fact does.
 """
 from __future__ import annotations
 
 import json
+import os
 from datetime import date
-from functools import lru_cache
 from pathlib import Path
 
 import pandas as pd
 
-CALENDAR_PATH = Path(__file__).resolve().parent / "league_season_calendar.json"
-REGISTRY_VERSION = "v11-league-registry/1.0"
+PROJ = Path(__file__).resolve().parents[1]
+REGISTRY_REL = "config/leagues.json"
+RAW_URL = f"https://raw.githubusercontent.com/NevixAA/wowza-betting/main/{REGISTRY_REL}"
+MODEL_TYPES = ("standard", "new_format")
 
-# canonical -> (model_type, result_source, code)
-LEAGUES: dict[str, tuple[str, str, str | None]] = {
-    "Championship": ("standard", "fd_std", "E1"),
-    "League One": ("standard", "fd_std", "E2"),
-    "League Two": ("standard", "fd_std", "E3"),
-    "National League": ("standard", "fd_std", "EC"),
-    "Bundesliga 2": ("standard", "fd_std", "D2"),
-    "Ligue 2": ("standard", "fd_std", "F2"),
-    "La Liga 2": ("standard", "fd_std", "SP2"),
-    "Serie B": ("standard", "fd_std", "I2"),
-    "Greek Super League": ("standard", "fd_std", "G1"),
-    "Portuguese Primeira Liga": ("standard", "fd_std", "P1"),
-    "Scottish Premiership": ("standard", "fd_std", "SC0"),
-    "Scottish Championship": ("standard", "fd_std", "SC1"),
-    "Scottish League One": ("standard", "fd_std", "SC2"),
-    "Scottish League Two": ("standard", "fd_std", "SC3"),
-    "Belgian First Division A": ("standard", "fd_std", "B1"),
-    "Dutch Eredivisie": ("standard", "fd_std", "N1"),
-    "Turkish Super Lig": ("standard", "fd_std", "T1"),
-    "Denmark Superliga": ("new_format", "fd_new", "DNK"),
-    "Austrian Bundesliga": ("new_format", "fd_new", "AUT"),
-    "Sweden Allsvenskan": ("new_format", "fd_new", "SWE"),
-    "Norway Eliteserien": ("new_format", "fd_new", "NOR"),
-    "Finland Veikkausliiga": ("new_format", "fd_new", "FIN"),
-    "Ireland Premier Division": ("new_format", "fd_new", "IRL"),
-    "Argentina Primera Division": ("new_format", "fd_new", "ARG"),
-    "Brazil Serie A": ("new_format", "fd_new", "BRA"),
-    "Japan J-League": ("new_format", "fd_new", "JPN"),
-    "Mexico Liga MX": ("new_format", "fd_new", "MEX"),
-    "China Super League": ("new_format", "fd_new", "CHN"),
-    "USA MLS": ("new_format", "fd_new", "USA"),
-    "Romanian Superliga": ("new_format", "fd_new", "ROM"),
-    # API-Football-only: football-data.co.uk has no file. Results come from v9's PUBLIC committed
-    # output/af_history.parquet (read, never written -- v11 invariant 4).
-    "Saudi Pro League": ("new_format", "v9_af_history", None),
-    "K-League 1": ("new_format", "v9_af_history", None),
-}
 
-# Alias -> canonical. An alias is NEVER also a key of LEAGUES.
-ALIASES: dict[str, str] = {
-    "Austria Bundesliga": "Austrian Bundesliga",
-    "Danish Superliga": "Denmark Superliga",
-}
+class RegistryUnavailable(RuntimeError):
+    """v9's config/leagues.json could not be read from any source."""
 
-STD_RESULT_CODES = {lg: c for lg, (_, src, c) in LEAGUES.items() if src == "fd_std"}
-NEW_RESULT_CODES = {lg: c for lg, (_, src, c) in LEAGUES.items() if src == "fd_new"}
-AF_RESULT_LEAGUES = tuple(lg for lg, (_, src, _c) in LEAGUES.items() if src == "v9_af_history")
+
+_STATE: dict = {}
+
+
+def _candidates() -> list[Path]:
+    out = []
+    env = os.getenv("V9_LOCAL", "")
+    if env:
+        out.append(Path(env) / REGISTRY_REL)
+    out += [PROJ.parent / "v9" / REGISTRY_REL, PROJ.parent / "wowza-betting" / REGISTRY_REL]
+    return out
+
+
+def _read_registry() -> tuple[dict, str]:
+    for p in _candidates():
+        if p.is_file():
+            return json.loads(p.read_text(encoding="utf-8")), str(p)
+    try:
+        import requests
+        r = requests.get(RAW_URL, timeout=30)
+        if r.status_code == 200:
+            return r.json(), RAW_URL
+        why = f"HTTP {r.status_code}"
+    except Exception as e:                                              # noqa: BLE001
+        why = f"{type(e).__name__}: {e}"
+    raise RegistryUnavailable(
+        f"cannot read v9 {REGISTRY_REL} (tried {[str(p) for p in _candidates()]} and {RAW_URL}: "
+        f"{why}). Set V9_LOCAL to a wowza-betting checkout.")
+
+
+def _build(reg: dict, source: str) -> dict:
+    leagues: dict[str, tuple[str, str | None, str | None]] = {}
+    aliases: dict[str, str] = {}
+    entries: dict[str, dict] = {}
+    for e in reg["leagues"]:
+        name = e["name"]
+        entries[name] = e
+        for a in e.get("aliases") or []:
+            aliases[a] = name
+        mt = e.get("model_type")
+        if mt not in MODEL_TYPES:
+            continue                                   # no model -> v11 never shadows it
+        code = e.get("football_data_code") or None
+        if code and not e.get("api_football_only"):
+            src = "fd_std" if mt == "standard" else "fd_new"
+        elif e.get("api_football_only"):
+            # football-data.co.uk has no file; results come from v9's PUBLIC committed
+            # output/af_history.parquet (read, never written -- v11 invariant 4).
+            src, code = "v9_af_history", None
+        else:
+            src = None                                 # no known result source: stays ungraded
+        leagues[name] = (mt, src, code)
+    return {"source": source, "version": str(reg.get("registry_version", "")),
+            "LEAGUES": leagues, "ALIASES": aliases, "ENTRIES": entries,
+            "STD_RESULT_CODES": {lg: c for lg, (_, s, c) in leagues.items() if s == "fd_std"},
+            "NEW_RESULT_CODES": {lg: c for lg, (_, s, c) in leagues.items() if s == "fd_new"},
+            "AF_RESULT_LEAGUES": tuple(lg for lg, (_, s, _c) in leagues.items()
+                                       if s == "v9_af_history")}
+
+
+def _state() -> dict:
+    if not _STATE:
+        reg, src = _read_registry()
+        _STATE.update(_build(reg, src))
+    return _STATE
+
+
+def reset_cache() -> None:
+    """Forget the loaded registry (tests point V9_LOCAL elsewhere and reload)."""
+    _STATE.clear()
+
+
+def __getattr__(name: str):
+    # PEP 562: these are read from the registry on first access, not typed at import time.
+    if name in ("LEAGUES", "ALIASES", "STD_RESULT_CODES", "NEW_RESULT_CODES", "AF_RESULT_LEAGUES"):
+        return _state()[name]
+    if name == "REGISTRY_VERSION":
+        return _state()["version"]
+    raise AttributeError(name)
+
+
+def registry_source() -> str:
+    return _state()["source"]
 
 
 def canonical_league(name) -> str | None:
-    """Exact canonical name or a registered alias; anything else is None (never guessed)."""
+    """Exact canonical name or a registered alias (after trimming whitespace); anything else is
+    None. Same rule as v9 src/league_registry.canonical_name: no case folding, no fuzzy match."""
+    if name is None or (isinstance(name, float) and name != name):
+        return None
     lg = str(name).strip()
-    if lg in LEAGUES:
+    if not lg:
+        return None
+    st = _state()
+    if lg in st["ENTRIES"]:
         return lg
-    return ALIASES.get(lg)
+    return st["ALIASES"].get(lg)
 
 
-def model_type(name) -> str:
+def model_type(name) -> str | None:
+    """'standard' | 'new_format' from the registry, or None (unknown league, or no model).
+    Never a placeholder such as 'unknown'."""
     lg = canonical_league(name)
-    return LEAGUES[lg][0] if lg else "unknown"
-
-
-# ── seasons ───────────────────────────────────────────────────────────────────────────────
-@lru_cache(maxsize=2)
-def _calendar(path: str) -> dict:
-    d = json.loads(Path(path).read_text(encoding="utf-8"))
-    out = {}
-    for lg, e in d["leagues"].items():
-        out[lg] = {"base": sorted([r for r in e["rules"] if "to" not in r], key=lambda r: r["from"]),
-                   "special": [r for r in e["rules"] if "to" in r]}
-    return {"version": d["version"], "leagues": out}
+    leagues = _state()["LEAGUES"]
+    return leagues[lg][0] if lg in leagues else None
 
 
 def calendar_version() -> str:
-    return _calendar(str(CALENDAR_PATH))["version"]
+    return _state()["version"]
+
+
+# ── seasons ─────────────────────────────────────────────────────────────────────────────────
+def _rule_for(rule: dict, d: date) -> dict | None:
+    if "eras" in rule:
+        for er in rule["eras"]:
+            lo = date.fromisoformat(er["from"]) if er.get("from") else date.min
+            hi = date.fromisoformat(er["until"]) if er.get("until") else date.max
+            if lo <= d < hi:
+                return {k: v for k, v in er.items() if k not in ("from", "until")}
+        return None
+    return rule
 
 
 def season_for(league, when) -> dict | None:
     """{'type', 'start_year', 'fd_label'} for this league on this date, or None (unknown).
 
     fd_label is football-data.co.uk's `Season` value in its /new/ files: 'YYYY' for a calendar
-    campaign, 'YYYY/YYYY' for a winter one (e.g. Austria '2025/2026', Japan '2026/2027').
+    campaign, 'YYYY/YYYY' for a split one (e.g. Austria '2025/2026', Japan '2026/2027'). The
+    rollover month is the league's own `start_month` from the registry.
     """
     lg = canonical_league(league)
-    cal = _calendar(str(CALENDAR_PATH))["leagues"]
-    if lg is None or lg not in cal:
+    if lg is None:
         return None
-    d = pd.Timestamp(when).date() if not isinstance(when, date) else when
-    iso = d.isoformat()
-    for r in cal[lg]["special"]:
-        if r["from"] <= iso <= r["to"]:
-            sy = int(r["label"][:4])
-            lab = r["label"]
-            fd = lab if "/" not in lab else f"{sy}/{sy + 1}"
-            return {"type": "special", "start_year": sy, "fd_label": fd}
-    rule = None
-    for r in cal[lg]["base"]:
-        if r["from"] <= iso:
-            rule = r
-    if rule is None:
+    rule = _state()["ENTRIES"][lg].get("season_rule")
+    if not isinstance(rule, dict):
         return None
-    if rule["type"] == "calendar":
+    try:
+        ts = pd.Timestamp(when)
+    except (TypeError, ValueError):
+        return None
+    if pd.isna(ts):
+        return None
+    d = ts.date()
+    r = _rule_for(rule, d)
+    if r is None:
+        return None
+    t = r.get("type")
+    if t == "calendar_year":
         return {"type": "calendar", "start_year": d.year, "fd_label": str(d.year)}
-    sy = d.year if d.month >= 7 else d.year - 1
-    return {"type": "winter", "start_year": sy, "fd_label": f"{sy}/{sy + 1}"}
+    if t == "start_year":
+        sy = d.year if d.month >= int(r["start_month"]) else d.year - 1
+        return {"type": "winter", "start_year": sy, "fd_label": f"{sy}/{sy + 1}"}
+    if t == "end_year":
+        ey = d.year + 1 if d.month >= int(r["start_month"]) else d.year
+        return {"type": "winter", "start_year": ey - 1, "fd_label": f"{ey - 1}/{ey}"}
+    # 'fixed' (a one-off campaign such as Brazil 2020 or Argentina's Copa Maradona): the registry
+    # holds the API season, not football-data's label for it, so the label is unknown -> None.
+    return None
 
 
 def nf_result_seasons(league, today=None) -> tuple[str, ...]:
     """football-data `Season` labels to keep for a new-format league: the CURRENT campaign and the
     one before it (a fixture settled just after a rollover still needs its result). Derived from
-    the league's season type and the date -- never hardcoded. Unknown league -> () (keep nothing).
+    the league's season rule and the date -- never hardcoded. Unknown league -> () (keep nothing).
     """
     t = pd.Timestamp(today) if today is not None else pd.Timestamp.now(tz="UTC").tz_localize(None)
     cur = season_for(league, t)

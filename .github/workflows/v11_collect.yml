@@ -33,6 +33,10 @@ jobs:
     timeout-minutes: 15
     permissions:
       contents: write
+    # Every step reads v9's config/leagues.json (src/league_registry.py) and the other v9 files
+    # from the checkout below, not only the collector steps, so V9_LOCAL is set job-wide.
+    env:
+      V9_LOCAL: ${{ github.workspace }}/_v9
     steps:
       - uses: actions/checkout@v4
 
@@ -69,7 +73,7 @@ jobs:
 
       # Measure N_EFF and ECE from settled outcomes, replacing the hardcoded 1000 / 0.02.
       # Runs BEFORE the residual test so that test uses the measured values. If there is not
-      # enough settled history it writes nothing and the conservative fallback stands.
+      # enough settled history it writes nothing, and decisions are NO_BET MISSING_EVIDENCE.
       - name: Fit measured evidence (N_EFF, ECE)
         env:
           V9_LOCAL: ${{ github.workspace }}/_v9

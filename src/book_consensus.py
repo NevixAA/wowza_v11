@@ -25,10 +25,14 @@ TWO DIFFERENT NUMBERS, and conflating them is the classic error:
 So this module returns both, plus dispersion — which is itself information: books disagreeing
 widely means the price is not yet settled, and the uncertainty penalty should reflect that.
 
-FAIL-SAFE BY CONSTRUCTION. A missing or unparseable file yields an EMPTY index, and every lookup
-then returns a Consensus with `p_consensus=None`. Callers fall back to exactly their previous
-single-book behaviour, so wiring this in cannot regress a run — it can only add information when
-the data is present.
+FAIL-CLOSED. A missing or unparseable file yields an EMPTY index, and every lookup then returns a
+Consensus with `p_consensus=None` and no dispersion. The shadow then records the fixture as
+OBSERVE (no measured dispersion) rather than pretending a single book is a tight market.
+
+FIXTURE IDENTITY is (canonical league, "Home vs Away", market). The league is resolved through
+src/league_registry (v9's config/leagues.json) on both sides, so two leagues that happen to share
+a club pairing can never pool their quotes. v9 publishes no fixture id in this file yet; when it
+does, the key should become that id (Data Truth 2026-11-01).
 """
 from __future__ import annotations
 
@@ -39,11 +43,12 @@ from typing import Callable, Iterable
 
 import pandas as pd
 
+from . import league_registry as LR
 from .edge_engine import power_devig, proportional_devig
 
 # Columns v9's src/predict.py writes. Kept as a constant so a schema drift is a loud KeyError
 # during load rather than a silently empty index.
-REQUIRED_COLS = ("snapshot_ts", "match", "bookmaker", "market", "side", "odds")
+REQUIRED_COLS = ("snapshot_ts", "league", "match", "bookmaker", "market", "side", "odds")
 
 # An exchange is a sharper anchor than any bookmaker median, because its price is what other
 # people will actually trade against rather than a margin-loaded offer. Treated specially by
@@ -103,6 +108,11 @@ def load_snapshots(loader: Callable[[str], pd.DataFrame],
     out = df.copy()
     out["odds"] = pd.to_numeric(out["odds"], errors="coerce")
     out = out[out["odds"] > 1.0]
+    out["_league"] = out["league"].map(LR.canonical_league)
+    unk = int(out["_league"].isna().sum())
+    if unk:
+        print(f"[book_consensus] dropped {unk} quote(s) whose league is not in the registry")
+    out = out[out["_league"].notna()].copy()
     out["_match"] = out["match"].map(normalise_match)
     out["market"] = out["market"].astype(str).str.upper().str.strip()
     out["side"] = out["side"].astype(str).str.upper().str.strip()
@@ -111,7 +121,7 @@ def load_snapshots(loader: Callable[[str], pd.DataFrame],
     # LATEST quote per (fixture, market, book, side). The file is append-only and stores price
     # CHANGES, so the last row for a key is that book's current price.
     out = (out.sort_values("snapshot_ts")
-              .drop_duplicates(["_match", "market", "bookmaker", "side"], keep="last"))
+              .drop_duplicates(["_league", "_match", "market", "bookmaker", "side"], keep="last"))
     return out.reset_index(drop=True)
 
 
@@ -122,12 +132,12 @@ def _fair_prob(over: float | None, under: float | None) -> float | None:
     return power_devig(over, under) or proportional_devig(over, under)
 
 
-def build_index(df: pd.DataFrame) -> dict[tuple[str, str], Consensus]:
-    """Per (normalised match, market) consensus. Empty input gives an empty index."""
+def build_index(df: pd.DataFrame) -> dict[tuple[str, str, str], Consensus]:
+    """Per (canonical league, normalised match, market) consensus. Empty input -> empty index."""
     if df is None or df.empty:
         return {}
-    index: dict[tuple[str, str], Consensus] = {}
-    for (m, mkt), g in df.groupby(["_match", "market"], sort=False):
+    index: dict[tuple[str, str, str], Consensus] = {}
+    for (lg, m, mkt), g in df.groupby(["_league", "_match", "market"], sort=False):
         over = g[g["side"] == "OVER"].set_index("bookmaker")["odds"].to_dict()
         under = g[g["side"] == "UNDER"].set_index("bookmaker")["odds"].to_dict()
         books: dict[str, float] = {}
@@ -138,7 +148,7 @@ def build_index(df: pd.DataFrame) -> dict[tuple[str, str], Consensus]:
             if p is not None and 0.0 < p < 1.0:
                 books[bk] = float(p)
         if not books:
-            index[(m, mkt)] = Consensus(reason="no_two_sided_book")
+            index[(lg, m, mkt)] = Consensus(reason="no_two_sided_book")
             continue
         exch = [p for bk, p in books.items() if bk.lower() in EXCHANGE_KEYS]
         vals = list(books.values())
@@ -146,7 +156,7 @@ def build_index(df: pd.DataFrame) -> dict[tuple[str, str], Consensus]:
         if len(vals) > 1:
             mu = sum(vals) / len(vals)
             disp = math.sqrt(sum((v - mu) ** 2 for v in vals) / len(vals))
-        index[(m, mkt)] = Consensus(
+        index[(lg, m, mkt)] = Consensus(
             p_consensus=float(median(vals)),
             n_books=len(books),
             dispersion=disp,
@@ -162,10 +172,14 @@ def build_index(df: pd.DataFrame) -> dict[tuple[str, str], Consensus]:
     return index
 
 
-def lookup(index: dict[tuple[str, str], Consensus], home: object, away: object,
-           market: str = "OU25") -> Consensus:
-    """Consensus for one fixture, or an unusable Consensus when absent."""
+def lookup(index: dict[tuple[str, str, str], Consensus], league: object, home: object,
+           away: object, market: str = "OU25") -> Consensus:
+    """Consensus for one fixture, or an unusable Consensus when absent. A league that is not in
+    the registry never matches (reason 'league_not_in_registry')."""
     if not index:
         return Consensus(reason="no_index")
-    key = (normalise_match(f"{home} vs {away}"), str(market).upper().strip())
+    lg = LR.canonical_league(league)
+    if lg is None:
+        return Consensus(reason="league_not_in_registry")
+    key = (lg, normalise_match(f"{home} vs {away}"), str(market).upper().strip())
     return index.get(key, Consensus(reason="fixture_not_priced"))
