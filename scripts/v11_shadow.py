@@ -25,7 +25,8 @@ PROJ = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(PROJ))
 import config
 from src.edge_engine import (power_devig, proportional_devig, market_baseline, blend,
-                             lower_bound_prob, ev_lb, _band, MAX_BET_ODDS, RARE_EVENT_MARKETS)
+                             lower_bound_prob, ev_lb, _band, MAX_BET_ODDS, RARE_EVENT_MARKETS,
+                             valid_probability, MISSING_MODEL_PROBABILITY)
 
 TIER_RANK = {"SNIPER": 4, "MARKSMAN": 3, "VALUABLE": 2, "OBSERVE": 1, "NO_BET": 0}
 MOAT_W_CAP = {"new_format": 0.45, "standard": 0.40}
@@ -142,6 +143,10 @@ def _decide(p_model, o_bet, o_other, n_eff, ece, rclv, rclv_n, w_cap,
             cons=None, side="OVER"):
     out = {"tier": "NO_BET", "p_market": None, "p_blend": None, "ev_lb": None, "abs_edge": None,
            "n_books": 0, "book_dispersion": None, "price_source": "single_book"}
+    # R2 finding 30: no model probability -> NO_BET, never a 0.5 stand-in.
+    if not valid_probability(p_model):
+        out["reason"] = MISSING_MODEL_PROBABILITY
+        return out
     best = o_bet
     if not o_bet or o_bet <= 1.0 or best > MAX_BET_ODDS:
         return out

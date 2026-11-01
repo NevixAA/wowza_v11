@@ -47,29 +47,20 @@ from __future__ import annotations
 
 import re
 from io import StringIO
+from pathlib import Path
 
 import pandas as pd
 
-# Duplicated VERBATIM from v9 config.FOOTBALL_DATA_LEAGUES, deliberately and for the same reason
-# model_type_for_league is duplicated into v11's config: a shared import would couple v11 to a
-# frozen repo's module layout, and a silently diverging copy is the failure this comment exists to
-# prevent. If v9's mapping changes, change it here in the same commit.
-STD_LEAGUES = {
-    "Championship": "E1", "League One": "E2", "League Two": "E3", "National League": "EC",
-    "Bundesliga 2": "D2", "Ligue 2": "F2", "La Liga 2": "SP2", "Serie B": "I2",
-    "Greek Super League": "G1", "Portuguese Primeira Liga": "P1",
-    "Scottish Premiership": "SC0", "Scottish Championship": "SC1",
-    "Scottish League One": "SC2", "Scottish League Two": "SC3",
-    "Belgian First Division A": "B1", "Dutch Eredivisie": "N1", "Turkish Super Lig": "T1",
-}
-NEW_LEAGUES = {
-    "Denmark Superliga": "DNK", "Austrian Bundesliga": "AUT", "Austria Bundesliga": "AUT",
-    "Sweden Allsvenskan": "SWE", "Norway Eliteserien": "NOR",
-    "Finland Veikkausliiga": "FIN", "Ireland Premier Division": "IRL",
-    "Argentina Primera Division": "ARG", "Brazil Serie A": "BRA", "Japan J-League": "JPN",
-    "Mexico Liga MX": "MEX", "China Super League": "CHN", "USA MLS": "USA",
-    "Romanian Superliga": "ROM",
-}
+# DERIVED from the canonical registry (src/league_registry.py, R2 2026-11-01). This used to be a
+# hand copy of v9 config.FOOTBALL_DATA_LEAGUES; it drifted (no Saudi Pro League, no K-League 1, and
+# "Austria Bundesliga" as a duplicate KEY instead of an alias). scripts/v11_tests.py now checks the
+# registry for equality against v9 on every run.
+from src import league_registry as LR  # noqa: E402
+
+STD_LEAGUES = dict(LR.STD_RESULT_CODES)
+NEW_LEAGUES = dict(LR.NEW_RESULT_CODES)
+AF_LEAGUES = tuple(LR.AF_RESULT_LEAGUES)
+AF_HISTORY_REL = "af_history.parquet"
 
 STD_URL = "https://www.football-data.co.uk/mmz4281/{season}/{code}.csv"
 NEW_URL = "https://www.football-data.co.uk/new/{code}.csv"
@@ -156,10 +147,17 @@ def parse_standard(raw: pd.DataFrame, league: str) -> pd.DataFrame:
     return d.dropna(subset=["date", "home_team", "away_team", "home_goals", "away_goals"])
 
 
-def parse_new(raw: pd.DataFrame, league: str, *, seasons: tuple[str, ...] = ("2026", "2027")
-              ) -> pd.DataFrame:
+def parse_new(raw: pd.DataFrame, league: str, *, seasons: tuple[str, ...] | None = None,
+              today=None) -> pd.DataFrame:
+    """football-data /new/ file -> results. The kept seasons are DERIVED from the league's season
+    type and the date (current campaign + the one before), never hardcoded: the old literal
+    ("2026", "2027") would have silently dropped every calendar-year league on 2028-01-01.
+    Exact label match, not substring ("2026" must not match "2025/2026" by accident)."""
+    if seasons is None:
+        seasons = LR.nf_result_seasons(league, today)
     if "Season" in raw.columns:
-        raw = raw[raw["Season"].astype(str).str.contains("|".join(seasons), na=False)].copy()
+        lab = raw["Season"].astype(str).str.strip().str.replace(r"\.0$", "", regex=True)
+        raw = raw[lab.isin(set(seasons))].copy()
     d = pd.DataFrame()
     d["date"] = pd.to_datetime(raw.get("Date"), dayfirst=True, errors="coerce")
     d["home_team"] = raw.get("Home")
@@ -170,11 +168,61 @@ def parse_new(raw: pd.DataFrame, league: str, *, seasons: tuple[str, ...] = ("20
     return d.dropna(subset=["date", "home_team", "away_team", "home_goals", "away_goals"])
 
 
+def parse_af_history(af: pd.DataFrame, leagues, *, today=None) -> pd.DataFrame:
+    """Results for API-Football-only leagues from v9's committed af_history (FTHG/FTAG), limited
+    to the league's current + previous campaign by the same derived rule as parse_new."""
+    out = []
+    if af is None or af.empty or "league" not in af.columns:
+        return pd.DataFrame(columns=["date", "home_team", "away_team", "home_goals",
+                                     "away_goals", "league"])
+    t = pd.Timestamp(today) if today is not None else pd.Timestamp.now(tz="UTC").tz_localize(None)
+    for lg in leagues:
+        g = af[af["league"].astype(str) == lg]
+        if g.empty:
+            continue
+        d = pd.DataFrame({"date": pd.to_datetime(g["date"], errors="coerce"),
+                          "home_team": g["home_team"], "away_team": g["away_team"],
+                          "home_goals": pd.to_numeric(g.get("FTHG"), errors="coerce"),
+                          "away_goals": pd.to_numeric(g.get("FTAG"), errors="coerce"),
+                          "league": lg})
+        keep = set(LR.nf_result_seasons(lg, t))
+        lab = d["date"].map(lambda x: (LR.season_for(lg, x) or {}).get("fd_label")
+                            if pd.notna(x) else None)
+        d = d[lab.isin(keep)]
+        out.append(d.dropna(subset=["date", "home_team", "away_team", "home_goals", "away_goals"]))
+    return (pd.concat(out, ignore_index=True) if out else
+            pd.DataFrame(columns=["date", "home_team", "away_team", "home_goals", "away_goals",
+                                  "league"]))
+
+
+def _read_v9_af_history() -> pd.DataFrame:
+    """v9's PUBLIC committed af_history.parquet: local checkout (V9_LOCAL) first, raw HTTP second."""
+    import os
+    from io import BytesIO
+    loc = os.getenv("V9_LOCAL", "")
+    if loc:
+        p = Path(loc) / "output" / AF_HISTORY_REL
+        if p.exists():
+            return pd.read_parquet(p)
+    import requests
+    from config import V9_RAW_BASE
+    r = requests.get(f"{V9_RAW_BASE}/{AF_HISTORY_REL}", timeout=60)
+    if r.status_code != 200:
+        raise RuntimeError(f"HTTP {r.status_code}")
+    return pd.read_parquet(BytesIO(r.content))
+
+
 def fetch_results(leagues: list[str] | None = None, *, season: str | None = None,
                   quiet: bool = False) -> pd.DataFrame:
-    """Results for the given leagues. Empty frame (never an exception) on network failure."""
+    """Results for the given leagues. Empty frame (never an exception) on network failure.
+
+    League names are resolved through the canonical registry, so an alias ("Austria Bundesliga")
+    fetches the canonical league once and the rows carry the canonical name."""
     season = season or season_code()
-    want = set(leagues or (list(STD_LEAGUES) + list(NEW_LEAGUES)))
+    if leagues is None:
+        want = set(LR.LEAGUES)
+    else:
+        want = {c for c in (LR.canonical_league(x) for x in leagues) if c}
     frames, failed = [], []
     for league, code in STD_LEAGUES.items():
         if league not in want:
@@ -190,6 +238,12 @@ def fetch_results(leagues: list[str] | None = None, *, season: str | None = None
             frames.append(parse_new(_get(NEW_URL.format(code=code)), league))
         except Exception as e:                                        # noqa: BLE001
             failed.append(f"{league}({type(e).__name__})")
+    af_want = [lg for lg in AF_LEAGUES if lg in want]
+    if af_want:
+        try:
+            frames.append(parse_af_history(_read_v9_af_history(), af_want))
+        except Exception as e:                                        # noqa: BLE001
+            failed.append(f"v9_af_history({type(e).__name__})")
     out = (pd.concat(frames, ignore_index=True) if frames else
            pd.DataFrame(columns=["date", "home_team", "away_team", "home_goals",
                                  "away_goals", "league"]))
@@ -226,7 +280,7 @@ def grade_fixtures(fixtures: pd.DataFrame, results: pd.DataFrame, *,
     unmatched: list[str] = []
 
     for lg, idx in f.groupby(f["league"].astype(str)).groups.items():
-        rl = r[r["league"].astype(str) == lg]
+        rl = r[r["league"].astype(str) == (LR.canonical_league(lg) or lg)]
         if rl.empty:
             continue
         homes = sorted(rl["home_team"].astype(str).unique())
@@ -244,14 +298,24 @@ def grade_fixtures(fixtures: pd.DataFrame, results: pd.DataFrame, *,
             if cand.empty:
                 unmatched.append(f"{lg}: {m}")
                 continue
-            if pd.notna(fd.get(i)):
-                near = cand[(cand["date"] - fd.get(i)).abs() <= pd.Timedelta(days=1)]
-                cand = near if not near.empty else cand
+            # STRICT +/-1 day (R2 2026-11-01). This used to fall back to ANY date when nothing
+            # was near, so a fixture whose result was not yet published could be graded with an
+            # EARLIER meeting of the same two clubs -- a wrong result that looks like data. With
+            # the season filter now keeping the previous campaign as well, that fallback would
+            # fire more often, so it is removed: no near result -> unmatched (NULL).
+            if pd.isna(fd.get(i)):
+                unmatched.append(f"{lg}: {m} (no date)")
+                continue
+            cand = cand[(cand["date"] - fd.get(i)).abs() <= pd.Timedelta(days=1)]
+            if cand.empty:
+                unmatched.append(f"{lg}: {m} (no result within 1 day)")
+                continue
             row = cand.sort_values("date").iloc[-1]
             tg = float(row["home_goals"]) + float(row["away_goals"])
             f.at[i, "total_goals"] = tg
             f.at[i, "over25_result"] = 1 if tg > 2.5 else 0
-            f.at[i, "grade_source"] = "football-data.co.uk"
+            f.at[i, "grade_source"] = ("v9_af_history" if (LR.canonical_league(lg) or lg) in AF_LEAGUES
+                                       else "football-data.co.uk")
 
     if not quiet:
         got = int(f["over25_result"].notna().sum())

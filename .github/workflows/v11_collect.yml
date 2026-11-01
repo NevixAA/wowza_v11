@@ -55,7 +55,7 @@ jobs:
           python-version: '3.11'
 
       - name: Install deps
-        run: pip install pandas numpy requests
+        run: pip install pandas numpy requests pyarrow   # pyarrow: v9 af_history.parquet results (R2)
 
       - name: Collect V11 shadow snapshot
         env:

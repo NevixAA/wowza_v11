@@ -1,0 +1,61 @@
+{
+  "version": "season-calendar/1.0",
+  "created": "2026-11-01",
+  "source": "Derived from v9 config.py (STANDARD_FORMAT_LEAGUES / NEW_FORMAT_LEAGUES / API_FOOTBALL_SEASONS and its comments) and from the month-by-month fixture distribution of v9 output/fd_history.parquet at origin/main 2026-11-01.",
+  "todo": "Switch to v9 config/leagues.json (R2 workstream r2/registry-season-failclosed) once it is merged; tests/test_season_calendar.py compares this file to v9's API_FOOTBALL_SEASONS so drift is caught either way.",
+  "season_types": {
+    "winter": "one campaign spans two calendar years; boundary 1 July; label 'YYYY/YY' (start year first)",
+    "calendar": "one campaign per calendar year; boundary 1 January; label 'YYYY'",
+    "special": "an explicitly dated one-off campaign; label given by the rule"
+  },
+  "api_football_conventions": {
+    "start_year": "API-Football season = first calendar year of the campaign",
+    "end_year": "API-Football season = last calendar year of the campaign (J1 autumn-spring, verified 2026-10-22 in v9 config.py)",
+    "calendar_year": "API-Football season = the calendar year"
+  },
+  "leagues": {
+    "Championship":               {"model_type": "standard", "rules": [{"from": "1900-01-01", "type": "winter", "api": "start_year"}]},
+    "League One":                 {"model_type": "standard", "rules": [{"from": "1900-01-01", "type": "winter", "api": "start_year"}]},
+    "League Two":                 {"model_type": "standard", "rules": [{"from": "1900-01-01", "type": "winter", "api": "start_year"}]},
+    "National League":            {"model_type": "standard", "rules": [{"from": "1900-01-01", "type": "winter", "api": "start_year"}]},
+    "Bundesliga 2":               {"model_type": "standard", "rules": [{"from": "1900-01-01", "type": "winter", "api": "start_year"}]},
+    "La Liga 2":                  {"model_type": "standard", "rules": [{"from": "1900-01-01", "type": "winter", "api": "start_year"}]},
+    "Ligue 2":                    {"model_type": "standard", "rules": [{"from": "1900-01-01", "type": "winter", "api": "start_year"}]},
+    "Serie B":                    {"model_type": "standard", "rules": [{"from": "1900-01-01", "type": "winter", "api": "start_year"}]},
+    "Greek Super League":         {"model_type": "standard", "rules": [{"from": "1900-01-01", "type": "winter", "api": "start_year"}]},
+    "Portuguese Primeira Liga":   {"model_type": "standard", "rules": [{"from": "1900-01-01", "type": "winter", "api": "start_year"}]},
+    "Scottish Championship":      {"model_type": "standard", "rules": [{"from": "1900-01-01", "type": "winter", "api": "start_year"}]},
+    "Scottish League One":        {"model_type": "standard", "rules": [{"from": "1900-01-01", "type": "winter", "api": "start_year"}]},
+    "Scottish League Two":        {"model_type": "standard", "rules": [{"from": "1900-01-01", "type": "winter", "api": "start_year"}]},
+    "Scottish Premiership":       {"model_type": "standard", "rules": [{"from": "1900-01-01", "type": "winter", "api": "start_year"}]},
+    "Belgian First Division A":   {"model_type": "standard", "rules": [{"from": "1900-01-01", "type": "winter", "api": "start_year"}]},
+    "Dutch Eredivisie":           {"model_type": "standard", "rules": [{"from": "1900-01-01", "type": "winter", "api": "start_year"}]},
+    "Turkish Super Lig":          {"model_type": "standard", "rules": [{"from": "1900-01-01", "type": "winter", "api": "start_year"}]},
+
+    "Denmark Superliga":          {"model_type": "new_format", "aliases": ["Danish Superliga"], "rules": [{"from": "1900-01-01", "type": "winter", "api": "start_year"}]},
+    "Austrian Bundesliga":        {"model_type": "new_format", "aliases": ["Austria Bundesliga"], "rules": [{"from": "1900-01-01", "type": "winter", "api": "start_year"}]},
+    "Romanian Superliga":         {"model_type": "new_format", "rules": [{"from": "1900-01-01", "type": "winter", "api": "start_year"}]},
+    "Saudi Pro League":           {"model_type": "new_format", "rules": [{"from": "1900-01-01", "type": "winter", "api": "start_year"}]},
+    "Mexico Liga MX":             {"model_type": "new_format", "note": "Apertura (Jul-Dec) + Clausura (Jan-May) form one campaign", "rules": [{"from": "1900-01-01", "type": "winter", "api": "start_year"}]},
+    "Sweden Allsvenskan":         {"model_type": "new_format", "rules": [{"from": "1900-01-01", "type": "calendar", "api": "calendar_year"}]},
+    "Norway Eliteserien":         {"model_type": "new_format", "rules": [{"from": "1900-01-01", "type": "calendar", "api": "calendar_year"}]},
+    "Finland Veikkausliiga":      {"model_type": "new_format", "rules": [{"from": "1900-01-01", "type": "calendar", "api": "calendar_year"}]},
+    "Ireland Premier Division":   {"model_type": "new_format", "rules": [{"from": "1900-01-01", "type": "calendar", "api": "calendar_year"}]},
+    "USA MLS":                    {"model_type": "new_format", "rules": [{"from": "1900-01-01", "type": "calendar", "api": "calendar_year"}]},
+    "K-League 1":                 {"model_type": "new_format", "rules": [{"from": "1900-01-01", "type": "calendar", "api": "calendar_year"}]},
+    "Brazil Serie A":             {"model_type": "new_format", "rules": [
+        {"from": "1900-01-01", "type": "calendar", "api": "calendar_year"},
+        {"from": "2020-08-01", "to": "2021-02-28", "type": "special", "label": "2020", "api_season": "2020", "evidence": "COVID: the 2020 campaign ran Aug 2020 - Feb 2021 (fd_history: 0 rows Jan-Jul 2020, 112 rows Jan-Feb 2021)"}]},
+    "China Super League":         {"model_type": "new_format", "rules": [
+        {"from": "1900-01-01", "type": "calendar", "api": "calendar_year"},
+        {"from": "2021-04-01", "to": "2022-01-31", "type": "special", "label": "2021", "api_season": "2021", "evidence": "2021 campaign finished in Jan 2022 (fd_history: 16 rows Jan 2022, none Feb-May 2022)"}]},
+    "Argentina Primera Division": {"model_type": "new_format", "rules": [
+        {"from": "1900-01-01", "type": "winter", "api": "start_year"},
+        {"from": "2020-07-01", "to": "2021-01-31", "type": "special", "label": "2020/21", "api_season": "2020", "evidence": "Copa Diego Maradona Oct 2020 - Jan 2021"},
+        {"from": "2021-02-01", "type": "calendar", "api": "calendar_year"}]},
+    "Japan J-League":             {"model_type": "new_format", "rules": [
+        {"from": "1900-01-01", "type": "calendar", "api": "calendar_year"},
+        {"from": "2026-01-01", "to": "2026-06-30", "type": "special", "label": "2026", "api_season": "2026", "evidence": "J1 spring special tournament 2026-02-06 -> 06-06 (v9 config.py comment, verified 2026-10-22)"},
+        {"from": "2026-07-01", "type": "winter", "api": "end_year", "evidence": "J1 autumn-spring from 2026-08-07; API-Football season 2027 (v9 config.py)"}]}
+  }
+}

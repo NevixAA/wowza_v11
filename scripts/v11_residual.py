@@ -214,6 +214,8 @@ def run():
             p_model = float(r.get("p_model_over"))
         except (TypeError, ValueError):
             continue
+        if not (p_model == p_model and 0.0 <= p_model <= 1.0):   # NaN / missing: skip, never 0.5
+            continue
         p_mkt = power_devig(oo, ou) or proportional_devig(oo, ou)
         if p_mkt is None:
             continue
