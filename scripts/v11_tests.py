@@ -808,6 +808,21 @@ def _v9_registry() -> dict | None:
         return None
 
 
+def _v9_file(rel: str) -> str | None:
+    """One v9 source file: local checkout (V9_LOCAL or a sibling ../v9), else public raw."""
+    import os
+    for c in (os.getenv("V9_LOCAL", ""), str(PROJ.parent / "v9")):
+        p = Path(c) / rel if c else None
+        if p is not None and p.exists():
+            return p.read_text(encoding="utf-8")
+    try:
+        import requests
+        r = requests.get(f"https://raw.githubusercontent.com/NevixAA/wowza-betting/main/{rel}", timeout=20)
+        return r.text if r.status_code == 200 else None
+    except Exception:                                                   # noqa: BLE001
+        return None
+
+
 def _r2_registry_and_seasons() -> None:
     import config as v11cfg
     from src import league_registry as LR
@@ -827,6 +842,25 @@ def _r2_registry_and_seasons() -> None:
           "Austria Bundesliga" not in rs.NEW_LEAGUES
           and LR.canonical_league("Austria Bundesliga") == "Austrian Bundesliga")
     check("no alias is also a canonical key", not (set(LR.ALIASES) & set(LR.LEAGUES)))
+
+    # Data Truth 2026-11-01 (finding 20): club names resolve with v9's canonical resolver, and the
+    # vendored copy is byte-identical to v9's so the two repos cannot drift apart.
+    print("\n== Data Truth: club-name resolution ==")
+    v9_tn = _v9_file("src/team_names.py")
+    here = (PROJ / "src" / "team_names.py").read_text(encoding="utf-8").replace("\r\n", "\n")
+    check("src/team_names.py == v9 src/team_names.py",
+          v9_tn is None or v9_tn.replace("\r\n", "\n") == here,
+          "copy v9's src/team_names.py over src/team_names.py")
+    for a, cands, want in [
+        ("LA Galaxy", ["Los Angeles Galaxy", "Los Angeles FC"], "Los Angeles Galaxy"),
+        ("D.C. United", ["DC United", "Inter Miami"], "DC United"),
+        ("Queens Park Rangers", ["QPR", "Preston"], "QPR"),
+        ("Wolverhampton Wanderers", ["Wolves", "West Ham"], "Wolves"),
+        ("Saint Etienne", ["St Etienne", "Lens"], "St Etienne"),
+        ("Bristol", ["Bristol City", "Bristol Rovers"], None),
+        ("Manchester City", ["Manchester United", "Liverpool"], None),
+    ]:
+        check(f"resolve({a!r}) -> {want!r}", rs.resolve(a, cands) == want, str(rs.resolve(a, cands)))
     check("unknown / near-name league is not guessed",
           LR.canonical_league("USA  MLS") is None and LR.model_type("Mystery") == "unknown")
 

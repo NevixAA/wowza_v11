@@ -101,14 +101,21 @@ def _norm(name: str) -> str:
 def resolve(name: str, candidates: list[str]) -> str | None:
     """Match `name` to one of `candidates`, or None. League-scoped by the caller.
 
-    Order: exact, then normalised-exact, then containment that is unique IN BOTH DIRECTIONS.
-    The both-directions rule is the whole point — "Bristol" is contained in both "Bristol City"
-    and "Bristol Rovers", so it is refused rather than assigned to whichever sorts first.
+    FIRST v9's canonical resolver (src/team_names.py, a byte-identical copy of v9's, checked in
+    scripts/v11_tests.py): aliases incl. result spellings, token pairing, ambiguity refused. Without
+    it QPR, Wolves, Saint Etienne, LA Galaxy, D.C. United, Atletico Mineiro, Urawa... never resolved
+    and 172 fixtures stayed ungraded (Data Truth audit finding 20). THEN the original tiers below:
+    exact, normalised-exact, containment unique IN BOTH DIRECTIONS — "Bristol" is contained in both
+    "Bristol City" and "Bristol Rovers", so it is refused rather than assigned to whichever sorts first.
     """
     if not name or not candidates:
         return None
     if name in candidates:
         return name
+    from src.team_names import resolve_result as _v9_resolve
+    hit = _v9_resolve(name, list(candidates))
+    if hit:
+        return hit
     n = _norm(name)
     if not n:
         return None
