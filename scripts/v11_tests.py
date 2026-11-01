@@ -957,6 +957,13 @@ def _r2_missing_model_probability() -> None:
     d = _decide(0.55, 1.9, 1.95, 1000, 0.02, None, None, 0.4)
     check("a real p_model still reaches the decision (p_blend computed)", d["p_blend"] is not None)
 
+    # Data Truth finding 53: every decision says why.
+    cases = {"no price": (0.55, None, 1.95), "one-sided": (0.55, 1.9, None),
+             "above cap": (0.55, 99.0, 1.01), "real": (0.55, 1.9, 1.95), "strong": (0.80, 1.9, 1.95)}
+    for label, (p, ob, oo) in cases.items():
+        d = _decide(p, ob, oo, 1000, 0.02, None, None, 0.4)
+        check(f"_decide {label}: reason is set ({d.get('reason')!r})", bool(d.get("reason")), str(d))
+
 
 def _raises(fn) -> bool:
     try:

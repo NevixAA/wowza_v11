@@ -147,13 +147,20 @@ def _decide(p_model, o_bet, o_other, n_eff, ece, rclv, rclv_n, w_cap,
     if not valid_probability(p_model):
         out["reason"] = MISSING_MODEL_PROBABILITY
         return out
+    # Every return path says WHY (Data Truth audit finding 53: v11_reason was 100% null, so a
+    # board of NO_BET rows never said which gate stopped them).
     best = o_bet
-    if not o_bet or o_bet <= 1.0 or best > MAX_BET_ODDS:
+    if not o_bet or o_bet <= 1.0:
+        out["reason"] = "no_price"
+        return out
+    if best > MAX_BET_ODDS:
+        out["reason"] = f"odds_above_cap({MAX_BET_ODDS})"
         return out
     if not o_other or o_other <= 1.0:
-        out["tier"] = "OBSERVE"; return out
+        out["tier"] = "OBSERVE"; out["reason"] = "one_sided_no_devig"; return out
     p_market = power_devig(o_bet, o_other) or proportional_devig(o_bet, o_other)
     if p_market is None:
+        out["reason"] = "devig_failed"
         return out
 
     # ── CROSS-BOOK CONSENSUS (2026-08-19) ────────────────────────────────────
@@ -200,17 +207,25 @@ def _decide(p_model, o_bet, o_other, n_eff, ece, rclv, rclv_n, w_cap,
     out.update(p_market=round(p_market, 4), p_blend=round(p_blend, 4),
                ev_lb=round(_ev, 4), abs_edge=round(ae, 4))
     b = _band(best)
-    if b is None or _ev < b["ev_floor"] or ae < b["abs_floor"]:
+    if b is None:
+        out["reason"] = "no_odds_band"
+        return out
+    if _ev < b["ev_floor"] or ae < b["abs_floor"]:
+        out["reason"] = (f"below_floors(ev_lb {_ev:.4f} vs {b['ev_floor']}, "
+                         f"edge {ae:.4f} vs {b['abs_floor']})")
         return out
     # CLV gate now needs a big enough CLEAN sample, not just mean>0 (external review): below
     # MIN_CLV_N the CLV evidence is too immature to certify a BET -> cap at VALUABLE (=PAPER).
     clv_ok = (rclv is not None and rclv > 0 and rclv_n is not None and rclv_n >= config.MIN_CLV_N)
     if _ev >= b["ev_floor"] * 2 and ae >= b["abs_floor"] * 1.5 and clv_ok:
         out["tier"] = "SNIPER"
+        out["reason"] = "passes_floors_clv_certified"
     elif _ev >= b["ev_floor"] * 1.3 and clv_ok:
         out["tier"] = "MARKSMAN"
+        out["reason"] = "passes_floors_clv_certified"
     else:
         out["tier"] = "VALUABLE"
+        out["reason"] = "passes_floors" + ("" if clv_ok else "_clv_not_certified")
     return out
 
 
