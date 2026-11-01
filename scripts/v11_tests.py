@@ -739,12 +739,12 @@ def _results_checks() -> None:
     check("standard: FTHG/FTAG parsed, bad date dropped", len(std) == 2, str(len(std)))
     check("standard: dayfirst dates (16/08 = 16 August)",
           std["date"].iloc[0] == pd.Timestamp("2026-08-16"), str(std["date"].iloc[0]))
-    new_raw = pd.DataFrame({"Season": ["2025", "2026", "2026"],
-                            "Date": ["01/05/2025", "16/08/2026", "17/08/2026"],
+    new_raw = pd.DataFrame({"Season": ["2024", "2026", "2026"],
+                            "Date": ["01/05/2024", "16/08/2026", "17/08/2026"],
                             "Home": ["Old", "Boca Juniors", "River Plate"],
                             "Away": ["Gone", "Velez", "Racing"],
                             "HG": [1, 2, 3], "AG": [1, 2, 0]})
-    new = rs.parse_new(new_raw, "Argentina Primera Division")
+    new = rs.parse_new(new_raw, "Argentina Primera Division", today="2026-08-20")
     check("new: HG/AG parsed and off-season rows filtered", len(new) == 2, str(len(new)))
     check("new: current-season rows kept",
           set(new["home_team"]) == {"Boca Juniors", "River Plate"})
@@ -779,6 +779,150 @@ def _results_checks() -> None:
           pd.isna(rs.grade_fixtures(
               pd.DataFrame({"league": ["Serie B"], "match": ["Barnsley vs Wigan"],
                             "date": ["2026-08-16"]}), std, quiet=True)["over25_result"].iloc[0]))
+    check("an EARLIER meeting of the same clubs never grades a later fixture",
+          pd.isna(rs.grade_fixtures(
+              pd.DataFrame({"league": ["League One"], "match": ["Barnsley vs Wigan"],
+                            "date": ["2027-03-01"]}), std, quiet=True)["over25_result"].iloc[0]))
+
+    _r2_registry_and_seasons()
+    _r2_missing_model_probability()
+
+
+# ── R2 2026-11-01: canonical league registry, derived seasons, no 0.5 default ─────────────
+def _v9_config_text() -> str | None:
+    """v9 config.py: local checkout (V9_LOCAL, as in CI, or a sibling ../v9), else public raw."""
+    import os
+    for c in (os.getenv("V9_LOCAL", ""), str(PROJ.parent / "v9")):
+        p = Path(c) / "config.py" if c else None
+        if p is not None and p.exists():
+            return p.read_text(encoding="utf-8")
+    try:
+        import requests
+        r = requests.get("https://raw.githubusercontent.com/NevixAA/wowza-betting/main/config.py",
+                         timeout=20)
+        return r.text if r.status_code == 200 else None
+    except Exception:                                                   # noqa: BLE001
+        return None
+
+
+def _literal(text: str, name: str):
+    import ast
+    for node in ast.parse(text).body:
+        tgt = (node.target if isinstance(node, ast.AnnAssign) else
+               node.targets[0] if isinstance(node, ast.Assign) else None)
+        if isinstance(tgt, ast.Name) and tgt.id == name:
+            return ast.literal_eval(node.value)
+    raise KeyError(name)
+
+
+def _r2_registry_and_seasons() -> None:
+    import config as v11cfg
+    from src import league_registry as LR
+    from src import results as rs
+
+    print("\n== R2: canonical league registry ==")
+    check("registry model types == v11 config tags (std)",
+          {lg for lg, v in LR.LEAGUES.items() if v[0] == "standard"} == set(v11cfg.STANDARD_FORMAT_LEAGUES))
+    check("registry model types == v11 config tags (nf)",
+          {lg for lg, v in LR.LEAGUES.items() if v[0] == "new_format"} == set(v11cfg.NEW_FORMAT_LEAGUES))
+    check("Saudi Pro League has a result source", "Saudi Pro League" in rs.AF_LEAGUES)
+    check("K-League 1 has a result source", "K-League 1" in rs.AF_LEAGUES)
+    check("every model league has exactly one result source",
+          all((lg in rs.STD_LEAGUES) + (lg in rs.NEW_LEAGUES) + (lg in rs.AF_LEAGUES) == 1
+              for lg in LR.LEAGUES))
+    check("old Austria spelling is an ALIAS, not a duplicate key",
+          "Austria Bundesliga" not in rs.NEW_LEAGUES
+          and LR.canonical_league("Austria Bundesliga") == "Austrian Bundesliga")
+    check("no alias is also a canonical key", not (set(LR.ALIASES) & set(LR.LEAGUES)))
+    check("unknown / near-name league is not guessed",
+          LR.canonical_league("USA  MLS") is None and LR.model_type("Mystery") == "unknown")
+
+    txt = _v9_config_text()
+    if txt is None:
+        print("  SKIP  v9 equality checks (no v9 checkout and no network)")
+    else:
+        v9_std, v9_nf = _literal(txt, "STANDARD_FORMAT_LEAGUES"), _literal(txt, "NEW_FORMAT_LEAGUES")
+        v9_fd = _literal(txt, "FOOTBALL_DATA_LEAGUES")
+        check("EQUAL to v9: standard leagues",
+              set(v9_std) == {lg for lg, v in LR.LEAGUES.items() if v[0] == "standard"},
+              str(set(v9_std) ^ {lg for lg, v in LR.LEAGUES.items() if v[0] == "standard"}))
+        check("EQUAL to v9: new-format leagues",
+              set(v9_nf) == {lg for lg, v in LR.LEAGUES.items() if v[0] == "new_format"},
+              str(set(v9_nf) ^ {lg for lg, v in LR.LEAGUES.items() if v[0] == "new_format"}))
+        canon_fd = {}
+        for k, code in v9_fd.items():
+            c = LR.canonical_league(k)
+            check(f"v9 football-data key {k!r} is canonical or a registered alias", c is not None)
+            if c:
+                canon_fd[c] = code
+        mine = {**rs.STD_LEAGUES, **rs.NEW_LEAGUES}
+        check("EQUAL to v9: football-data codes (aliases collapsed)", canon_fd == mine,
+              str(set(canon_fd.items()) ^ set(mine.items())))
+        check("leagues v9 cannot fetch from football-data come from af_history",
+              set(LR.LEAGUES) - set(canon_fd) == set(rs.AF_LEAGUES),
+              str(set(LR.LEAGUES) - set(canon_fd)))
+
+    print("\n== R2: NF season filter derived from season type + date ==")
+    s = LR.nf_result_seasons
+    check("calendar league mid-season: current + previous",
+          s("USA MLS", "2026-08-20") == ("2026", "2025"), str(s("USA MLS", "2026-08-20")))
+    check("calendar league rolls on 1 January",
+          s("USA MLS", "2027-01-01") == ("2027", "2026"), str(s("USA MLS", "2027-01-01")))
+    check("calendar league in 2028 (old literal would drop it)",
+          s("Sweden Allsvenskan", "2028-04-01")[0] == "2028")
+    check("winter league before rollover",
+          s("Austrian Bundesliga", "2027-06-30") == ("2026/2027", "2025/2026"),
+          str(s("Austrian Bundesliga", "2027-06-30")))
+    check("winter league rolls on 1 July",
+          s("Austrian Bundesliga", "2027-07-01") == ("2027/2028", "2026/2027"),
+          str(s("Austrian Bundesliga", "2027-07-01")))
+    check("alias resolves for seasons too",
+          s("Austria Bundesliga", "2027-07-01") == s("Austrian Bundesliga", "2027-07-01"))
+    check("Japan after the 2026 calendar change: winter, previous = spring special",
+          s("Japan J-League", "2026-11-01") == ("2026/2027", "2026"),
+          str(s("Japan J-League", "2026-11-01")))
+    check("unknown league keeps nothing (fail closed)", s("Mystery", "2026-11-01") == ())
+    raw = pd.DataFrame({"Season": ["2025/2026", "2026/2027", "2024/2025", "2026"],
+                        "Date": ["01/03/2026", "20/09/2026", "01/03/2025", "20/09/2026"],
+                        "Home": ["A", "B", "C", "D"], "Away": ["E", "F", "G", "H"],
+                        "HG": [1, 1, 1, 1], "AG": [0, 0, 0, 0]})
+    got = rs.parse_new(raw, "Austrian Bundesliga", today="2026-11-01")
+    check("exact label match: winter league keeps 2026/2027 + 2025/2026 only",
+          sorted(got["home_team"]) == ["A", "B"], str(sorted(got["home_team"])))
+    af = pd.DataFrame({"league": ["Saudi Pro League", "Saudi Pro League", "K-League 1", "Other"],
+                       "date": ["2026-09-20", "2024-09-20", "2026-09-21", "2026-09-21"],
+                       "home_team": ["Al Hilal", "Old", "Ulsan", "X"],
+                       "away_team": ["Al Nassr", "Gone", "Jeonbuk", "Y"],
+                       "FTHG": [2, 1, 1, 0], "FTAG": [2, 1, 0, 0]})
+    ar = rs.parse_af_history(af, ["Saudi Pro League", "K-League 1"], today="2026-11-01")
+    check("af_history results: Saudi + K-League current season only",
+          sorted(ar["home_team"]) == ["Al Hilal", "Ulsan"], str(sorted(ar["home_team"])))
+    g = rs.grade_fixtures(pd.DataFrame({"league": ["Saudi Pro League"],
+                                        "match": ["Al Hilal vs Al Nassr"], "date": ["2026-09-20"]}),
+                          ar, quiet=True)
+    check("Saudi fixture graded from af_history", g["over25_result"].iloc[0] == 1
+          and g["grade_source"].iloc[0] == "v9_af_history")
+
+
+def _r2_missing_model_probability() -> None:
+    from src.edge_engine import Candidate, classify, MISSING_MODEL_PROBABILITY
+    from scripts.v11_shadow import _decide
+
+    print("\n== R2: missing model probability fails closed (no 0.5 default) ==")
+    c = Candidate(market="over25", over_odds=1.9, under_odds=1.95, lineup_confirmed=True)
+    check("Candidate has no default p_model", c.p_model is None)
+    r = classify(c)
+    check("classify(): missing p_model -> NO_BET MISSING_MODEL_PROBABILITY",
+          r["tier"] == "NO_BET" and r["reason"] == MISSING_MODEL_PROBABILITY, str(r))
+    r = classify(Candidate(market="over25", over_odds=1.9, under_odds=1.95, p_model=float("nan"),
+                           lineup_confirmed=True))
+    check("classify(): NaN p_model -> NO_BET", r["reason"] == MISSING_MODEL_PROBABILITY)
+    for bad in (None, float("nan"), 1.5, -0.1, "x"):
+        d = _decide(bad, 1.9, 1.95, 1000, 0.02, None, None, 0.4)
+        check(f"_decide({bad!r}) -> NO_BET MISSING_MODEL_PROBABILITY",
+              d["tier"] == "NO_BET" and d.get("reason") == MISSING_MODEL_PROBABILITY, str(d))
+    d = _decide(0.55, 1.9, 1.95, 1000, 0.02, None, None, 0.4)
+    check("a real p_model still reaches the decision (p_blend computed)", d["p_blend"] is not None)
 
 
 def _raises(fn) -> bool:
