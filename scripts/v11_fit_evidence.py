@@ -20,9 +20,12 @@ Data: over25_result from v11_graded.csv (the label) joined to p_model_over from
 v11_shadow_snapshots.csv (what the model said). The snapshot used per fixture is the LAST
 PRE-KICKOFF one, via closing_snapshot() — never the last row, which can be post-kickoff.
 
-If there is not enough settled history, this writes nothing and v11 keeps the CONSERVATIVE
-fallback (N_EFF 100, ECE 0.08) rather than the optimistic constants. Absent evidence should
-cost the model confidence, not grant it.
+If there is not enough settled history, this writes nothing, and v11_shadow records every
+decision as NO_BET with reason MISSING_EVIDENCE. There is no typed fallback (the old 100 / 0.08
+pair was an assumption, removed in the Data Truth pass 2026-11-01).
+
+The label and the probability are joined on fixture_id (built from the canonical league), never
+on (date, match) alone, which could pair two different competitions' fixtures.
 """
 from __future__ import annotations
 
@@ -35,6 +38,7 @@ PROJ = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(PROJ))
 import config  # noqa: E402
 from src.evidence import EvidenceStore, expected_calibration_error  # noqa: E402
+from src import league_registry as LR  # noqa: E402
 from scripts.v11_shadow import closing_snapshot  # noqa: E402
 
 
@@ -83,14 +87,23 @@ def build() -> pd.DataFrame:
     if s.empty:
         print("[evidence] no snapshots available")
         return pd.DataFrame()
-    keep = [c for c in ("date", "match", "league", "model_type", "p_model_over",
-                        "snapshot_ts") if c in s.columns]
+    if "fixture_id" not in g.columns or "fixture_id" not in s.columns:
+        print("[evidence] fixture_id missing from v11_graded.csv or the snapshots; re-run "
+              "v11_grade.py")
+        return pd.DataFrame()
+    keep = [c for c in ("fixture_id", "league", "p_model_over", "snapshot_ts") if c in s.columns]
     close = (s[keep].sort_values("snapshot_ts")
-                    .drop_duplicates(subset=["date", "match"], keep="last"))
+                    .drop_duplicates(subset=["fixture_id"], keep="last"))
 
-    j = g.merge(close, on=["date", "match"], how="inner", suffixes=("", "_snap"))
-    if "league" not in j.columns and "league_snap" in j.columns:
-        j["league"] = j["league_snap"]
+    j = g.drop(columns=["league"], errors="ignore").merge(close, on="fixture_id", how="inner")
+    # Segment keys use the REGISTRY's canonical league and its model type (not the snapshot's
+    # free-text columns), so an alias spelling cannot open a second segment.
+    j["league"] = j["league"].map(LR.canonical_league)
+    j["model_type"] = j["league"].map(LR.model_type)
+    unk = int(j["model_type"].isna().sum())
+    if unk:
+        print(f"[evidence] dropped {unk} fixture(s) whose league has no registry model type")
+    j = j[j["model_type"].notna()]
     j["p"] = pd.to_numeric(j.get("p_model_over"), errors="coerce")
     j = j[j["p"].notna()]
     print(f"[evidence] joined to a model probability: {len(j)}")
@@ -100,8 +113,8 @@ def build() -> pd.DataFrame:
 def main() -> int:
     j = build()
     if j.empty:
-        print("[evidence] nothing to fit — v11 keeps the CONSERVATIVE fallback "
-              "(N_EFF=100, ECE=0.08), not the old optimistic 1000/0.02")
+        print("[evidence] nothing to fit; no evidence file is written and the shadow records "
+              "NO_BET MISSING_EVIDENCE until settled history exists")
         return 0
 
     store = EvidenceStore().fit(j, y_col="y", p_col="p")

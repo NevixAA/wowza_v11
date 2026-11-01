@@ -117,13 +117,14 @@ def main() -> int:
         for bk, o, u in specs:
             for side, price in (("OVER", o), ("UNDER", u)):
                 if price:
-                    out.append({"snapshot_ts": "2026-08-19T09:00:00Z", "match": match,
+                    out.append({"snapshot_ts": "2026-08-19T09:00:00Z", "league": "League One",
+                                "match": match,
                                 "bookmaker": bk, "market": "OU25", "side": side, "odds": price})
         return out
 
     books = _q(("a", 1.65, 2.35), ("b", 1.66, 2.30), ("c", 1.64, 2.40),
                ("d", 1.70, 2.25), ("e", 1.63, 2.45))
-    cons = lookup(build_index(load_snapshots(lambda n: pd.DataFrame(books))), "A", "B")
+    cons = lookup(build_index(load_snapshots(lambda n: pd.DataFrame(books))), "League One", "A", "B")
     check("5 two-sided books de-vigged", cons.n_books == 5, str(cons.n_books))
     check("consensus is usable", cons.usable, cons.reason)
     check("best OVER odds is the MAX, not the median", cons.best_over_odds == 1.70,
@@ -135,34 +136,48 @@ def main() -> int:
 
     # a lone outlier must not move the median
     sk = _q(("a", 1.65, 2.35), ("b", 1.66, 2.30), ("c", 1.64, 2.40), ("z", 3.50, 1.30))
-    cs = lookup(build_index(load_snapshots(lambda n: pd.DataFrame(sk))), "A", "B")
+    cs = lookup(build_index(load_snapshots(lambda n: pd.DataFrame(sk))), "League One", "A", "B")
     check("median resists an outlier book",
           abs(cs.p_consensus - cs.books["z"]) > 0.10,
           f"consensus {cs.p_consensus:.4f} vs outlier {cs.books['z']:.4f}")
 
     # one-sided quote: excluded from consensus (unknown margin) but still executable
     os_ = _q(("a", 1.65, 2.35), ("b", 1.66, 2.30), ("c", 1.64, 2.40)) + \
-        [{"snapshot_ts": "t", "match": "A vs B", "bookmaker": "oneside", "market": "OU25",
+        [{"snapshot_ts": "t", "league": "League One", "match": "A vs B", "bookmaker": "oneside",
+          "market": "OU25",
           "side": "OVER", "odds": 1.99}]
-    co = lookup(build_index(load_snapshots(lambda n: pd.DataFrame(os_))), "A", "B")
+    co = lookup(build_index(load_snapshots(lambda n: pd.DataFrame(os_))), "League One", "A", "B")
     check("one-sided book excluded from consensus", "oneside" not in co.books, str(list(co.books)))
     check("one-sided price still counts as executable", co.best_over_odds == 1.99,
           str(co.best_over_odds))
 
     # fewer than MIN_BOOKS_FOR_CONSENSUS is not a consensus
     c1 = lookup(build_index(load_snapshots(lambda n: pd.DataFrame(_q(("a", 1.65, 2.35))))),
-                "A", "B")
+                "League One", "A", "B")
     check("single book is not treated as consensus", not c1.usable, c1.reason)
 
     # fail-safe: nothing about a missing/broken file may raise or fabricate
     for nm, ldr in (("raises", lambda n: (_ for _ in ()).throw(FileNotFoundError())),
                     ("empty", lambda n: pd.DataFrame()),
                     ("bad schema", lambda n: pd.DataFrame([{"foo": 1}]))):
-        e = lookup(build_index(load_snapshots(ldr)), "A", "B")
+        e = lookup(build_index(load_snapshots(ldr)), "League One", "A", "B")
         check(f"fail-safe on {nm}", (not e.usable) and e.p_consensus is None, e.reason)
     check("unpriced fixture reports why",
           lookup(build_index(load_snapshots(lambda n: pd.DataFrame(books))),
-                 "Nobody", "Nowhere").reason == "fixture_not_priced")
+                 "League One", "Nobody", "Nowhere").reason == "fixture_not_priced")
+    # Data Truth 2026-11-01: identity is (canonical league, match, market).
+    idx = build_index(load_snapshots(lambda n: pd.DataFrame(books)))
+    check("same club pairing in ANOTHER league never borrows these quotes",
+          lookup(idx, "League Two", "A", "B").reason == "fixture_not_priced")
+    check("a league not in the registry never matches",
+          lookup(idx, "league one", "A", "B").reason == "league_not_in_registry")
+    alias_q = [dict(q, league="Danish Superliga") for q in books]
+    ai = build_index(load_snapshots(lambda n: pd.DataFrame(alias_q)))
+    check("alias-spelled quotes key under the canonical league",
+          lookup(ai, "Denmark Superliga", "A", "B").n_books == 5)
+    unk_q = [dict(q, league="Mystery League") for q in books]
+    check("quotes from an unknown league are dropped, not pooled",
+          build_index(load_snapshots(lambda n: pd.DataFrame(unk_q))) == {})
 
     # the flip itself, at the market_baseline level
     p_over = cons.p_consensus
@@ -174,27 +189,32 @@ def main() -> int:
     # ── CLV cleanliness gates BET, so a contaminated row must not buy its way past MIN_CLV_N ──
     print("\n== clean CLV ==")
     from scripts.v11_shadow import _rolling_clv_stats, CLV_PLAUSIBLE_ABS
-    rows = ([{"source": "live", "league": "L1", "clv_pct": 2.0}] * 10
-            + [{"source": "live", "league": "L1", "clv_pct": 287.1}] * 5)
+    rows = ([{"source": "live", "league": "League One", "clv_pct": 2.0}] * 10
+            + [{"source": "live", "league": "League One", "clv_pct": 287.1}] * 5)
     st = _rolling_clv_stats(pd.DataFrame(rows))
-    mean, n = st["L1"]
+    mean, n = st["League One"]
     check("implausible rows excluded from the COUNT", n == 10, str(n))
     check("implausible rows excluded from the MEAN", abs(mean - 2.0) < 1e-9, str(mean))
     check(f"boundary is inclusive at {CLV_PLAUSIBLE_ABS}",
           _rolling_clv_stats(pd.DataFrame(
-              [{"source": "live", "league": "L", "clv_pct": CLV_PLAUSIBLE_ABS}]))["L"][1] == 1)
+              [{"source": "live", "league": "League Two", "clv_pct": CLV_PLAUSIBLE_ABS}]))["League Two"][1] == 1)
     check("just beyond the boundary is dropped",
-          "L" not in _rolling_clv_stats(pd.DataFrame(
-              [{"source": "live", "league": "L", "clv_pct": CLV_PLAUSIBLE_ABS + 0.01}])))
+          "League Two" not in _rolling_clv_stats(pd.DataFrame(
+              [{"source": "live", "league": "League Two", "clv_pct": CLV_PLAUSIBLE_ABS + 0.01}])))
     check("negative outliers dropped too, not just positive",
-          "L" not in _rolling_clv_stats(pd.DataFrame(
-              [{"source": "live", "league": "L", "clv_pct": -66.86}])))
+          "League Two" not in _rolling_clv_stats(pd.DataFrame(
+              [{"source": "live", "league": "League Two", "clv_pct": -66.86}])))
     # the real-world shape: a segment that only clears MIN_CLV_N on contaminated rows must NOT
-    real = ([{"source": "live", "league": "NF", "clv_pct": 0.0}] * 143
-            + [{"source": "live", "league": "NF", "clv_pct": 120.0}] * 174)
-    m2, n2 = _rolling_clv_stats(pd.DataFrame(real))["NF"]
+    real = ([{"source": "live", "league": "USA MLS", "clv_pct": 0.0}] * 143
+            + [{"source": "live", "league": "USA MLS", "clv_pct": 120.0}] * 174)
+    m2, n2 = _rolling_clv_stats(pd.DataFrame(real))["USA MLS"]
     check("a segment cannot reach MIN_CLV_N on bad rows", n2 == 143, str(n2))
     check("and its mean is not inflated by them", abs(m2) < 1e-9, str(m2))
+    st = _rolling_clv_stats(pd.DataFrame([{"source": "live", "league": "Danish Superliga", "clv_pct": 1.0},
+                                          {"source": "live", "league": "Denmark Superliga", "clv_pct": 3.0},
+                                          {"source": "live", "league": "Mystery", "clv_pct": 2.0}]))
+    check("CLV segments use the canonical league (alias pooled, unknown dropped)",
+          st == {"Denmark Superliga": (2.0, 2)}, str(st))
 
     _movement_checks()
     _results_checks()
@@ -696,13 +716,16 @@ def _results_checks() -> None:
     """
     from src import results as rs
 
-    print("\n== results: season code is derived, never hardcoded ==")
-    check("August 2026 -> 2627", rs.season_code(pd.Timestamp("2026-08-23", tz="UTC")) == "2627")
-    check("July rolls the season", rs.season_code(pd.Timestamp("2026-07-01", tz="UTC")) == "2627")
+    print("\n== results: season code is derived per league, never hardcoded ==")
+    sc = rs.season_code
+    check("August 2026 -> 2627", sc("League One", pd.Timestamp("2026-08-23", tz="UTC")) == "2627")
+    check("the league's start_month rolls the season (Championship: July)",
+          sc("Championship", pd.Timestamp("2026-07-01", tz="UTC")) == "2627")
     check("June is still the old season",
-          rs.season_code(pd.Timestamp("2026-06-30", tz="UTC")) == "2526")
+          sc("Championship", pd.Timestamp("2026-06-30", tz="UTC")) == "2526")
     check("January stays in the same season",
-          rs.season_code(pd.Timestamp("2027-01-15", tz="UTC")) == "2627")
+          sc("Championship", pd.Timestamp("2027-01-15", tz="UTC")) == "2627")
+    check("unknown league -> None (skipped, no assumed July)", sc("Mystery", "2026-08-23") is None)
 
     print("\n== results: club-name resolution ==")
     check("exact match", rs.resolve("Bristol City", ["Bristol City", "Exeter"]) == "Bristol City")
@@ -729,6 +752,8 @@ def _results_checks() -> None:
     check("no candidates -> None", rs.resolve("Anything", []) is None)
     check("empty name -> None", rs.resolve("", ["A", "B"]) is None)
     check("unrelated name -> None", rs.resolve("Nowhere Town", ["Bristol City"]) is None)
+    check("no second, home-grown matcher after the canonical resolver",
+          not hasattr(rs, "_norm") and not hasattr(rs, "_NOISE"))
 
     print("\n== results: parsing both football-data formats ==")
     std_raw = pd.DataFrame({"Date": ["16/08/2026", "17/08/2026", "bad"],
@@ -778,6 +803,10 @@ def _results_checks() -> None:
     check("results for the WRONG league never cross over",
           pd.isna(rs.grade_fixtures(
               pd.DataFrame({"league": ["Serie B"], "match": ["Barnsley vs Wigan"],
+                            "date": ["2026-08-16"]}), std, quiet=True)["over25_result"].iloc[0]))
+    check("a league NOT in the registry is refused, never matched by its raw spelling",
+          pd.isna(rs.grade_fixtures(
+              pd.DataFrame({"league": ["league one"], "match": ["Barnsley vs Wigan"],
                             "date": ["2026-08-16"]}), std, quiet=True)["over25_result"].iloc[0]))
     check("an EARLIER meeting of the same clubs never grades a later fixture",
           pd.isna(rs.grade_fixtures(
@@ -829,10 +858,15 @@ def _r2_registry_and_seasons() -> None:
     from src import results as rs
 
     print("\n== R2: canonical league registry ==")
-    check("registry model types == v11 config tags (std)",
-          {lg for lg, v in LR.LEAGUES.items() if v[0] == "standard"} == set(v11cfg.STANDARD_FORMAT_LEAGUES))
-    check("registry model types == v11 config tags (nf)",
-          {lg for lg, v in LR.LEAGUES.items() if v[0] == "new_format"} == set(v11cfg.NEW_FORMAT_LEAGUES))
+    check("v11 config types no league list (the registry is the only source)",
+          not hasattr(v11cfg, "STANDARD_FORMAT_LEAGUES") and not hasattr(v11cfg, "NEW_FORMAT_LEAGUES")
+          and not hasattr(v11cfg, "model_type_for_league"))
+    check("registry is read from v9's config/leagues.json",
+          LR.registry_source().replace("\\", "/").endswith("config/leagues.json"),
+          LR.registry_source())
+    check("no hand-typed league table or calendar copy is left in src/",
+          not (PROJ / "src" / "league_season_calendar.json").exists()
+          and "\"Championship\": (" not in (PROJ / "src" / "league_registry.py").read_text(encoding="utf-8"))
     check("Saudi Pro League has a result source", "Saudi Pro League" in rs.AF_LEAGUES)
     check("K-League 1 has a result source", "K-League 1" in rs.AF_LEAGUES)
     check("every model league has exactly one result source",
@@ -862,7 +896,10 @@ def _r2_registry_and_seasons() -> None:
     ]:
         check(f"resolve({a!r}) -> {want!r}", rs.resolve(a, cands) == want, str(rs.resolve(a, cands)))
     check("unknown / near-name league is not guessed",
-          LR.canonical_league("USA  MLS") is None and LR.model_type("Mystery") == "unknown")
+          LR.canonical_league("USA  MLS") is None and LR.model_type("Mystery") is None)
+    check("a registry league with no model has no model type (None, not 'unknown')",
+          LR.canonical_league("Premier League") == "Premier League"
+          and LR.model_type("Premier League") is None)
 
     reg = _v9_registry()
     if reg is None:
@@ -963,6 +1000,82 @@ def _r2_missing_model_probability() -> None:
     for label, (p, ob, oo) in cases.items():
         d = _decide(p, ob, oo, 1000, 0.02, None, None, 0.4)
         check(f"_decide {label}: reason is set ({d.get('reason')!r})", bool(d.get("reason")), str(d))
+    _data_truth_no_invented_inputs()
+
+
+def _data_truth_no_invented_inputs() -> None:
+    """Data Truth 2026-11-01: no typed evidence, cap, dispersion or ledger key stands in for data."""
+    from src.edge_engine import Candidate, classify, MISSING_EVIDENCE, MISSING_MODEL_TYPE
+    from src.evidence import EvidenceStore
+    from src.book_consensus import Consensus
+    from scripts.v11_shadow import _decide, NO_CONSENSUS_DISPERSION
+    import tempfile, json as _json
+
+    print("\n== Data Truth: missing inputs are missing, never typed ==")
+    c = Candidate(market="over25", over_odds=1.9, under_odds=1.95, p_model=0.6,
+                  lineup_confirmed=True, model_w_cap=0.4)
+    check("Candidate without measured evidence -> NO_BET MISSING_EVIDENCE",
+          classify(c)["reason"] == MISSING_EVIDENCE, str(classify(c)))
+    c = Candidate(market="over25", over_odds=1.9, under_odds=1.95, p_model=0.6,
+                  lineup_confirmed=True, n_eff=500, ece=0.03)
+    check("Candidate without a model-type cap -> NO_BET MISSING_MODEL_TYPE",
+          classify(c)["reason"] == MISSING_MODEL_TYPE, str(classify(c)))
+
+    st = EvidenceStore()
+    check("an empty evidence store returns None, not a typed prior", st.lookup("standard", "League One") is None)
+    st = EvidenceStore.from_json(Path(tempfile.gettempdir()) / "no_such_v11_evidence.json")
+    check("missing evidence file -> None + a recorded reason",
+          st.lookup("standard") is None and bool(st.load_error))
+    with tempfile.TemporaryDirectory() as td:
+        fp = Path(td) / "ev.json"
+        fp.write_text(_json.dumps({"global": {"scope": "global", "n": 0, "n_eff": 100, "ece": 0.08,
+                                              "source": "fallback"}, "segments": {}}), encoding="utf-8")
+        check("an old file's typed 'fallback' global is NOT loaded as evidence",
+              EvidenceStore.from_json(fp).lookup("standard") is None)
+    fit = EvidenceStore().fit(pd.DataFrame({"y": [1, 0] * 40, "p": [0.6, 0.4] * 40,
+                                            "model_type": ["standard"] * 80,
+                                            "league": ["League One"] * 80}), y_col="y", p_col="p")
+    ev = fit.lookup("standard", "League One")
+    check("measured evidence is returned per league segment",
+          ev is not None and ev.scope == "standard|League One" and ev.n_eff == 80, str(ev))
+
+    d = _decide(0.55, 1.9, 1.95, 1000, 0.02, None, None, 0.4)
+    check("no consensus -> OBSERVE no_consensus_dispersion (penalty is NOT assumed 0)",
+          d["tier"] == "OBSERVE" and d["reason"] == NO_CONSENSUS_DISPERSION and d["ev_lb"] is None, str(d))
+    check("consensus never consulted -> n_books None, not 0", d["n_books"] is None, str(d))
+    cons = Consensus(p_consensus=0.52, n_books=5, dispersion=0.01, best_over_odds=1.95,
+                     best_under_odds=1.98, books={"a": 0.51, "b": 0.52, "c": 0.53, "d": 0.52, "e": 0.52},
+                     reason="ok")
+    d = _decide(0.55, 1.9, 1.95, 1000, 0.02, None, None, 0.4, cons=cons, side="OVER")
+    check("measured dispersion -> the decision reaches the EV floors", d["ev_lb"] is not None
+          and d["n_books"] == 5 and d["reason"] != NO_CONSENSUS_DISPERSION, str(d))
+
+    print("\n== Data Truth: ledger fallback is league-scoped + canonical resolver ==")
+    from scripts.v11_grade import _ledger_results, _ledger_over
+    bl = pd.DataFrame([
+        {"league": "League One", "match_date": "2026-08-16", "home_team": "Wolverhampton Wanderers",
+         "away_team": "Bristol City", "side": "OVER", "result": "WIN"},
+        {"league": "Serie B", "match_date": "2026-08-16", "home_team": "Bari", "away_team": "Modena",
+         "side": "OVER", "result": "LOSS"},
+        {"league": "Mystery", "match_date": "2026-08-16", "home_team": "X", "away_team": "Y",
+         "side": "OVER", "result": "WIN"}])
+    led = _ledger_results(bl)
+    check("ledger rows with an unknown league are dropped", "Mystery" not in set(led["league"]))
+    check("ledger result found with the canonical resolver (Wolves alias)",
+          _ledger_over(led, "League One", "Wolves vs Bristol City", "2026-08-16") is True)
+    check("the same pairing in another league is NOT used",
+          _ledger_over(led, "League Two", "Wolves vs Bristol City", "2026-08-16") is None)
+    check("a different date is NOT used",
+          _ledger_over(led, "League One", "Wolves vs Bristol City", "2026-08-17") is None)
+    check("UNDER on a lost OVER tip", _ledger_over(led, "Serie B", "Bari vs Modena", "2026-08-16") is False)
+
+    print("\n== Data Truth: seasons from the registry's season_rule ==")
+    from src import league_registry as LR
+    check("Japan end_year rule: Nov 2026 is the 2026/2027 campaign",
+          LR.season_for("Japan J-League", "2026-11-01")["fd_label"] == "2026/2027")
+    check("a 'fixed' era has no known football-data label -> None (not guessed)",
+          LR.season_for("Brazil Serie A", "2020-10-01") is None)
+    check("unknown league -> None", LR.season_for("Mystery", "2026-11-01") is None)
 
 
 def _raises(fn) -> bool:

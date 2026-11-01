@@ -95,7 +95,7 @@ def market_baseline(book_fair_probs: dict[str, float], exchange_prob: float | No
 
 
 # ── model↔market blend ────────────────────────────────────────────────────────
-def blend_weight(odds: float, n_eff: int, market: str, w_cap: float = 0.30) -> float:
+def blend_weight(odds: float, n_eff: int, market: str, w_cap: float) -> float:
     """Weight on the MODEL. Market is the baseline; the model is a residual. `w_cap` is the
     per-segment ceiling: 0.30 for zero-signal segments (props, AUC≈0.5), higher for segments
     with genuine measured AUC (our obscure-league team O/U moat). Shrinks on long odds (band
@@ -133,6 +133,9 @@ def ev_lb(p_lb: float, best_odds: float, tx_cost: float = DEFAULT_TX_COST) -> fl
 
 # ── decision ──────────────────────────────────────────────────────────────────
 MISSING_MODEL_PROBABILITY = "MISSING_MODEL_PROBABILITY"
+# No measured N_EFF/ECE for the segment, or no model type (so no model-weight cap): NO_BET.
+MISSING_EVIDENCE = "MISSING_EVIDENCE"
+MISSING_MODEL_TYPE = "MISSING_MODEL_TYPE"
 
 
 def valid_probability(p) -> bool:
@@ -157,13 +160,15 @@ class Candidate:
     p_model: float | None = None
     book_fair_probs: dict = field(default_factory=dict)
     exchange_prob: float | None = None
-    n_eff: int = 0
-    ece: float = 0.02
+    # MEASURED evidence and the segment's cap, no typed defaults (Data Truth 2026-11-01: these
+    # were n_eff 0 / ece 0.02 / cap 0.30). Missing -> classify() returns NO_BET with a reason.
+    n_eff: int | None = None                # from output/v11_evidence.json (src/evidence.py)
+    ece: float | None = None
     lineup_confirmed: bool = False
     two_sided: bool = True
     rolling_clv: float | None = None        # positive => selection historically beat close
     settlement_aligned: bool = True         # #1 gate: our label == book's settlement feed
-    model_w_cap: float = 0.30               # per-segment model-weight ceiling (moat > 0.30)
+    model_w_cap: float | None = None        # per-segment model-weight ceiling (by model type)
 
 
 def classify(c: Candidate) -> dict:
@@ -175,6 +180,10 @@ def classify(c: Candidate) -> dict:
     # ── hard gates ──
     if not valid_probability(c.p_model):
         out["reason"] = MISSING_MODEL_PROBABILITY; return out
+    if c.n_eff is None or c.ece is None:
+        out["reason"] = MISSING_EVIDENCE; return out
+    if c.model_w_cap is None:
+        out["reason"] = MISSING_MODEL_TYPE; return out
     if not c.settlement_aligned:
         out["reason"] = "settlement feed not aligned (odds vs outcome definition)"; return out
     if best > MAX_BET_ODDS:

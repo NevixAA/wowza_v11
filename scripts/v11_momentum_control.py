@@ -269,8 +269,12 @@ def build(prior_window: int = 60, future_window: int = 60) -> pd.DataFrame:
     # DIRECTION STREAK: how many of the recent windows agree in sign. A market drifting one way
     # for three hours is a different state from one that jittered to the same place, and pooling
     # them is how momentum gets under-controlled.
-    signs = np.sign(d[["move_30m", "move_1h", "move_3h"]].fillna(0.0))
-    d["direction_streak"] = signs.sum(axis=1)
+    # Only OBSERVED windows count. An unobserved prior move used to be filled with 0 (a flat
+    # market), which inflated the 'no direction' state; now it is skipped, the number of windows
+    # actually seen is carried, and a row with none observed stays NaN.
+    signs = np.sign(d[["move_30m", "move_1h", "move_3h"]])
+    d["direction_streak"] = signs.sum(axis=1, min_count=1)
+    d["direction_streak_n_obs"] = signs.notna().sum(axis=1)
 
     # Dispersion CHANGE, not level: books converging and books scattering are opposite states
     # even at identical dispersion.
@@ -453,10 +457,12 @@ def placebo_table(d: pd.DataFrame, *, n_boot: int = 400, seed: int = 5) -> pd.Da
         "PLACEBO_momentum_continuation": sub["prev_move_pp"],
         "PLACEBO_random_direction": pd.Series(rng.normal(size=len(sub)), index=sub.index),
         "CONTROL_market_only": -sub["v11_p_market"] * 100.0,
-        "CONTROL_dispersion": sub["dispersion"].fillna(0.0),
+        # Missing dispersion / 3h velocity stay NaN: the dropna below scores these variants on
+        # OBSERVED rows only and n_obs says how many (they were 0-filled and scored as data).
+        "CONTROL_dispersion": sub["dispersion"],
     }
     if "velocity_3h" in sub.columns:
-        variants["PLACEBO_long_momentum"] = sub["velocity_3h"].fillna(0.0)
+        variants["PLACEBO_long_momentum"] = sub["velocity_3h"]
 
     rows = []
     for name, pred in variants.items():

@@ -45,93 +45,64 @@ an empty frame and prints the reason on any network failure, so a blocked fetch 
 """
 from __future__ import annotations
 
-import re
 from io import StringIO
 from pathlib import Path
 
 import pandas as pd
 
-# DERIVED from the canonical registry (src/league_registry.py, R2 2026-11-01). This used to be a
-# hand copy of v9 config.FOOTBALL_DATA_LEAGUES; it drifted (no Saudi Pro League, no K-League 1, and
-# "Austria Bundesliga" as a duplicate KEY instead of an alias). scripts/v11_tests.py now checks the
-# registry for equality against v9 on every run.
+# DERIVED from the canonical registry (src/league_registry.py, which reads v9's config/leagues.json).
+# Resolved lazily (module __getattr__ below) so importing this module never needs the registry.
 from src import league_registry as LR  # noqa: E402
 
-STD_LEAGUES = dict(LR.STD_RESULT_CODES)
-NEW_LEAGUES = dict(LR.NEW_RESULT_CODES)
-AF_LEAGUES = tuple(LR.AF_RESULT_LEAGUES)
 AF_HISTORY_REL = "af_history.parquet"
 
 STD_URL = "https://www.football-data.co.uk/mmz4281/{season}/{code}.csv"
 NEW_URL = "https://www.football-data.co.uk/new/{code}.csv"
 _HEADERS = {"User-Agent": "Mozilla/5.0"}
 
-# Corporate suffixes and prefixes that carry no identity. Deliberately does NOT include anything
-# that distinguishes two real clubs — "City", "Rovers", "United", "II", "B" all stay, because
-# dropping them is precisely how Manchester City becomes Manchester United.
-_NOISE = {"fc", "cf", "afc", "sc", "ac", "as", "ss", "ssc", "cd", "ud", "sd", "rcd", "club",
-          "calcio", "kv", "kaa", "rsc", "sk", "fk", "if", "ff", "bk", "gf", "ik", "aik"}
+
+def __getattr__(name: str):
+    if name == "STD_LEAGUES":
+        return dict(LR.STD_RESULT_CODES)
+    if name == "NEW_LEAGUES":
+        return dict(LR.NEW_RESULT_CODES)
+    if name == "AF_LEAGUES":
+        return tuple(LR.AF_RESULT_LEAGUES)
+    raise AttributeError(name)
 
 
-def season_code(today: pd.Timestamp | None = None) -> str:
-    """mmz4281 season code, e.g. '2627'. Derived, never hardcoded.
+def season_code(league, today: pd.Timestamp | None = None) -> str | None:
+    """mmz4281 season code for one league, e.g. '2627'. Derived, never hardcoded.
 
     Root CLAUDE.md: a hardcoded season froze COLLECT_SEASONS at "2025" and cost six weeks of
-    uncollected data while the job reported success daily. Football seasons roll in July.
+    uncollected data while the job reported success daily. The rollover month is the league's own
+    `start_month` from config/leagues.json (it used to be an assumed July for every league).
+    Unknown league / season -> None, and the caller skips that league.
     """
-    t = today or pd.Timestamp.now(tz="UTC")
-    y = t.year if t.month >= 7 else t.year - 1
+    t = today if today is not None else pd.Timestamp.now(tz="UTC")
+    s = LR.season_for(league, t)
+    if s is None:
+        return None
+    y = int(s["start_year"])
     return f"{y % 100:02d}{(y + 1) % 100:02d}"
-
-
-def _norm(name: str) -> str:
-    """Lowercase, strip accents/punctuation, drop identity-free corporate tokens."""
-    s = str(name or "").lower().strip()
-    s = (s.replace("á", "a").replace("à", "a").replace("ä", "a").replace("â", "a")
-          .replace("é", "e").replace("è", "e").replace("ë", "e").replace("ê", "e")
-          .replace("í", "i").replace("ï", "i").replace("ó", "o").replace("ö", "o")
-          .replace("ô", "o").replace("ú", "u").replace("ü", "u").replace("ç", "c")
-          .replace("ş", "s").replace("ğ", "g").replace("ı", "i").replace("ø", "o")
-          .replace("å", "a").replace("æ", "ae").replace("ñ", "n"))
-    s = re.sub(r"[^a-z0-9 ]+", " ", s)
-    toks = [t for t in s.split() if t and t not in _NOISE]
-    return " ".join(toks) if toks else s.strip()
 
 
 def resolve(name: str, candidates: list[str]) -> str | None:
     """Match `name` to one of `candidates`, or None. League-scoped by the caller.
 
-    FIRST v9's canonical resolver (src/team_names.py, a byte-identical copy of v9's, checked in
-    scripts/v11_tests.py): aliases incl. result spellings, token pairing, ambiguity refused. Without
-    it QPR, Wolves, Saint Etienne, LA Galaxy, D.C. United, Atletico Mineiro, Urawa... never resolved
-    and 172 fixtures stayed ungraded (Data Truth audit finding 20). THEN the original tiers below:
-    exact, normalised-exact, containment unique IN BOTH DIRECTIONS — "Bristol" is contained in both
-    "Bristol City" and "Bristol Rovers", so it is refused rather than assigned to whichever sorts first.
+    v9's canonical result resolver ONLY (src/team_names.resolve_result, a byte-identical copy of
+    v9's, checked in scripts/v11_tests.py): aliases incl. result spellings, token pairing, reserve
+    sides kept apart, ambiguity refused. The second, home-grown matcher that used to run after it
+    (hand accent table, noise-word list and substring containment) is gone (Data Truth 2026-11-01):
+    an unresolved club stays ungraded and is reported as unmatched, and a missing spelling is
+    added to v9's alias table, not guessed here.
     """
     if not name or not candidates:
         return None
     if name in candidates:
         return name
     from src.team_names import resolve_result as _v9_resolve
-    hit = _v9_resolve(name, list(candidates))
-    if hit:
-        return hit
-    n = _norm(name)
-    if not n:
-        return None
-    norm_map: dict[str, list[str]] = {}
-    for c in candidates:
-        norm_map.setdefault(_norm(c), []).append(c)
-    exact = norm_map.get(n)
-    if exact and len(exact) == 1:
-        return exact[0]
-    if exact:
-        return None                                  # genuinely ambiguous after normalisation
-    # Containment, unique both ways.
-    fwd = [c for k, cs in norm_map.items() if n and n in k for c in cs]
-    bwd = [c for k, cs in norm_map.items() if k and k in n for c in cs]
-    hits = {c for c in fwd + bwd}
-    return next(iter(hits)) if len(hits) == 1 else None
+    return _v9_resolve(name, list(candidates))
 
 
 def _get(url: str) -> pd.DataFrame:
@@ -183,8 +154,9 @@ def parse_af_history(af: pd.DataFrame, leagues, *, today=None) -> pd.DataFrame:
         return pd.DataFrame(columns=["date", "home_team", "away_team", "home_goals",
                                      "away_goals", "league"])
     t = pd.Timestamp(today) if today is not None else pd.Timestamp.now(tz="UTC").tz_localize(None)
+    af_canon = af["league"].map(LR.canonical_league)        # alias spellings collapse, unknown -> None
     for lg in leagues:
-        g = af[af["league"].astype(str) == lg]
+        g = af[af_canon == lg]
         if g.empty:
             continue
         d = pd.DataFrame({"date": pd.to_datetime(g["date"], errors="coerce"),
@@ -224,28 +196,39 @@ def fetch_results(leagues: list[str] | None = None, *, season: str | None = None
     """Results for the given leagues. Empty frame (never an exception) on network failure.
 
     League names are resolved through the canonical registry, so an alias ("Austria Bundesliga")
-    fetches the canonical league once and the rows carry the canonical name."""
-    season = season or season_code()
+    fetches the canonical league once and the rows carry the canonical name. A name that is not
+    in the registry is skipped and listed (never fetched under a guessed league).
+
+    `season` forces one mmz4281 code for every standard league; by default each league's own
+    code is derived from its season rule (leagues do not all roll over in July)."""
     if leagues is None:
         want = set(LR.LEAGUES)
     else:
         want = {c for c in (LR.canonical_league(x) for x in leagues) if c}
-    frames, failed = [], []
-    for league, code in STD_LEAGUES.items():
+        unknown = sorted({str(x) for x in leagues if LR.canonical_league(x) is None})
+        if unknown and not quiet:
+            print(f"[results] SKIPPED, league not in registry: {', '.join(unknown)}")
+    frames, failed, seasons = [], [], set()
+    for league, code in LR.STD_RESULT_CODES.items():
         if league not in want:
             continue
+        sc = season or season_code(league)
+        if sc is None:
+            failed.append(f"{league}(season unknown)")
+            continue
+        seasons.add(sc)
         try:
-            frames.append(parse_standard(_get(STD_URL.format(season=season, code=code)), league))
+            frames.append(parse_standard(_get(STD_URL.format(season=sc, code=code)), league))
         except Exception as e:                                        # noqa: BLE001
             failed.append(f"{league}({type(e).__name__})")
-    for league, code in NEW_LEAGUES.items():
+    for league, code in LR.NEW_RESULT_CODES.items():
         if league not in want:
             continue
         try:
             frames.append(parse_new(_get(NEW_URL.format(code=code)), league))
         except Exception as e:                                        # noqa: BLE001
             failed.append(f"{league}({type(e).__name__})")
-    af_want = [lg for lg in AF_LEAGUES if lg in want]
+    af_want = [lg for lg in LR.AF_RESULT_LEAGUES if lg in want]
     if af_want:
         try:
             frames.append(parse_af_history(_read_v9_af_history(), af_want))
@@ -258,7 +241,7 @@ def fetch_results(leagues: list[str] | None = None, *, season: str | None = None
         out["total_goals"] = out["home_goals"] + out["away_goals"]
     if not quiet:
         print(f"[results] {len(out):,} results over {out['league'].nunique() if len(out) else 0} "
-              f"league(s), season {season}"
+              f"league(s), standard season(s) {sorted(seasons) or '-'}"
               + (f" | UNAVAILABLE: {', '.join(failed)}" if failed else ""))
     return out
 
@@ -287,7 +270,12 @@ def grade_fixtures(fixtures: pd.DataFrame, results: pd.DataFrame, *,
     unmatched: list[str] = []
 
     for lg, idx in f.groupby(f["league"].astype(str)).groups.items():
-        rl = r[r["league"].astype(str) == (LR.canonical_league(lg) or lg)]
+        canon = LR.canonical_league(lg)
+        if canon is None:
+            # Not in the registry: refused, never matched under its raw spelling.
+            unmatched += [f"{lg}: {f.at[i, 'match']} (league not in registry)" for i in idx]
+            continue
+        rl = r[r["league"].astype(str) == canon]
         if rl.empty:
             continue
         homes = sorted(rl["home_team"].astype(str).unique())
@@ -321,7 +309,7 @@ def grade_fixtures(fixtures: pd.DataFrame, results: pd.DataFrame, *,
             tg = float(row["home_goals"]) + float(row["away_goals"])
             f.at[i, "total_goals"] = tg
             f.at[i, "over25_result"] = 1 if tg > 2.5 else 0
-            f.at[i, "grade_source"] = ("v9_af_history" if (LR.canonical_league(lg) or lg) in AF_LEAGUES
+            f.at[i, "grade_source"] = ("v9_af_history" if canon in LR.AF_RESULT_LEAGUES
                                        else "football-data.co.uk")
 
     if not quiet:

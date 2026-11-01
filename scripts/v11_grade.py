@@ -13,7 +13,6 @@ CLV comparison is a later add (needs closing-line capture for v11's own picks).
 Outputs: output/v11_graded.csv  (per-fixture, both picks graded)
          output/v11_scoreboard.csv  (v9 vs v11 aggregates, overall + monthly)
 """
-import re
 import sys
 from pathlib import Path
 
@@ -111,27 +110,58 @@ def _write_derived(df, name: str, *, allow_shrink: bool = False):
 BET_TIERS = {"SNIPER", "MARKSMAN", "VALUABLE"}
 
 
-def _norm(s):
-    return re.sub(r"[^a-z0-9]", "", str(s).lower())
+def _ledger_results(bl: pd.DataFrame) -> pd.DataFrame:
+    """v9 bets_ledger -> one row per settled tip: canonical league, date, home, away, over.
+
+    bets_ledger has no total_goals column, so over 2.5 happened iff a tipped OVER won or a tipped
+    UNDER lost. The league is the REGISTRY's canonical name; a row whose league is unknown, or
+    whose side/result/clubs/date is missing, is dropped (never guessed) and counted."""
+    cols = ["league", "date", "home_team", "away_team", "over"]
+    need = {"league", "result", "side", "home_team", "away_team", "match_date"}
+    if bl is None or bl.empty or not need <= set(bl.columns):
+        return pd.DataFrame(columns=cols)
+    from src import league_registry as LR
+    d = bl.copy()
+    res = d["result"].astype(str).str.upper()
+    side = d["side"].astype(str).str.upper()
+    d = d[res.isin(["WIN", "LOSS"]) & side.isin(["OVER", "UNDER"])].copy()
+    if d.empty:
+        return pd.DataFrame(columns=cols)
+    res, side = d["result"].astype(str).str.upper(), d["side"].astype(str).str.upper()
+    out = pd.DataFrame({
+        "league": d["league"].map(LR.canonical_league),
+        "date": pd.to_datetime(d["match_date"], errors="coerce").dt.strftime("%Y-%m-%d"),
+        "home_team": d["home_team"], "away_team": d["away_team"],
+        "over": ((side == "OVER") & (res == "WIN")) | ((side == "UNDER") & (res == "LOSS"))})
+    bad = out[["league", "date", "home_team", "away_team"]].isna().any(axis=1)
+    if bad.any():
+        print(f"[grade] ledger: dropped {int(bad.sum())} settled row(s) with an unknown league, "
+              f"date or club")
+    return out[~bad].reset_index(drop=True)
 
 
-def _result_lookup(bl: pd.DataFrame) -> dict:
-    """(home, away, date) -> over_happened (bool). Derived from v9's tipped side + WIN/LOSS
-    (bets_ledger has no total_goals column): over 2.5 happened iff a tipped OVER won or a
-    tipped UNDER lost."""
-    if bl is None or bl.empty or "result" not in bl.columns or "side" not in bl.columns:
-        return {}
-    look = {}
-    for _, r in bl.iterrows():
-        res = str(r.get("result", "")).upper()
-        side = str(r.get("side", "")).upper()
-        if res not in ("WIN", "LOSS") or side not in ("OVER", "UNDER"):
-            continue
-        over = (side == "OVER" and res == "WIN") or (side == "UNDER" and res == "LOSS")
-        key = (_norm(r.get("home_team", "")), _norm(r.get("away_team", "")),
-               str(r.get("match_date", ""))[:10])
-        look[key] = bool(over)
-    return look
+def _ledger_over(led: pd.DataFrame, league, match, date) -> bool | None:
+    """over_happened for one shadow fixture from the ledger, or None. LEAGUE-SCOPED and same-date,
+    clubs resolved with v9's canonical result resolver (src/team_names.resolve_result). This used
+    to be a raw lowercase/strip-punctuation key with no league, which could join two clubs of the
+    same spelling in different competitions."""
+    from src import league_registry as LR
+    from src.team_names import resolve_result
+    lg = LR.canonical_league(league)
+    m = str(match) if pd.notna(match) else ""
+    if lg is None or " vs " not in m or led is None or led.empty or pd.isna(date):
+        return None
+    c = led[(led["league"] == lg) & (led["date"] == str(date)[:10])]
+    if c.empty:
+        return None
+    h_raw, a_raw = (x.strip() for x in m.split(" vs ", 1))
+    h = resolve_result(h_raw, sorted(c["home_team"].astype(str).unique()))
+    a = resolve_result(a_raw, sorted(c["away_team"].astype(str).unique()))
+    if not h or not a:
+        return None
+    hit = c[(c["home_team"].astype(str) == h) & (c["away_team"].astype(str) == a)]
+    vals = set(hit["over"].astype(bool))
+    return vals.pop() if len(vals) == 1 else None          # two tips that disagree -> unknown
 
 
 def _grade(side, over_happened, o_over, o_under):
@@ -179,6 +209,7 @@ def run():
     # unauthenticated, so the conditioning is removable. The ledger is kept as a fallback rather
     # than deleted: it covers a handful of API-Football-only competitions football-data does not
     # carry, and losing those would trade one gap for another.
+    # Keyed by the shadow's own fixture_id (built from the canonical league), not by raw strings.
     fd_lookup: dict = {}
     try:
         from src import results as rs
@@ -186,38 +217,37 @@ def run():
         res = rs.fetch_results(leagues)
         if not res.empty:
             graded_fx = rs.grade_fixtures(
-                log[["league", "match", "date"]].drop_duplicates(), res)
+                log[["fixture_id", "league", "match", "date"]].drop_duplicates("fixture_id"), res)
             for _, g in graded_fx.iterrows():
                 if pd.notna(g.get("over25_result")):
-                    fd_lookup[(str(g["league"]), str(g["match"]),
-                               str(g["date"])[:10])] = int(g["over25_result"])
+                    fd_lookup[str(g["fixture_id"])] = int(g["over25_result"])
     except Exception as e:                                             # noqa: BLE001
         print(f"[grade] football-data results unavailable ({type(e).__name__}: {e}); "
               f"falling back to v9's tip ledger, which is SELECTION-BIASED")
 
     try:
-        lookup = _result_lookup(_load_v9("bets_ledger.csv"))
+        led = _ledger_results(_load_v9("bets_ledger.csv"))
     except Exception as e:
-        print(f"[grade] could not load v9 results: {e}"); lookup = {}
+        print(f"[grade] could not load v9 results: {e}"); led = None
 
     n_fd = n_ledger = 0
     rows = []
     for _, r in log.iterrows():
-        h, a = str(r.get("match", "")).split(" vs ", 1) if " vs " in str(r.get("match", "")) else ("", "")
         # Actual goals win. A ledger value is only consulted where football-data has nothing.
-        over = fd_lookup.get((str(r.get("league")), str(r.get("match")),
-                              str(r.get("date", ""))[:10]))
+        over = fd_lookup.get(str(r.get("fixture_id")))
         if over is not None:
             n_fd += 1
         else:
-            over = lookup.get((_norm(h), _norm(a), str(r.get("date", ""))[:10]))
+            over = _ledger_over(led, r.get("league"), r.get("match"), r.get("date"))
             if over is not None:
                 n_ledger += 1
         o_over, o_under = r.get("odds_over25"), r.get("odds_under25")
         v9 = _grade(r.get("live_side"), over, o_over, o_under) if str(r.get("live_tier")) in BET_TIERS else None
         v11 = _grade(r.get("v11_side"), over, o_over, o_under) if str(r.get("v11_tier")) in BET_TIERS else None
         rows.append({
-            "date": r.get("date"), "month": str(r.get("date", ""))[:7], "league": r.get("league"),
+            "fixture_id": r.get("fixture_id"),
+            "date": r.get("date"), "month": str(r.get("date"))[:7] if pd.notna(r.get("date")) else None,
+            "league": r.get("league"),
             "match": r.get("match"), "over25_result": over,
             "live_side": r.get("live_side"), "live_tier": r.get("live_tier"),
             "live_pnl": v9["pnl"] if v9 else None,

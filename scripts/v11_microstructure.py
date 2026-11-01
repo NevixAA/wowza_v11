@@ -194,9 +194,11 @@ def residual_information(j: pd.DataFrame) -> pd.DataFrame:
     y = pd.to_numeric(f["toward_wowza"], errors="coerce").astype(float).values
 
     def z(v):
+        # Called on complete cases only, so nothing is imputed (a missing value used to become
+        # z = 0, the mean). A constant column standardises to zeros, which the fit reports as such.
         v = pd.to_numeric(v, errors="coerce").astype(float)
         sd = v.std()
-        return ((v - v.mean()) / sd).fillna(0).values if sd and np.isfinite(sd) else np.zeros(len(v))
+        return ((v - v.mean()) / sd).values if sd and np.isfinite(sd) else np.zeros(len(v))
 
     # Coverage of each candidate term ON THIS SAMPLE, checked before it is allowed into a
     # specification. Mean-filling a column that is 99% missing produces a near-constant
@@ -213,34 +215,29 @@ def residual_information(j: pd.DataFrame) -> pd.DataFrame:
         "velocity_3h": f.get("velocity_3h"),
     }
     cover = {k: float(pd.to_numeric(v, errors="coerce").notna().mean()) for k, v in raw.items()}
-    terms = {k: z(v) for k, v in raw.items()}
     out = []
     for spec in (["residual_pp"], ["reversion_pp"], ["residual_pp", "reversion_pp"],
                  ["residual_pp", "reversion_pp", "log_window_h", "dispersion"],
                  ["residual_pp", "reversion_pp", "log_window_h", "dispersion", "velocity_3h"]):
         thin = [c for c in spec if cover.get(c, 0.0) < _MIN_TERM_COVERAGE]
-        if thin:
-            # COMPLETE CASES instead of mean-filling. Restricting the sample loses rows and says
-            # so; filling keeps every row and quietly changes what the coefficient means. The
-            # reduced n is reported in the `n` column so the trade is visible.
-            mask = np.ones(len(y), dtype=bool)
-            for c in spec:
-                mask &= pd.to_numeric(raw[c], errors="coerce").notna().values
-            if mask.sum() < 60:
-                out.append({"spec": " + ".join(spec), "n": int(mask.sum()),
-                            "term": "SKIPPED (complete cases < 60: "
-                                    + ", ".join(f"{c}={100*cover[c]:.0f}%" for c in thin) + ")",
-                            "beta": None, "se": None, "z": None,
-                            "significant_95": False, "log_lik": None})
-                continue
-            sub_y = y[mask]
-            A = np.column_stack([np.ones(int(mask.sum()))]
-                                + [z(pd.Series(raw[c]).reset_index(drop=True)[mask])
-                                   for c in spec])
-            out.extend(_fit(A, sub_y, spec, note="complete-cases"))
+        # ALWAYS COMPLETE CASES (Data Truth 2026-11-01). Specs whose terms all had >= 60%
+        # coverage used to take a 'full' path that mean-imputed up to 40% of rows; now every spec
+        # fits on the rows where all its terms are observed, and `n` reports that count.
+        mask = np.ones(len(y), dtype=bool)
+        for c in spec:
+            mask &= pd.to_numeric(pd.Series(raw[c]), errors="coerce").notna().values
+        if mask.sum() < 60:
+            out.append({"spec": " + ".join(spec), "n": int(mask.sum()),
+                        "term": "SKIPPED (complete cases < 60"
+                                + (": " + ", ".join(f"{c}={100*cover[c]:.0f}%" for c in thin)
+                                   if thin else "") + ")",
+                        "beta": None, "se": None, "z": None,
+                        "significant_95": False, "log_lik": None})
             continue
-        A = np.column_stack([np.ones(len(y))] + [terms[c] for c in spec])
-        out.extend(_fit(A, y, spec, note="full"))
+        A = np.column_stack([np.ones(int(mask.sum()))]
+                            + [z(pd.Series(raw[c]).reset_index(drop=True)[mask]) for c in spec])
+        out.extend(_fit(A, y[mask], spec,
+                        note="full" if mask.all() else "complete-cases"))
     return pd.DataFrame(out)
 
 

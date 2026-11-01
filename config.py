@@ -24,46 +24,6 @@ MIN_CLV_N = 150                       # clean CLV observations required per segm
 OVERROUND_MIN = 1.00                  # 1/over + 1/under must exceed 1.0 (a real book has vig)
 OVERROUND_MAX = 1.25                  # ...and not be absurd (mislabelled / non-goal market leak)
 
-# ── League classification (copied verbatim from v9 so tags never diverge) ─────────
-STANDARD_FORMAT_LEAGUES = {
-    "League One", "League Two",
-    "Bundesliga 2", "La Liga 2", "Ligue 2",
-    "Championship",
-    "Serie B",
-    "Greek Super League",
-    "National League",
-    "Portuguese Primeira Liga",
-    "Scottish Championship", "Scottish League One", "Scottish League Two",
-    "Belgian First Division A",
-    "Dutch Eredivisie",
-    "Scottish Premiership",
-    "Turkish Super Lig",
-}
-
-NEW_FORMAT_LEAGUES = {
-    "Denmark Superliga",
-    "Austrian Bundesliga",
-    "Sweden Allsvenskan",
-    "Romanian Superliga",
-    "Norway Eliteserien",
-    "Finland Veikkausliiga",
-    "Ireland Premier Division",
-    "Argentina Primera Division",
-    "Brazil Serie A",
-    "Japan J-League",
-    "Mexico Liga MX",
-    "China Super League",
-    "USA MLS",
-    "Saudi Pro League",
-    "K-League 1",
-}
-
-
-def model_type_for_league(league) -> str:
-    """Canonical model tag: 'standard' | 'new_format' | 'unknown' (identical to v9)."""
-    lg = str(league).strip()
-    if lg in STANDARD_FORMAT_LEAGUES:
-        return "standard"
-    if lg in NEW_FORMAT_LEAGUES:
-        return "new_format"
-    return "unknown"
+# League classification lives in v9's config/leagues.json, read by src/league_registry.py
+# (model_type per league). The two hand-typed league sets that used to sit here, and the
+# 'unknown' placeholder model type, were removed in the Data Truth pass (2026-11-01).
