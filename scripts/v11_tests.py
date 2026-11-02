@@ -893,6 +893,8 @@ def _r2_registry_and_seasons() -> None:
         ("Saint Etienne", ["St Etienne", "Lens"], "St Etienne"),
         ("Bristol", ["Bristol City", "Bristol Rovers"], None),
         ("Manchester City", ["Manchester United", "Liverpool"], None),
+        # v9 resolver once stem-paired 'platense' with 'plate'; the absent club is now refused
+        ("Platense", ["Boca Juniors", "River Plate"], None),
     ]:
         check(f"resolve({a!r}) -> {want!r}", rs.resolve(a, cands) == want, str(rs.resolve(a, cands)))
     check("unknown / near-name league is not guessed",
@@ -907,8 +909,11 @@ def _r2_registry_and_seasons() -> None:
     else:
         v9_std = [x["name"] for x in reg["leagues"] if x.get("model_type") == "standard"]
         v9_nf = [x["name"] for x in reg["leagues"] if x.get("model_type") == "new_format"]
+        # Only leagues with a model: v11 shadows nothing else, so a football-data code on a
+        # no-model league (registry LR-1.2 added E0/D1/SP1/I1/F1/SWZ/POL) is not a result source here.
         v9_fd = {x["name"]: x["football_data_code"] for x in reg["leagues"]
-                 if x.get("football_data_code") and not x.get("api_football_only")}
+                 if x.get("football_data_code") and not x.get("api_football_only")
+                 and x.get("model_type") in LR.MODEL_TYPES}
         for x in reg["leagues"]:                       # registry aliases resolve like the old alias keys
             for al in x.get("aliases") or []:
                 if x["name"] in v9_fd:
