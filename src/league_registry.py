@@ -151,6 +151,15 @@ def model_type(name) -> str | None:
     return leagues[lg][0] if lg in leagues else None
 
 
+def is_paper(name) -> bool | None:
+    """v9's registry `paper` flag (e.g. USA MLS, owner 2026-10-06/07: "predicted and collected,
+    never sent, counted or bet"). None for a league the registry does not know."""
+    lg = canonical_league(name)
+    if lg is None:
+        return None
+    return bool(_state()["ENTRIES"][lg].get("paper"))
+
+
 def calendar_version() -> str:
     return _state()["version"]
 

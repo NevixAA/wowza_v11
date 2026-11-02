@@ -56,7 +56,10 @@ DETAIL_COLS = [
     "league", "model_type",
     "p_model", "p_market_entry", "residual", "abs_residual_pp", "entry_odds", "bet_side",
     "n_books", "market_prob_std", "market_prob_range", "previous_market_move_pp",
-    "close_ts", "close_minutes_to_kickoff", "window_min", "p_market_close", "close_odds",
+    # close_kind: NEAR_CLOSE (<= 30 min before kickoff) or LAST_PRE_KICKOFF_SNAPSHOT - the
+    # "close" is the last snapshot v11 took, a median ~2 h out (src/movement.Summary).
+    "close_ts", "close_minutes_to_kickoff", "close_kind", "window_min", "p_market_close",
+    "close_odds",
     "market_move_pp", "signed_market_move_pp", "toward_wowza",
     "entry_fair_probability", "close_fair_probability",
     "clv_pct", "clv_quality", "quality_not_assessed",

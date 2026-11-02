@@ -44,7 +44,7 @@ from typing import Callable, Iterable
 import pandas as pd
 
 from . import league_registry as LR
-from .edge_engine import power_devig, proportional_devig
+from .edge_engine import power_devig
 
 # Columns v9's src/predict.py writes. Kept as a constant so a schema drift is a loud KeyError
 # during load rather than a silently empty index.
@@ -73,6 +73,7 @@ class Consensus:
     exchange_prob: float | None = None
     books: dict[str, float] = field(default_factory=dict)
     reason: str = "no_data"
+    n_rejected: int = 0                      # two-sided pairs refused by the overround gate
 
     @property
     def usable(self) -> bool:
@@ -125,11 +126,108 @@ def load_snapshots(loader: Callable[[str], pd.DataFrame],
     return out.reset_index(drop=True)
 
 
+#: PAIR QUALITY GATE, the same bounds as Pro (wowzaV9-Pro src/market/devig.py MIN_OVERROUND /
+#: MAX_OVERROUND) and as v11's own board check (config.OVERROUND_MIN/MAX). A book's pair enters
+#: the consensus only when 1/over + 1/under is inside [1.00, 1.25].
+#: Data Truth round 2 (2026-11-02): exchange pairs entered with NO check - 1.01/1.01 placeholders
+#: (overround 1.98, de-vigs to exactly 0.5) and Matchbook O 1.56 / U 1.22 (1.46) - and the exchange
+#: median then OVERRODE the whole cross-book median (`market_baseline` is exchange-first).
+OVERROUND_MIN = 1.00
+OVERROUND_MAX = 1.25
+
+#: THE ONE p_market ESTIMATOR, recorded on every row as `p_market_estimator`: power de-vig per
+#: book, gated pairs only, median across books. Exchanges vote as ordinary books; they no longer
+#: replace the median, and there is no proportional fallback. Before 2026-11-02 p_market switched
+#: between snapshots of ONE fixture (1,448 of 2,221 fixtures) among an exchange median, a cross-book
+#: median and one book's de-vig, so a "price move" could be an estimator change.
+ESTIMATOR = "power_median_gated"
+
+
+def pair_ok(over, under) -> bool:
+    try:
+        o, u = float(over), float(under)
+    except (TypeError, ValueError):
+        return False
+    if not (o > 1.0 and u > 1.0):
+        return False
+    return OVERROUND_MIN <= 1.0 / o + 1.0 / u <= OVERROUND_MAX
+
+
 def _fair_prob(over: float | None, under: float | None) -> float | None:
-    """One book's two-way de-vig, power method with a proportional fallback."""
-    if not over or not under or over <= 1.0 or under <= 1.0:
+    """One book's two-way POWER de-vig, or None when the pair fails the gate."""
+    if not pair_ok(over, under):
         return None
-    return power_devig(over, under) or proportional_devig(over, under)
+    p = power_devig(float(over), float(under))
+    return p if p is not None and 0.0 < p < 1.0 else None
+
+
+def consensus_from_books(over: dict, under: dict) -> Consensus:
+    """THE consensus for one fixture-market from each book's latest OVER / UNDER price. Used by the
+    live index (build_index) and by the historical restatement, so the two cannot drift."""
+    books: dict[str, float] = {}
+    bad: set = set()
+    for bk in set(over) | set(under):
+        # A book needs BOTH sides to be de-vigged. A one-sided quote carries an unknown
+        # margin, so including it would bias the consensus by however much that book charges.
+        if bk not in over or bk not in under:
+            continue
+        p = _fair_prob(over.get(bk), under.get(bk))
+        if p is None:
+            bad.add(bk)
+            continue
+        books[bk] = float(p)
+    rejected = len(bad)
+    # Best executable price: every quoted price EXCEPT a book whose two-sided pair failed the gate
+    # (a 1.56/1.22 exchange pair is not an executable 1.56). A one-sided quote stays executable.
+    ok_over = [o for b, o in over.items() if b not in bad]
+    ok_under = [u for b, u in under.items() if b not in bad]
+    if not books:
+        return Consensus(reason="no_two_sided_book", n_rejected=rejected)
+    exch = [p for bk, p in books.items() if bk.lower() in EXCHANGE_KEYS]
+    vals = list(books.values())
+    disp = None
+    if len(vals) > 1:
+        mu = sum(vals) / len(vals)
+        disp = math.sqrt(sum((v - mu) ** 2 for v in vals) / len(vals))
+    return Consensus(
+        p_consensus=float(median(vals)),
+        n_books=len(books),
+        dispersion=disp,
+        spread=(max(vals) - min(vals)) if len(vals) > 1 else None,
+        best_over_odds=max(ok_over) if ok_over else None,
+        best_under_odds=max(ok_under) if ok_under else None,
+        median_over_odds=float(median(ok_over)) if ok_over else None,
+        median_under_odds=float(median(ok_under)) if ok_under else None,
+        exchange_prob=float(median(exch)) if exch else None,
+        books=books,
+        reason="ok" if len(books) >= MIN_BOOKS_FOR_CONSENSUS else "too_few_books",
+        n_rejected=rejected,
+    )
+
+
+RESTATED_REL = "corrections/v11_p_market_restated.csv"
+
+
+def one_estimator_p_market(d: pd.DataFrame, restated: pd.DataFrame | None) -> pd.DataFrame:
+    """Snapshot rows with `v11_p_market` = P(OVER) from THE one estimator, for research readers.
+
+    A row the shadow wrote with p_market_estimator == ESTIMATOR keeps its value. An older row takes
+    `p_market_restated` from the sidecar (scripts/v11_restate_p_market.py) by snapshot_id. A row
+    with neither is DROPPED - its value came from an unknown mix of estimators. The value the row
+    was published with is kept as `v11_p_market_original`. Nothing on disk is changed."""
+    d = d.copy()
+    d["v11_p_market_original"] = d.get("v11_p_market")
+    est = d["p_market_estimator"] if "p_market_estimator" in d.columns else pd.Series(
+        None, index=d.index, dtype=object)
+    own = est.astype(str) == ESTIMATOR
+    val = pd.Series(float("nan"), index=d.index)
+    val[own] = pd.to_numeric(d.loc[own, "v11_p_market"], errors="coerce")
+    if restated is not None and not restated.empty:
+        m = restated.drop_duplicates("snapshot_id").set_index("snapshot_id")["p_market_restated"]
+        fill = ~own
+        val[fill] = pd.to_numeric(d.loc[fill, "snapshot_id"].map(m), errors="coerce")
+    d["v11_p_market"] = val
+    return d[d["v11_p_market"].notna()]
 
 
 def build_index(df: pd.DataFrame) -> dict[tuple[str, str, str], Consensus]:
@@ -140,35 +238,7 @@ def build_index(df: pd.DataFrame) -> dict[tuple[str, str, str], Consensus]:
     for (lg, m, mkt), g in df.groupby(["_league", "_match", "market"], sort=False):
         over = g[g["side"] == "OVER"].set_index("bookmaker")["odds"].to_dict()
         under = g[g["side"] == "UNDER"].set_index("bookmaker")["odds"].to_dict()
-        books: dict[str, float] = {}
-        for bk in set(over) | set(under):
-            # A book needs BOTH sides to be de-vigged. A one-sided quote carries an unknown
-            # margin, so including it would bias the consensus by however much that book charges.
-            p = _fair_prob(over.get(bk), under.get(bk))
-            if p is not None and 0.0 < p < 1.0:
-                books[bk] = float(p)
-        if not books:
-            index[(lg, m, mkt)] = Consensus(reason="no_two_sided_book")
-            continue
-        exch = [p for bk, p in books.items() if bk.lower() in EXCHANGE_KEYS]
-        vals = list(books.values())
-        disp = None
-        if len(vals) > 1:
-            mu = sum(vals) / len(vals)
-            disp = math.sqrt(sum((v - mu) ** 2 for v in vals) / len(vals))
-        index[(lg, m, mkt)] = Consensus(
-            p_consensus=float(median(vals)),
-            n_books=len(books),
-            dispersion=disp,
-            spread=(max(vals) - min(vals)) if len(vals) > 1 else None,
-            best_over_odds=max(over.values()) if over else None,
-            best_under_odds=max(under.values()) if under else None,
-            median_over_odds=float(median(list(over.values()))) if over else None,
-            median_under_odds=float(median(list(under.values()))) if under else None,
-            exchange_prob=float(median(exch)) if exch else None,
-            books=books,
-            reason="ok" if len(books) >= MIN_BOOKS_FOR_CONSENSUS else "too_few_books",
-        )
+        index[(lg, m, mkt)] = consensus_from_books(over, under)
     return index
 
 
