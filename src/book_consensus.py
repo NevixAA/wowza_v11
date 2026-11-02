@@ -206,20 +206,42 @@ def consensus_from_books(over: dict, under: dict) -> Consensus:
 
 
 RESTATED_REL = "corrections/v11_p_market_restated.csv"
+#: scripts/v11_shadow.P_MARKET_BASIS: the shadow's v11_p_market is P(OVER) from 2026-11-02 (round 5).
+P_MARKET_BASIS_OVER = "over"
+
+
+def research_snapshots(path, restated_path=None) -> pd.DataFrame:
+    """THE loader for research on v11_shadow_snapshots.csv: rows carry the one-estimator P(OVER)
+    as v11_p_market (one_estimator_p_market), the published value as v11_p_market_original, and
+    rows with neither are dropped. Used by v11_market_movement, v11_microstructure and
+    v11_momentum_control so the three tables rest on one series."""
+    from pathlib import Path
+    path = Path(path)
+    if not path.exists():
+        return pd.DataFrame()
+    d = pd.read_csv(path, low_memory=False)
+    rp = Path(restated_path) if restated_path is not None else path.parent / RESTATED_REL
+    return one_estimator_p_market(d, pd.read_csv(rp, low_memory=False) if rp.exists() else None)
 
 
 def one_estimator_p_market(d: pd.DataFrame, restated: pd.DataFrame | None) -> pd.DataFrame:
     """Snapshot rows with `v11_p_market` = P(OVER) from THE one estimator, for research readers.
 
-    A row the shadow wrote with p_market_estimator == ESTIMATOR keeps its value. An older row takes
-    `p_market_restated` from the sidecar (scripts/v11_restate_p_market.py) by snapshot_id. A row
-    with neither is DROPPED - its value came from an unknown mix of estimators. The value the row
-    was published with is kept as `v11_p_market_original`. Nothing on disk is changed."""
+    A row the shadow wrote with p_market_estimator == ESTIMATOR AND v11_p_market_basis == 'over'
+    keeps its value. Any other row takes `p_market_restated` (always P(OVER)) from the sidecar
+    (scripts/v11_restate_p_market.py) by snapshot_id: that includes rows written with the estimator
+    but before the basis column, whose value was the CHOSEN side's probability (P(UNDER) whenever
+    the UNDER decision ranked higher). A row with neither is DROPPED - its value came from an
+    unknown estimator or side. The value the row was published with is kept as
+    `v11_p_market_original`. Nothing on disk is changed."""
     d = d.copy()
     d["v11_p_market_original"] = d.get("v11_p_market")
-    est = d["p_market_estimator"] if "p_market_estimator" in d.columns else pd.Series(
-        None, index=d.index, dtype=object)
-    own = est.astype(str) == ESTIMATOR
+
+    def _col(name):
+        return d[name] if name in d.columns else pd.Series(None, index=d.index, dtype=object)
+
+    own = ((_col("p_market_estimator").astype(str) == ESTIMATOR)
+           & (_col("v11_p_market_basis").astype(str) == P_MARKET_BASIS_OVER))
     val = pd.Series(float("nan"), index=d.index)
     val[own] = pd.to_numeric(d.loc[own, "v11_p_market"], errors="coerce")
     if restated is not None and not restated.empty:

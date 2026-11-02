@@ -18,7 +18,12 @@ output/book_odds_snapshots_archive/*.csv, latest quote per book and side at or b
 snapshot), for the side OVER. With fewer than MIN_BOOKS_FOR_CONSENSUS gated books it is the same
 estimator on v9's own pair (odds_over25 / odds_under25), exactly as the live shadow now does.
 
-    python scripts/v11_restate_p_market.py --v9 <wowza-betting checkout>
+    python scripts/v11_restate_p_market.py --v9 <wowza-betting checkout>            # full
+    python scripts/v11_restate_p_market.py --v9 <wowza-betting checkout> --append   # CI
+
+--append keeps every existing sidecar row byte for byte and adds rows only for snapshots that are
+not in it yet and do not carry the one estimator's P(OVER) themselves (from 2026-11-02 round 5
+the shadow writes v11_p_market = P(OVER) with v11_p_market_basis = 'over').
 
 Read-only on v9. Never touches v11_shadow_snapshots.csv.
 """
@@ -35,7 +40,8 @@ sys.path.insert(0, str(PROJ))
 import config  # noqa: E402
 from src import league_registry as LR  # noqa: E402
 from src.book_consensus import (ESTIMATOR, EXCHANGE_KEYS, MIN_BOOKS_FOR_CONSENSUS,  # noqa: E402
-                                consensus_from_books, normalise_match, pair_ok)
+                                P_MARKET_BASIS_OVER, consensus_from_books, normalise_match,
+                                pair_ok)
 from src.edge_engine import power_devig  # noqa: E402
 
 OUT_REL = Path("corrections") / "v11_p_market_restated.csv"
@@ -108,20 +114,67 @@ def restate(snaps: pd.DataFrame, quotes: pd.DataFrame) -> pd.DataFrame:
     return pd.DataFrame(out)
 
 
+def pending_snapshots(snaps: pd.DataFrame, old: pd.DataFrame) -> pd.DataFrame:
+    """Snapshots the sidecar still has to cover: not in it yet, and not already carrying the one
+    estimator's P(OVER) themselves (p_market_estimator == ESTIMATOR and v11_p_market_basis ==
+    'over', written by the shadow from 2026-11-02 round 5)."""
+    done = set(old["snapshot_id"].astype(str))
+    est = snaps["p_market_estimator"] if "p_market_estimator" in snaps.columns else None
+    basis = snaps["v11_p_market_basis"] if "v11_p_market_basis" in snaps.columns else None
+    own = pd.Series(False, index=snaps.index)
+    if est is not None and basis is not None:
+        own = (est.astype(str) == ESTIMATOR) & (basis.astype(str) == P_MARKET_BASIS_OVER)
+    return snaps[~snaps["snapshot_id"].astype(str).isin(done) & ~own]
+
+
+def append_rows(path: Path, columns: list, new: pd.DataFrame) -> None:
+    """Append rows to the sidecar WITHOUT rewriting it: existing bytes are untouched."""
+    for c in columns:
+        if c not in new.columns:
+            new[c] = None
+    with open(path, "rb") as fh:
+        fh.seek(0, 2)
+        size = fh.tell()
+        if size:
+            fh.seek(size - 1)
+            ends_nl = fh.read(1) == b"\n"
+        else:
+            ends_nl = True
+    with open(path, "a", encoding="utf-8", newline="") as fh:
+        if not ends_nl:
+            fh.write("\n")
+        new[columns].to_csv(fh, header=False, index=False, lineterminator="\n")
+
+
 def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--v9", required=True, help="wowza-betting checkout (read-only)")
+    ap.add_argument("--append", action="store_true",
+                    help="keep every existing sidecar row verbatim and restate only snapshots that "
+                         "need it and are not in the sidecar yet (the CI mode)")
     a = ap.parse_args()
-    snaps = pd.read_csv(config.OUTPUT_DIR / "v11_shadow_snapshots.csv", low_memory=False,
-                        usecols=["snapshot_id", "fixture_id", "snapshot_ts", "league", "match",
-                                 "odds_over25", "odds_under25", "price_source", "v11_p_market",
-                                 "v11_side"])
+    cols = ["snapshot_id", "fixture_id", "snapshot_ts", "league", "match", "odds_over25",
+            "odds_under25", "price_source", "v11_p_market", "v11_side", "p_market_estimator",
+            "v11_p_market_basis"]
+    sf = config.OUTPUT_DIR / "v11_shadow_snapshots.csv"
+    head = pd.read_csv(sf, nrows=0).columns
+    snaps = pd.read_csv(sf, low_memory=False, usecols=[c for c in cols if c in head])
+    p = config.OUTPUT_DIR / OUT_REL
+    old = pd.read_csv(p, low_memory=False) if (a.append and p.exists()) else None
+    if old is not None:
+        snaps = pending_snapshots(snaps, old)
+        if snaps.empty:
+            print(f"[restate] --append: nothing to restate ({len(old):,} rows kept)")
+            return 0
     q = load_book_history(Path(a.v9))
     print(f"[restate] {len(snaps):,} snapshots, {len(q):,} OU25 book quotes")
     r = restate(snaps, q)
     r["generated_at"] = pd.Timestamp.now(tz="UTC").strftime("%Y-%m-%dT%H:%M:%SZ")
-    p = config.OUTPUT_DIR / OUT_REL
     p.parent.mkdir(parents=True, exist_ok=True)
+    if old is not None:
+        append_rows(p, list(old.columns), r)
+        print(f"[restate] --append: {len(r):,} row(s) added after {len(old):,} kept verbatim")
+        return 0
     r.to_csv(p, index=False)
     print(f"[restate] wrote {p}: {len(r):,} rows; exchange anchor failed the gate on "
           f"{int(r['exchange_anchor_failed_gate'].sum()):,}; pairs rejected on "

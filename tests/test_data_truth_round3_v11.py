@@ -56,7 +56,10 @@ def test_v9_tip_is_priced_at_first_sight_and_kept_when_it_later_turns_avoid():
 
 def test_v9_paper_league_tips_are_not_counted():
     import v11_grade as G
-    s = pd.DataFrame([_snap("m1", "2026-10-02T09:00:00Z", "SNIPER", league="USA MLS")])
+    # After the 2026-10-07 paper switch (owner 2026-11-02: tips sent live before it count; see
+    # tests/test_data_truth_round5_v11.py).
+    s = pd.DataFrame([_snap("m1", "2026-10-09T09:00:00Z", "SNIPER", league="USA MLS",
+                            date="2026-10-10", ko="2026-10-10T15:00:00Z")])
     t = G.v9_scoreboard_rows(s, {"m1": 0})
     assert not bool(t.iloc[0]["counted"]) and t.iloc[0]["exclude_reason"] == "paper_league"
 
@@ -165,7 +168,9 @@ def test_single_book_pair_outside_the_gate_is_not_devigged():
 def test_research_reads_one_estimator_and_drops_unknown_rows():
     from src.book_consensus import ESTIMATOR, one_estimator_p_market
     d = pd.DataFrame([
-        {"snapshot_id": "s1", "v11_p_market": 0.50, "p_market_estimator": ESTIMATOR},
+        # round 5: a row keeps its own value only when it also says it is P(OVER)
+        {"snapshot_id": "s1", "v11_p_market": 0.50, "p_market_estimator": ESTIMATOR,
+         "v11_p_market_basis": "over"},
         {"snapshot_id": "s2", "v11_p_market": 0.70, "p_market_estimator": None},   # old exchange
         {"snapshot_id": "s3", "v11_p_market": 0.40, "p_market_estimator": None}])  # not restated
     side = pd.DataFrame([{"snapshot_id": "s2", "p_market_restated": 0.52}])

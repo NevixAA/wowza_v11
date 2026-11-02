@@ -244,6 +244,40 @@ def _decide(p_model, o_bet, o_other, n_eff, ece, rclv, rclv_n, w_cap,
     return out
 
 
+#: What `v11_p_market` on a snapshot row means. Rows written before 2026-11-02 stored the CHOSEN
+#: side's probability (P(UNDER) whenever the UNDER decision ranked higher, even on rows whose
+#: v11_side is '-'), while every research reader treats the column as P(OVER). From this version the
+#: column is always P(OVER) and the row says so; the side's own value is `v11_p_market_side`.
+P_MARKET_BASIS = "over"
+
+
+def market_p_over(o_over, o_under, cons=None) -> float | None:
+    """P(OVER) from THE one estimator (src/book_consensus.ESTIMATOR), independent of which side the
+    engine chose or whether either side cleared its own gates. Usable cross-book consensus -> its
+    median; else v9's own pair, power de-vigged, when it passes the overround gate; else None.
+    The same rule as scripts/v11_restate_p_market.py, so live and restated rows are one series."""
+    if cons is not None and getattr(cons, "usable", False):
+        cb = market_baseline(dict(cons.books), None)
+        if cb is not None and 0.0 < cb < 1.0:
+            return float(cb)
+    if pair_ok(o_over, o_under):
+        p = power_devig(float(o_over), float(o_under))
+        if p is not None and 0.0 < p < 1.0:
+            return float(p)
+    return None
+
+
+def market_columns(o_over, o_under, cons, best: dict, valid: bool) -> dict:
+    """The p_market columns of a snapshot row. Contaminated odds (valid=False) record nothing."""
+    p = market_p_over(o_over, o_under, cons) if valid else None
+    return {
+        "v11_p_market": None if p is None else round(p, 4),
+        "v11_p_market_basis": P_MARKET_BASIS if p is not None else None,
+        "v11_p_market_side": best.get("p_market"),
+        "p_market_estimator": ESTIMATOR if p is not None else None,
+    }
+
+
 def _tier_to_state(tier: str) -> str:
     """Three explicit states (external review). BET only when CLV-certified (SNIPER/MARKSMAN);
     PAPER when it clears economics but CLV isn't validated yet; else NO_BET."""
@@ -467,6 +501,9 @@ def run():
         valid, reason = _validate_odds(o_over, o_under, r.get("odds_over15"), r.get("odds_over35"))
         _nobet = {"tier": "NO_BET", "p_market": None, "p_blend": None, "ev_lb": None,
                   "abs_edge": None, "n_books": None}
+        # The market's P(OVER) does not depend on the model or the evidence, so the consensus is
+        # looked up for every row whose odds passed validation (market_columns below).
+        _cons = consensus_lookup(_books_idx, lg, home, away, "OU25") if valid else None
         if not valid:
             side, best, state = "-", dict(_nobet), "NO_BET"
         elif w_cap is None:
@@ -477,7 +514,6 @@ def run():
             if _ev is None:
                 side, best, state = "-", dict(_nobet, reason=MISSING_EVIDENCE), "NO_BET"
             else:
-                _cons = consensus_lookup(_books_idx, lg, home, away, "OU25")
                 over = _decide(p_over, o_over, o_under, _ev.n_eff, _ev.ece, rc, rn, w_cap,
                                cons=_cons, side="OVER")
                 under = _decide(1.0 - p_over, o_under, o_over, _ev.n_eff, _ev.ece, rc, rn, w_cap,
@@ -492,6 +528,7 @@ def run():
         _fid = _fixture_id(_date, lg, _match)
         _kickoff = r.get("kickoff_utc")
         _mtk = _minutes_to_kickoff(_kickoff, ts)
+        _mkt = market_columns(o_over, o_under, _cons, best, valid)
         rows.append({
             "fixture_id": _fid,
             "snapshot_id": _snapshot_id(_fid, ts),
@@ -534,7 +571,9 @@ def run():
             # Which estimator produced v11_p_market (src/book_consensus.ESTIMATOR); rows written
             # before 2026-11-02 lack it and mixed three estimators - see
             # output/corrections/v11_p_market_restated.csv for their one-estimator value.
-            "p_market_estimator": best.get("p_market_estimator"),
+            # v11_p_market is P(OVER) on every row (v11_p_market_basis = 'over'); the chosen
+            # side's own probability is v11_p_market_side.
+            "p_market_estimator": _mkt["p_market_estimator"],
             "n_books": best.get("n_books"),        # None = consensus never consulted
             "book_dispersion": best.get("book_dispersion"),
             # Post-kickoff guard (Prompt 3 sections 9 and 27). predictions.csv is pre-match
@@ -546,7 +585,10 @@ def run():
                 isinstance(_mtk, (int, float)) and _mtk is not True and _mtk < 0
             ),
             "v11_state": state, "v11_side": side, "v11_tier": best["tier"],
-            "v11_p_market": best["p_market"], "v11_p_blend": best["p_blend"],
+            "v11_p_market": _mkt["v11_p_market"],
+            "v11_p_market_basis": _mkt["v11_p_market_basis"],
+            "v11_p_market_side": _mkt["v11_p_market_side"],
+            "v11_p_blend": best["p_blend"],
             "v11_ev_lb": best["ev_lb"], "v11_abs_edge": best["abs_edge"],
             "rolling_clv_pct": round(rc, 2) if rc is not None else "",
             "rolling_clv_n": rn if rn is not None else "",

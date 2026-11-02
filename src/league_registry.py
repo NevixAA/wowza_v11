@@ -160,6 +160,14 @@ def is_paper(name) -> bool | None:
     return bool(_state()["ENTRIES"][lg].get("paper"))
 
 
+def registry_field(name, field_name: str):
+    """One raw field of a league's v9 registry entry, or None (unknown league or absent field)."""
+    lg = canonical_league(name)
+    if lg is None:
+        return None
+    return _state()["ENTRIES"][lg].get(field_name)
+
+
 def calendar_version() -> str:
     return _state()["version"]
 
