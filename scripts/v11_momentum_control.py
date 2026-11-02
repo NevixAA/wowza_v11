@@ -64,6 +64,7 @@ if str(PROJ) not in sys.path:
 
 import config  # noqa: E402
 from src import movement as mv  # noqa: E402
+from src.book_consensus import RESTATED_REL, one_estimator_p_market  # noqa: E402
 
 CALC_VERSION = "1.0.0"
 
@@ -114,6 +115,13 @@ def _load() -> pd.DataFrame:
         d = d[~d["is_post_kickoff"].astype(str).str.lower().isin(("true", "1"))]
     if "minutes_to_kickoff" in d.columns:
         d = d[pd.to_numeric(d["minutes_to_kickoff"], errors="coerce") > 0]
+
+    # ONE ESTIMATOR (Data Truth round 2, 2026-11-02). p_market used to switch between an
+    # ungated exchange median, a cross-book median and one book's de-vig across snapshots of the
+    # same fixture, so a "move" could be an estimator change. Rows now carry the one estimator,
+    # either as written by the shadow or from the restated sidecar; rows with neither are dropped.
+    rp = config.OUTPUT_DIR / RESTATED_REL
+    d = one_estimator_p_market(d, pd.read_csv(rp) if rp.exists() else None)
 
     # Only rows where both sides of the comparison exist. A residual needs a model probability
     # AND a market probability; either missing makes the row uninterpretable, not zero.

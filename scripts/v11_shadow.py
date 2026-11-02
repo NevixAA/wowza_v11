@@ -42,7 +42,8 @@ NO_CONSENSUS_DISPERSION = "no_consensus_dispersion"
 # settled outcomes with the section-11 hierarchy (model+league -> model -> global). When nothing
 # was measured there is NO typed fallback any more: the fixture is NO_BET with MISSING_EVIDENCE.
 from src.evidence import EvidenceStore, MISSING_EVIDENCE
-from src.book_consensus import load_snapshots, build_index, lookup as consensus_lookup
+from src.book_consensus import (load_snapshots, build_index, lookup as consensus_lookup,
+                                ESTIMATOR, pair_ok)
 from src import league_registry as LR
 
 _EVIDENCE = EvidenceStore.from_json(config.OUTPUT_DIR / "v11_evidence.json")
@@ -144,7 +145,8 @@ def _decide(p_model, o_bet, o_other, n_eff, ece, rclv, rclv_n, w_cap,
             cons=None, side="OVER"):
     # n_books None = the consensus was never consulted (not "zero books").
     out = {"tier": "NO_BET", "p_market": None, "p_blend": None, "ev_lb": None, "abs_edge": None,
-           "n_books": None, "book_dispersion": None, "price_source": "single_book"}
+           "n_books": None, "book_dispersion": None, "price_source": "single_book",
+           "p_market_estimator": None}
     # R2 finding 30: no model probability -> NO_BET, never a 0.5 stand-in.
     if not valid_probability(p_model):
         out["reason"] = MISSING_MODEL_PROBABILITY
@@ -160,10 +162,14 @@ def _decide(p_model, o_bet, o_other, n_eff, ece, rclv, rclv_n, w_cap,
         return out
     if not o_other or o_other <= 1.0:
         out["tier"] = "OBSERVE"; out["reason"] = "one_sided_no_devig"; return out
-    p_market = power_devig(o_bet, o_other) or proportional_devig(o_bet, o_other)
+    # ONE ESTIMATOR (src/book_consensus.ESTIMATOR): power de-vig per book, gated, median across
+    # books. With no usable consensus the "books" are v9's own pair - the same estimator on one
+    # book (price_source / n_books say how many). No proportional fallback, no exchange override.
+    p_market = power_devig(o_bet, o_other) if pair_ok(o_bet, o_other) else None
     if p_market is None:
         out["reason"] = "devig_failed"
         return out
+    out["p_market_estimator"] = ESTIMATOR
 
     # ── CROSS-BOOK CONSENSUS (2026-08-19) ────────────────────────────────────
     # This line used to read `market_baseline({}, None)`. With an empty dict market_baseline
@@ -185,13 +191,12 @@ def _decide(p_model, o_bet, o_other, n_eff, ece, rclv, rclv_n, w_cap,
     if cons is not None and getattr(cons, "usable", False):
         flip = (str(side).upper() == "UNDER")
         books = {k: (1.0 - v if flip else v) for k, v in cons.books.items()}
-        exch = cons.exchange_prob
-        if exch is not None and flip:
-            exch = 1.0 - exch
-        cb = market_baseline(books, exch)
+        # The exchange is NOT passed: market_baseline is exchange-first, which made p_market jump
+        # estimator whenever an exchange pair appeared or vanished (Data Truth round 2).
+        cb = market_baseline(books, None)
         if cb is not None and 0.0 < cb < 1.0:
             p_market = cb
-            out["price_source"] = "exchange" if exch is not None else "cross_book_median"
+            out["price_source"] = "cross_book_median"
         out["book_dispersion"] = None if cons.dispersion is None else round(cons.dispersion, 5)
         # BEST EXECUTABLE price for THIS side, which is a different quantity from the consensus
         # probability: you bet at the best available price, not the median one. On the first real
@@ -371,7 +376,12 @@ def _minutes_to_kickoff(kickoff_utc, snapshot_ts) -> float | str:
 
 
 def closing_snapshot(snapshots: "pd.DataFrame") -> "pd.DataFrame":
-    """The latest PRE-kickoff snapshot per fixture — the only legitimate 'close'.
+    """The latest PRE-kickoff snapshot per fixture - the only legitimate 'close' this collector has.
+
+    NOT A CLOSING LINE. v11 can observe no faster than v9 publishes predictions.csv (hourly,
+    08-23 UTC), so this row was a median ~2 h before kickoff (119.5 min over 2,021 fixtures on
+    2026-11-01; 19.1% inside 30 min). Callers label it with src/movement close_kind /
+    close_definition rather than calling it the close.
 
     Prompt 3 sections 9 and 27: never use post-kickoff information, and prove it. Any CLV or
     closing-price derivation must go through here rather than taking the last row per fixture,
@@ -521,6 +531,10 @@ def run():
             # how we will tell whether consensus actually changes decisions or merely restates
             # the single book.
             "price_source": best.get("price_source"),
+            # Which estimator produced v11_p_market (src/book_consensus.ESTIMATOR); rows written
+            # before 2026-11-02 lack it and mixed three estimators - see
+            # output/corrections/v11_p_market_restated.csv for their one-estimator value.
+            "p_market_estimator": best.get("p_market_estimator"),
             "n_books": best.get("n_books"),        # None = consensus never consulted
             "book_dispersion": best.get("book_dispersion"),
             # Post-kickoff guard (Prompt 3 sections 9 and 27). predictions.csv is pre-match
