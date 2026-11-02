@@ -49,6 +49,7 @@ sys.path.insert(0, str(PROJ))
 
 import src.microstructure as ms          # noqa: E402
 import src.movement as mv                # noqa: E402
+from src.book_consensus import research_snapshots  # noqa: E402
 
 OUT = PROJ / "output"
 SNAPS = OUT / "v11_shadow_snapshots.csv"
@@ -71,11 +72,25 @@ MICRO_PREFIXES = ("velocity_", "largest_move_", "range_", "window_span_", "move_
                   "minutes_since_previous", "quality_flags", "quality_status")
 
 
-def build() -> pd.DataFrame:
-    """Snapshot-level microstructure joined to forward outcomes."""
-    snaps = pd.read_csv(SNAPS, low_memory=False)
+def load_snapshots(one_estimator: bool = True) -> pd.DataFrame:
+    """ONE ESTIMATOR (Data Truth round 5, 2026-11-02): the backward-looking features (velocity,
+    move from open, ...) are differences of v11_p_market, which used to switch estimator and side
+    between snapshots of one fixture. Rows now carry the one-estimator P(OVER) and rows with no
+    live or restated value are dropped (src/book_consensus.research_snapshots). one_estimator=False
+    is only for the restatement comparison (scripts/v11_restate_research.py)."""
+    if one_estimator:
+        return research_snapshots(SNAPS)
+    return pd.read_csv(SNAPS, low_memory=False)
+
+
+def build(snaps: pd.DataFrame | None = None, det: pd.DataFrame | None = None) -> pd.DataFrame:
+    """Snapshot-level microstructure joined to forward outcomes. Defaults read the committed
+    files (one-estimator snapshots, the movement detail written by v11_market_movement.py)."""
+    if snaps is None:
+        snaps = load_snapshots()
     micro = ms.compute(snaps)
-    det = pd.read_csv(DETAIL, low_memory=False)
+    if det is None:
+        det = pd.read_csv(DETAIL, low_memory=False)
     # v11_market_movement_detail.csv carries a duplicated `p_market_entry` column (written twice
     # by the detail builder). Dropped here rather than upstream so this script stays read-only
     # with respect to the existing pipeline.

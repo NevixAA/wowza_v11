@@ -204,6 +204,40 @@ def _agg(df, syscol_side, syscol_tier):
 # on the actual match; a match moved further than that voids the tips placed before the move.
 # The latest-view number is kept beside it as system "v9_latest_view (legacy)", never overwritten.
 RESCHEDULE_SETTLE_HOURS = 48
+
+#: When a registry PAPER league stopped being live. v9's config/leagues.json marks USA MLS
+#: `paper: true` with no start date, yet v9's tips there went out as live until the switch, and
+#: v9's bets_ledger carries them as source=live. Owner decision 2026-11-02: MLS tips sent as live
+#: BEFORE the paper switch count (they were real tips); from the switch on they are paper.
+#: The instant is v9 commit 2e143193 "USA MLS -> paper league: collect everything, send nothing,
+#: count nothing, bet nothing" (2026-10-07 15:46:26 +0300). A `paper_since` field in the v9
+#: registry, if one is ever added, takes precedence. A paper league with no known switch is paper
+#: for its whole history (unchanged).
+PAPER_SWITCH_UTC = {"USA MLS": "2026-10-07T12:46:26Z"}
+
+
+def paper_since(league) -> pd.Timestamp | None:
+    """The instant a paper league stopped counting, or None when unknown (= paper throughout)."""
+    from src import league_registry as LR
+    lg = LR.canonical_league(league)
+    if lg is None:
+        return None
+    raw = LR.registry_field(lg, "paper_since") or PAPER_SWITCH_UTC.get(lg)
+    ts = pd.to_datetime(raw, utc=True, errors="coerce") if raw else None
+    return None if ts is None or pd.isna(ts) else ts
+
+
+def _is_paper_tip(league, tip_ts) -> bool:
+    """A tip is paper when its league is a registry paper league AND it was first tipped at or
+    after the league's paper switch (or the switch is unknown)."""
+    from src import league_registry as LR
+    if not LR.is_paper(league):
+        return False
+    since = paper_since(league)
+    t = pd.to_datetime(tip_ts, utc=True, errors="coerce")
+    if since is None or t is None or pd.isna(t):
+        return True
+    return t >= since
 SNAP_COLS = ["fixture_id", "snapshot_ts", "date", "league", "match", "kickoff_ts",
              "minutes_to_kickoff", "live_side", "live_tier", "odds_over25", "odds_under25"]
 
@@ -339,7 +373,7 @@ def v9_scoreboard_rows(snaps: pd.DataFrame, over_by_fid: dict) -> pd.DataFrame:
     tips["settles_on"] = tips["fixture_id"]
     tips["exclude_reason"] = ""
     for i, r in tips.iterrows():
-        if LR.is_paper(r["league"]):
+        if _is_paper_tip(r["league"], r["first_tip_ts"]):
             tips.at[i, "exclude_reason"] = "paper_league"
             continue
         if r["fixture_id"] in chains:

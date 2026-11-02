@@ -84,6 +84,17 @@ jobs:
           V9_LOCAL: ${{ github.workspace }}/_v9
         run: python scripts/v11_residual.py
 
+      # ONE p_market ESTIMATOR for research (Data Truth round 5, 2026-11-02). Snapshots that do not
+      # carry the one-estimator P(OVER) themselves (older rows, or rows from a run on older code)
+      # are restated from v9's per-book quote history and APPENDED to the sidecar; existing sidecar
+      # rows are never rewritten. ~12 s on the full history. The movement, microstructure and
+      # momentum steps below read it (src/book_consensus.research_snapshots).
+      - name: Restate p_market for snapshots without the one estimator (append-only sidecar)
+        run: python scripts/v11_restate_p_market.py --v9 "$V9_LOCAL" --append
+        # Never cost the collected snapshots: a failure here leaves new rows unrestated (the
+        # research loader drops them, visibly) and the next run appends them.
+        continue-on-error: true
+
       # Does the market move TOWARD Wowza when they disagree (Prompt 3 section 16)? Only
       # computable since the snapshot history stopped being deleted every 30 minutes.
       - name: Market movement vs initial disagreement
@@ -186,6 +197,9 @@ jobs:
                    output/v11_research_health.json output/research_state.json; do
             git add -f "$f" 2>/dev/null || echo "  (skip, not present: $f)"
           done
+          # Corrections that sit BESIDE the originals (output/corrections/*: the append-only
+          # p_market sidecar and the dated restatements). Data Truth round 5, 2026-11-02.
+          git add -f output/corrections/ 2>/dev/null || echo "  (skip, not present: output/corrections/)"
           echo "staged: $(git diff --staged --name-only | wc -l) file(s)"
           git diff --staged --quiet || \
             git commit -m "auto: v11 collect+grade $(date -u '+%Y-%m-%d %H:%M UTC')"
