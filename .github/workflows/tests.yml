@@ -1,0 +1,68 @@
+name: Tests
+
+# Go-live prep (runbook D10), 2026-11-06. v11 had no test workflow. This runs the self-check
+# (scripts/v11_tests.py) and the pytest suite on every push and pull request to main and
+# data-truth-100.
+#
+# v9 is read from a checkout of the MATCHING branch: data-truth-100 for data-truth-100 (and for
+# prep/** branches cut from it), main for main. Pull requests use their base branch. V9_LOCAL points
+# at it, so the league registry and v9 source files are read locally, never over HTTP. The
+# production workflow (v11_collect.yml) is unchanged and still reads v9 main.
+#
+# Offline: no secret is passed. v9 is public, so its checkout needs none.
+
+on:
+  push:
+    branches: [main, data-truth-100, 'prep/**']
+  pull_request:
+    branches: [main, data-truth-100]
+  workflow_dispatch:
+
+concurrency:
+  group: tests-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  tests:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      V9_LOCAL: ${{ github.workspace }}/_v9
+      V9_REF: ${{ ((github.event_name == 'pull_request' && github.base_ref) || github.ref_name) == 'main' && 'main' || 'data-truth-100' }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Check out v9 at the matching branch (read-only)
+        uses: actions/checkout@v4
+        with:
+          repository: NevixAA/wowza-betting
+          ref: ${{ env.V9_REF }}
+          path: _v9
+          fetch-depth: 1
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+          cache-dependency-path: requirements.txt
+      - name: Install
+        run: pip install -r requirements.txt pytest
+      - name: Self-check (scripts/v11_tests.py)
+        env:
+          PYTHONDONTWRITEBYTECODE: '1'
+        run: python scripts/v11_tests.py
+      - name: pytest
+        if: always()
+        env:
+          PYTHONDONTWRITEBYTECODE: '1'
+        run: python -m pytest -q -p no:cacheprovider tests
+      - name: The run left the tree clean
+        if: always()
+        run: |
+          # _v9 is the read-only peer checkout made above, not a file the tests wrote
+          if [ -n "$(git status --porcelain -- . ':!_v9')" ]; then
+            git status --short -- . ':!_v9'
+            echo "::error title=Test hygiene::the test run changed or created files in the repo tree"
+            exit 1
+          fi
