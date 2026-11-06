@@ -292,6 +292,46 @@ _ALIASES = {
     "guadalajara": "guadalajara chivas",                        # (22)
     "pumas": ("u n a m pumas", "unam pumas"),                   # (13) two history spellings
     "tigres": "tigres uanl",                                    # (25)
+    # 2026-11-02 (data5): API-Football gives one club two spellings - the /fixtures side name and
+    # the /fixtures/players team-block name. FIXTURE-LEVEL proof in player_history.parquet: on every
+    # fixture_id carrying the block name, the fixture's side is the alias spelling, the other
+    # block names the other side, and the two spellings never meet (fixtures/rows in brackets).
+    # Without them 1,122 player_history rows could not be put on a side (own club as opponent).
+    "hellas verona": "verona",                  # Serie A (114 fixtures / 1,687 rows); fd_history
+                                                # Serie B 2026-08-23 / -29: same date, score, opponent
+    "cf montreal": "montreal impact",           # USA MLS (36 / 529)
+    "czechia": "czech republic",                # WC Qualification Europe (3 / 34)
+    # Romanian Superliga: 'CS Universitatea Craiova' (API-Football source, to 2022-05) and
+    # 'Univ. Craiova' (football-data, from 2022-01) hold the SAME 20 matches of 2022-01-22..05-27
+    # in fd_history: same date, same score, the opponent the same club (10 identical strings, 10
+    # spelled differently: 'Rapid' / 'FC Rapid Bucuresti'), and the two names never meet.
+    # 'U Craiova 1948' (FC U Craiova 1948) is a DIFFERENT club: on 2022-02-14 both copies read
+    # Craiova 2-0 U Craiova 1948. 'Universitatea Craiova' is the af/API spelling from 2022-07.
+    "cs universitatea craiova": ("univ craiova", "universitatea craiova"),
+    # Fix round 9 (owner 2026-11-04, KEY=bank): identity gaps that dropped af_history / sidecar rows
+    # and left board clubs blind. FIXTURE-LEVEL proof against the PROVIDER fixture lists
+    # (output/strength/competition_fixtures.parquet: fixture id, team id, FT): every row of each
+    # spelling in fd_history / af_history (provider rows) / the committed ledgers was placed on the
+    # provider fixture of the same league, date +-1 and strictly resolved opponent, and the club's
+    # slot carries ONE provider team id for every spelling; FT agrees on every scored row unless
+    # noted. Counts: rows placed on that team id per spelling (history rows; ledger fixtures).
+    # The two spellings never meet in one row. Same pairs the loader's same-day identity step
+    # derived (IDENTITY_ALIASES), now provable by the resolver too.
+    "austria lustenau": "a lustenau",           # Austrian Bundesliga, team 1399: 'Austria Lustenau' 77
+                                                # (+10 ledger), 'A. Lustenau' 73 (72 FT agree, 1 differs)
+    "orgryte is": "orgryte",                    # Sweden Allsvenskan, team 2166: 29 / 26
+    "uc dublin": "ucd",                         # Ireland Premier Division, team 3844: 73 / 112
+    "atletico paranaense": "athletico pr",      # Brazil Serie A, team 134: 257 (+13 ledger) / 129
+    "atletico go": "atletico goianiense",       # Brazil Serie A, team 144: 66 / 150
+    "america mg": "america mineiro",            # Brazil Serie A, team 125: 66 / 112
+    # board spellings (OddsAPI) with no history spelling of their own; the club's history spellings
+    # are already one group above ('machida' / 'machida zelvia')
+    "fc machida zelvia": "machida zelvia",      # Japan J-League, team 303: 13 ledger fixtures;
+                                                # 'Machida Zelvia' 100, 'Machida' 82
+    "shanghai sipg fc": ("shanghai port", "shanghai sipg"),  # China Super League, team 836: 6 ledger
+                                                # fixtures; 'SHANGHAI SIPG' 193, 'Shanghai SIPG' 31,
+                                                # 'Shanghai Port' 64 (91 with an opponent the lists
+                                                # spell differently: not placed, not contradicting)
 }
 
 
@@ -377,6 +417,20 @@ _TRANSLIT = str.maketrans({"ø": "o", "Ø": "O", "æ": "ae", "Æ": "AE", "ß": "
 
 def norm(s: str) -> str:
     """Lowercase, strip accents and punctuation, collapse whitespace."""
+    s = str(s)
+    hit = _NORM_CACHE.get(s)
+    if hit is None:
+        hit = _NORM_CACHE[s] = _norm(s)
+    return hit
+
+
+# Pure functions of one string, called ~1M times per identity pass of the merged history (the
+# data-truth rule 5 stoplight spent ~20 s here): memoised, bounded by the club vocabulary.
+_NORM_CACHE: dict = {}
+_IKEY_CACHE: dict = {}
+
+
+def _norm(s: str) -> str:
     nfkd = unicodedata.normalize("NFKD", str(s).translate(_TRANSLIT))
     ascii_str = "".join(c for c in nfkd if not unicodedata.combining(c))
     ascii_str = ascii_str.lower().replace("&", " and ")
@@ -404,10 +458,36 @@ def identity_key(name) -> str | None:
     must not be merged with anything by this key."""
     if name is None or (isinstance(name, float) and name != name):
         return None
-    t = _tokens(str(name))
-    if not t:
-        return None
-    return ("reserve|" if _is_reserve(str(name)) else "") + " ".join(sorted(t))
+    s = str(name)
+    if s in _IKEY_CACHE:
+        return _IKEY_CACHE[s]
+    t = _tokens(s)
+    k = (("reserve|" if _is_reserve(s) else "") + " ".join(sorted(t))) if t else None
+    _IKEY_CACHE[s] = k
+    return k
+
+
+def alias_groups_in(pool) -> list[set]:
+    """Groups of >= 2 spellings in `pool` (one league's club names) that the ALIAS STORE names as
+    ONE club. Each alias entry carries fixture-level evidence, so a league history holding two of
+    its spellings holds one club under two names - a duplicate identity for the loader to unify
+    (resolve() refuses such a pool as ambiguous instead of picking half the history)."""
+    by_norm: dict = {}
+    for p in pool:
+        if p is None or (isinstance(p, float) and p != p):
+            continue
+        by_norm.setdefault(norm(p), set()).add(str(p))
+    groups = _alias_groups(id(_ALIASES), _ALIASES)
+    seen, out = set(), []
+    for n in by_norm:
+        g = groups.get(n)
+        if not g or n in seen:
+            continue
+        present = [m for m in g if m in by_norm]
+        seen.update(present)
+        if len(present) >= 2:
+            out.append(set().union(*(by_norm[m] for m in present)))
+    return out
 
 
 def resolve(name: str, candidates: list[str]) -> str | None:
