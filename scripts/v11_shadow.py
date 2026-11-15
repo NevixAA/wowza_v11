@@ -26,25 +26,27 @@ sys.path.insert(0, str(PROJ))
 import config
 from src.edge_engine import (power_devig, proportional_devig, market_baseline, blend,
                              lower_bound_prob, ev_lb, _band, MAX_BET_ODDS, RARE_EVENT_MARKETS,
-                             valid_probability, MISSING_MODEL_PROBABILITY)
+                             valid_probability, MISSING_MODEL_PROBABILITY, MISSING_MODEL_TYPE)
 
 TIER_RANK = {"SNIPER": 4, "MARKSMAN": 3, "VALUABLE": 2, "OBSERVE": 1, "NO_BET": 0}
 MOAT_W_CAP = {"new_format": 0.45, "standard": 0.40}
-DEFAULT_W_CAP = 0.30
+# No DEFAULT_W_CAP (Data Truth 2026-11-01): it gave a missing or unrecognised model_type an
+# invented 0.30 cap. The model type now comes from the league via v9's registry; a league with no
+# model type is NO_BET with reason MISSING_MODEL_TYPE.
+NO_CONSENSUS_DISPERSION = "no_consensus_dispersion"
 # MEASURED, not assumed (Prompt 3 sections 11 and 12). These were hardcoded N_EFF = 1000 and
 # ECE = 0.02 since v11 was written, and they push in opposite directions so being wrong about
 # them is not neutral: a flat N_EFF of 1000 claims more evidence than a thin segment has, which
 # inflates the model's blend weight, while a flat ECE of 0.02 understates uncertainty, which
 # inflates EV_lb and lets a bet clear a floor it should not. src/evidence.py derives both from
-# settled outcomes with the section-11 hierarchy (model+market+league -> model+market -> global)
-# and falls back CONSERVATIVELY when a segment is too thin to speak: less model weight, wider
-# uncertainty. Being unsure should cost the model confidence, not grant it.
-from src.evidence import EvidenceStore, FALLBACK_N_EFF, FALLBACK_ECE
-from src.book_consensus import load_snapshots, build_index, lookup as consensus_lookup
+# settled outcomes with the section-11 hierarchy (model+league -> model -> global). When nothing
+# was measured there is NO typed fallback any more: the fixture is NO_BET with MISSING_EVIDENCE.
+from src.evidence import EvidenceStore, MISSING_EVIDENCE
+from src.book_consensus import (load_snapshots, build_index, lookup as consensus_lookup,
+                                ESTIMATOR, pair_ok)
+from src import league_registry as LR
 
 _EVIDENCE = EvidenceStore.from_json(config.OUTPUT_DIR / "v11_evidence.json")
-N_EFF = FALLBACK_N_EFF     # per-row values come from _EVIDENCE.lookup() below
-ECE = FALLBACK_ECE
 
 
 def _load_v9(name: str) -> pd.DataFrame:
@@ -141,8 +143,10 @@ def _validate_odds(o_over, o_under, o_over15=None, o_over35=None):
 
 def _decide(p_model, o_bet, o_other, n_eff, ece, rclv, rclv_n, w_cap,
             cons=None, side="OVER"):
+    # n_books None = the consensus was never consulted (not "zero books").
     out = {"tier": "NO_BET", "p_market": None, "p_blend": None, "ev_lb": None, "abs_edge": None,
-           "n_books": 0, "book_dispersion": None, "price_source": "single_book"}
+           "n_books": None, "book_dispersion": None, "price_source": "single_book",
+           "p_market_estimator": None}
     # R2 finding 30: no model probability -> NO_BET, never a 0.5 stand-in.
     if not valid_probability(p_model):
         out["reason"] = MISSING_MODEL_PROBABILITY
@@ -158,10 +162,14 @@ def _decide(p_model, o_bet, o_other, n_eff, ece, rclv, rclv_n, w_cap,
         return out
     if not o_other or o_other <= 1.0:
         out["tier"] = "OBSERVE"; out["reason"] = "one_sided_no_devig"; return out
-    p_market = power_devig(o_bet, o_other) or proportional_devig(o_bet, o_other)
+    # ONE ESTIMATOR (src/book_consensus.ESTIMATOR): power de-vig per book, gated, median across
+    # books. With no usable consensus the "books" are v9's own pair - the same estimator on one
+    # book (price_source / n_books say how many). No proportional fallback, no exchange override.
+    p_market = power_devig(o_bet, o_other) if pair_ok(o_bet, o_other) else None
     if p_market is None:
         out["reason"] = "devig_failed"
         return out
+    out["p_market_estimator"] = ESTIMATOR
 
     # ── CROSS-BOOK CONSENSUS (2026-08-19) ────────────────────────────────────
     # This line used to read `market_baseline({}, None)`. With an empty dict market_baseline
@@ -174,18 +182,21 @@ def _decide(p_model, o_bet, o_other, n_eff, ece, rclv, rclv_n, w_cap,
     # devig(over_odds, under_odds). `_decide` is called once per side, so on the UNDER call every
     # book probability AND the exchange anchor must be flipped. Getting this wrong would not
     # crash — it would silently invert the market estimate on half of all rows.
-    stale_pen = 0.0
+    # Book dispersion feeds the uncertainty penalty. UNMEASURED is not zero: a market whose
+    # dispersion is unknown (no usable consensus) used to get penalty 0, i.e. was treated as
+    # perfectly tight. It now stays None and the decision stops at OBSERVE below.
+    stale_pen = None
+    if cons is not None:
+        out["n_books"] = cons.n_books
     if cons is not None and getattr(cons, "usable", False):
         flip = (str(side).upper() == "UNDER")
         books = {k: (1.0 - v if flip else v) for k, v in cons.books.items()}
-        exch = cons.exchange_prob
-        if exch is not None and flip:
-            exch = 1.0 - exch
-        cb = market_baseline(books, exch)
+        # The exchange is NOT passed: market_baseline is exchange-first, which made p_market jump
+        # estimator whenever an exchange pair appeared or vanished (Data Truth round 2).
+        cb = market_baseline(books, None)
         if cb is not None and 0.0 < cb < 1.0:
             p_market = cb
-            out["price_source"] = "exchange" if exch is not None else "cross_book_median"
-        out["n_books"] = cons.n_books
+            out["price_source"] = "cross_book_median"
         out["book_dispersion"] = None if cons.dispersion is None else round(cons.dispersion, 5)
         # BEST EXECUTABLE price for THIS side, which is a different quantity from the consensus
         # probability: you bet at the best available price, not the median one. On the first real
@@ -196,16 +207,20 @@ def _decide(p_model, o_bet, o_other, n_eff, ece, rclv, rclv_n, w_cap,
             best = float(bx)
         # Books disagreeing means the price is not settled yet. Feed that straight into the
         # uncertainty rather than treating a wide market as if it were a tight one.
-        if cons.dispersion:
+        if cons.dispersion is not None:
             stale_pen = min(0.02, float(cons.dispersion))
 
     w = _blend_weight(best, n_eff, "over25", w_cap)
     p_blend = blend(p_model, p_market, w)
+    ae = p_blend - p_market
+    out.update(p_market=round(p_market, 4), p_blend=round(p_blend, 4), abs_edge=round(ae, 4))
+    if stale_pen is None:
+        out["tier"] = "OBSERVE"
+        out["reason"] = NO_CONSENSUS_DISPERSION
+        return out
     p_lb = lower_bound_prob(p_blend, ece, n_eff, "over25", stale_penalty=stale_pen)
     _ev = ev_lb(p_lb, best)
-    ae = p_blend - p_market
-    out.update(p_market=round(p_market, 4), p_blend=round(p_blend, 4),
-               ev_lb=round(_ev, 4), abs_edge=round(ae, 4))
+    out["ev_lb"] = round(_ev, 4)
     b = _band(best)
     if b is None:
         out["reason"] = "no_odds_band"
@@ -227,6 +242,40 @@ def _decide(p_model, o_bet, o_other, n_eff, ece, rclv, rclv_n, w_cap,
         out["tier"] = "VALUABLE"
         out["reason"] = "passes_floors" + ("" if clv_ok else "_clv_not_certified")
     return out
+
+
+#: What `v11_p_market` on a snapshot row means. Rows written before 2026-11-02 stored the CHOSEN
+#: side's probability (P(UNDER) whenever the UNDER decision ranked higher, even on rows whose
+#: v11_side is '-'), while every research reader treats the column as P(OVER). From this version the
+#: column is always P(OVER) and the row says so; the side's own value is `v11_p_market_side`.
+P_MARKET_BASIS = "over"
+
+
+def market_p_over(o_over, o_under, cons=None) -> float | None:
+    """P(OVER) from THE one estimator (src/book_consensus.ESTIMATOR), independent of which side the
+    engine chose or whether either side cleared its own gates. Usable cross-book consensus -> its
+    median; else v9's own pair, power de-vigged, when it passes the overround gate; else None.
+    The same rule as scripts/v11_restate_p_market.py, so live and restated rows are one series."""
+    if cons is not None and getattr(cons, "usable", False):
+        cb = market_baseline(dict(cons.books), None)
+        if cb is not None and 0.0 < cb < 1.0:
+            return float(cb)
+    if pair_ok(o_over, o_under):
+        p = power_devig(float(o_over), float(o_under))
+        if p is not None and 0.0 < p < 1.0:
+            return float(p)
+    return None
+
+
+def market_columns(o_over, o_under, cons, best: dict, valid: bool) -> dict:
+    """The p_market columns of a snapshot row. Contaminated odds (valid=False) record nothing."""
+    p = market_p_over(o_over, o_under, cons) if valid else None
+    return {
+        "v11_p_market": None if p is None else round(p, 4),
+        "v11_p_market_basis": P_MARKET_BASIS if p is not None else None,
+        "v11_p_market_side": best.get("p_market"),
+        "p_market_estimator": ESTIMATOR if p is not None else None,
+    }
 
 
 def _tier_to_state(tier: str) -> str:
@@ -288,7 +337,7 @@ CLV_PLAUSIBLE_ABS = 25.0
 
 
 def _rolling_clv_stats(bl: pd.DataFrame) -> dict:
-    """league -> (mean_clv_pct, clean_n) from settled live rows.
+    """CANONICAL league -> (mean_clv_pct, clean_n) from settled live rows.
 
     `clean_n` now means what it says: implausible observations are excluded from BOTH the mean and
     the count, so a contaminated segment cannot buy its way past MIN_CLV_N on bad rows.
@@ -307,6 +356,15 @@ def _rolling_clv_stats(bl: pd.DataFrame) -> dict:
               f"implausible (|clv_pct| > {CLV_PLAUSIBLE_ABS}%)")
     if bl.empty or "league" not in bl.columns:
         return {}
+    # Grouped by the registry's canonical name so an alias spelling in the ledger and the
+    # canonical one in predictions.csv land in ONE segment. Unknown leagues are dropped, logged.
+    bl["league"] = bl["league"].map(LR.canonical_league)
+    unk = int(bl["league"].isna().sum())
+    if unk:
+        print(f"[v11] CLV: dropped {unk} ledger row(s) whose league is not in the registry")
+    bl = bl.dropna(subset=["league"])
+    if bl.empty:
+        return {}
     g = bl.groupby("league")["clv_pct"]
     means, counts = g.mean(), g.count()
     return {lg: (float(means[lg]), int(counts[lg])) for lg in means.index}
@@ -315,7 +373,9 @@ def _rolling_clv_stats(bl: pd.DataFrame) -> dict:
 def _fixture_id(date, league, match) -> str:
     """Deterministic fixture identity (Prompt 3 section 5). v9 publishes no fixture_id, so
     one is derived from (date, league, match). Stable across runs and machines, which is what
-    lets snapshots taken hours apart join to the same fixture."""
+    lets snapshots taken hours apart join to the same fixture. `run()` passes the CANONICAL
+    league (src/league_registry), so an alias spelling cannot split one fixture into two ids;
+    for a canonical name the hash is unchanged, so existing history keeps its ids."""
     import hashlib
     import re
     import unicodedata
@@ -350,7 +410,12 @@ def _minutes_to_kickoff(kickoff_utc, snapshot_ts) -> float | str:
 
 
 def closing_snapshot(snapshots: "pd.DataFrame") -> "pd.DataFrame":
-    """The latest PRE-kickoff snapshot per fixture — the only legitimate 'close'.
+    """The latest PRE-kickoff snapshot per fixture - the only legitimate 'close' this collector has.
+
+    NOT A CLOSING LINE. v11 can observe no faster than v9 publishes predictions.csv (hourly,
+    08-23 UTC), so this row was a median ~2 h before kickoff (119.5 min over 2,021 fixtures on
+    2026-11-01; 19.1% inside 30 min). Callers label it with src/movement close_kind /
+    close_definition rather than calling it the close.
 
     Prompt 3 sections 9 and 27: never use post-kickoff information, and prove it. Any CLV or
     closing-price derivation must go through here rather than taking the last row per fixture,
@@ -375,8 +440,13 @@ def run():
     df = _load_v9("predictions.csv")
     try:
         rstats = _rolling_clv_stats(_load_v9("bets_ledger.csv"))
-    except Exception:
+    except Exception as e:                                             # noqa: BLE001
+        # No CLV history means no segment is CLV-certified (the gate stays closed), not a guess.
+        print(f"[v11] rolling CLV unavailable ({type(e).__name__}: {e}); no segment certified")
         rstats = {}
+    if _EVIDENCE.load_error:
+        print(f"[v11] no measured evidence ({_EVIDENCE.load_error}); decisions are "
+              f"NO_BET {MISSING_EVIDENCE} until scripts/v11_fit_evidence.py writes it")
     ts = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
     today = datetime.now(timezone.utc).strftime("%Y-%m-%d")
 
@@ -390,45 +460,75 @@ def run():
               f"{_n_usable} with >=3 books")
     except Exception as e:
         _books_idx = {}
-        print(f"[v11] cross-book index unavailable ({e}) — falling back to single-book de-vig")
+        print(f"[v11] cross-book index unavailable ({e}); every fixture lacks a measured "
+              f"book dispersion and stops at OBSERVE ({NO_CONSENSUS_DISPERSION})")
 
     rows = []
+    skipped: dict[str, int] = {}
+
+    def _skip(why: str) -> None:
+        skipped[why] = skipped.get(why, 0) + 1
+
     for _, r in df.iterrows():
         try:
             o_over = float(r.get("odds_over25")); o_under = float(r.get("odds_under25"))
             p_over = float(r.get("p_over25"))
         except (TypeError, ValueError):
+            _skip("non-numeric odds or p_over25")
             continue
-        if not (0.0 <= p_over <= 1.0) or str(r.get("date", ""))[:10] < today:
+        _date = str(r.get("date"))[:10] if pd.notna(r.get("date")) else None
+        if not (0.0 <= p_over <= 1.0):
+            _skip("p_over25 outside [0, 1]")
             continue
-        lg = str(r.get("league", "")); rc, rn = rstats.get(lg, (None, None))
-        w_cap = MOAT_W_CAP.get(str(r.get("model_type", "")), DEFAULT_W_CAP)
+        if _date is None or _date < today:
+            continue                                   # past fixture: not a skip, just not upcoming
+        # The league is the REGISTRY's canonical name (v9 config/leagues.json). An unknown name
+        # is skipped and counted, never shadowed under its raw spelling.
+        lg = LR.canonical_league(r.get("league"))
+        if lg is None:
+            _skip(f"league not in registry ({r.get('league')!r})")
+            continue
+        home, away = r.get("home_team"), r.get("away_team")
+        if pd.isna(home) or pd.isna(away) or not str(home).strip() or not str(away).strip():
+            _skip("home_team/away_team missing")
+            continue
+        rc, rn = rstats.get(lg, (None, None))
+        mt = LR.model_type(lg)
+        w_cap = MOAT_W_CAP.get(mt) if mt else None
+        _ev = None
 
         # DATA-VALIDATION FIRST — reject contaminated prices before deciding.
         valid, reason = _validate_odds(o_over, o_under, r.get("odds_over15"), r.get("odds_over35"))
+        _nobet = {"tier": "NO_BET", "p_market": None, "p_blend": None, "ev_lb": None,
+                  "abs_edge": None, "n_books": None}
+        # The market's P(OVER) does not depend on the model or the evidence, so the consensus is
+        # looked up for every row whose odds passed validation (market_columns below).
+        _cons = consensus_lookup(_books_idx, lg, home, away, "OU25") if valid else None
         if not valid:
-            side, best, state = "-", {"tier": "NO_BET", "p_market": None, "p_blend": None,
-                                      "ev_lb": None, "abs_edge": None}, "NO_BET"
+            side, best, state = "-", dict(_nobet), "NO_BET"
+        elif w_cap is None:
+            side, best, state = "-", dict(_nobet, reason=MISSING_MODEL_TYPE), "NO_BET"
         else:
-            # Segment-specific evidence rather than one global constant for every fixture.
-            _ev = _EVIDENCE.lookup(str(r.get("model_type", "")), lg)
-            _cons = consensus_lookup(_books_idx, r.get("home_team", ""), r.get("away_team", ""),
-                                     "OU25")
-            over = _decide(p_over, o_over, o_under, _ev.n_eff, _ev.ece, rc, rn, w_cap,
-                           cons=_cons, side="OVER")
-            under = _decide(1.0 - p_over, o_under, o_over, _ev.n_eff, _ev.ece, rc, rn, w_cap,
-                            cons=_cons, side="UNDER")
-            side, best = (("OVER", over) if TIER_RANK[over["tier"]] >= TIER_RANK[under["tier"]]
-                          else ("UNDER", under))
-            state = _tier_to_state(best["tier"])
-            if best["tier"] in ("NO_BET", "OBSERVE"):
-                side = "-"
+            # Segment-specific MEASURED evidence; none measured -> NO_BET, never a typed prior.
+            _ev = _EVIDENCE.lookup(mt, lg)
+            if _ev is None:
+                side, best, state = "-", dict(_nobet, reason=MISSING_EVIDENCE), "NO_BET"
+            else:
+                over = _decide(p_over, o_over, o_under, _ev.n_eff, _ev.ece, rc, rn, w_cap,
+                               cons=_cons, side="OVER")
+                under = _decide(1.0 - p_over, o_under, o_over, _ev.n_eff, _ev.ece, rc, rn, w_cap,
+                                cons=_cons, side="UNDER")
+                side, best = (("OVER", over) if TIER_RANK[over["tier"]] >= TIER_RANK[under["tier"]]
+                              else ("UNDER", under))
+                state = _tier_to_state(best["tier"])
+                if best["tier"] in ("NO_BET", "OBSERVE"):
+                    side = "-"
 
-        _date = str(r.get("date", ""))[:10]
-        _match = f"{r.get('home_team', '')} vs {r.get('away_team', '')}"
+        _match = f"{home} vs {away}"
         _fid = _fixture_id(_date, lg, _match)
-        _kickoff = r.get("kickoff_utc", "")
+        _kickoff = r.get("kickoff_utc")
         _mtk = _minutes_to_kickoff(_kickoff, ts)
+        _mkt = market_columns(o_over, o_under, _cons, best, valid)
         rows.append({
             "fixture_id": _fid,
             "snapshot_id": _snapshot_id(_fid, ts),
@@ -438,13 +538,16 @@ def run():
             "minutes_to_kickoff": _mtk,
             # v9 stamps these into predictions.csv as of wowza-betting 5f23677. NULL rather
             # than invented where absent (Prompt 3 section 6).
-            "v9_generated_at": r.get("generated_at", ""),
-            "v9_git_sha": r.get("git_sha", ""),
-            "v9_model_sha": r.get("model_sha", ""),
-            "model_type": r.get("model_type", ""),
+            "v9_generated_at": r.get("generated_at"),
+            "v9_git_sha": r.get("git_sha"),
+            "v9_model_sha": r.get("model_sha"),
+            # The registry's model type for the league (what the cap and evidence were keyed on).
+            "model_type": mt,
             "odds_over25": o_over, "odds_under25": o_under,
             "valid_odds": valid, "reject_reason": reason,
-            "live_side": r.get("best_side", r.get("bet", "")), "live_tier": r.get("signal_tier", ""),
+            # v9's pick is its documented `best_side` column only; absent -> NULL and v9's pick
+            # is not graded (no substitution from the `bet` column).
+            "live_side": r.get("best_side"), "live_tier": r.get("signal_tier"),
             "p_model_over": round(p_over, 3),
             # WHY the engine decided this. `reject_reason` above carries only the odds-
             # validation verdict, so classify()'s own explanation was being thrown away:
@@ -452,21 +555,27 @@ def run():
             # record of the cause. It was in fact "below floors" — every row had a negative
             # EV lower bound (max -0.0384) — which is the engine working correctly, but
             # nothing in the dataset said so. Prompt 3 section 6 wants the reject reason kept.
-            "v11_reason": best.get("reason", ""),
+            "v11_reason": best.get("reason"),
             # Which evidence produced this decision. Without it a tier cannot be
             # reproduced later, because the inputs would be invisible.
-            "n_eff_used": _ev.n_eff if valid else "",
-            "ece_used": _ev.ece if valid else "",
-            "evidence_scope": _ev.scope if valid else "",
-            "evidence_source": _ev.source if valid else "",
+            "n_eff_used": _ev.n_eff if _ev is not None else None,
+            "ece_used": _ev.ece if _ev is not None else None,
+            "evidence_scope": _ev.scope if _ev is not None else None,
+            "evidence_source": _ev.source if _ev is not None else None,
             # How p_market was estimated. Recorded because "cross-book median of 15 books" and
             # "one book's de-vig" are different measurements, and a later analysis that mixes
             # them without knowing which is which cannot interpret its own result. This is also
             # how we will tell whether consensus actually changes decisions or merely restates
             # the single book.
-            "price_source": best.get("price_source", ""),
-            "n_books": best.get("n_books", 0),
-            "book_dispersion": best.get("book_dispersion", ""),
+            "price_source": best.get("price_source"),
+            # Which estimator produced v11_p_market (src/book_consensus.ESTIMATOR); rows written
+            # before 2026-11-02 lack it and mixed three estimators - see
+            # output/corrections/v11_p_market_restated.csv for their one-estimator value.
+            # v11_p_market is P(OVER) on every row (v11_p_market_basis = 'over'); the chosen
+            # side's own probability is v11_p_market_side.
+            "p_market_estimator": _mkt["p_market_estimator"],
+            "n_books": best.get("n_books"),        # None = consensus never consulted
+            "book_dispersion": best.get("book_dispersion"),
             # Post-kickoff guard (Prompt 3 sections 9 and 27). predictions.csv is pre-match
             # only, but its date filter is DAY-granular, so a fixture that kicked off earlier
             # today can still be snapshotted: Cardiff City v Wrexham AFC was captured 3.6
@@ -476,11 +585,16 @@ def run():
                 isinstance(_mtk, (int, float)) and _mtk is not True and _mtk < 0
             ),
             "v11_state": state, "v11_side": side, "v11_tier": best["tier"],
-            "v11_p_market": best["p_market"], "v11_p_blend": best["p_blend"],
+            "v11_p_market": _mkt["v11_p_market"],
+            "v11_p_market_basis": _mkt["v11_p_market_basis"],
+            "v11_p_market_side": _mkt["v11_p_market_side"],
+            "v11_p_blend": best["p_blend"],
             "v11_ev_lb": best["ev_lb"], "v11_abs_edge": best["abs_edge"],
             "rolling_clv_pct": round(rc, 2) if rc is not None else "",
             "rolling_clv_n": rn if rn is not None else "",
         })
+    for why, n in sorted(skipped.items()):
+        print(f"[v11] SKIPPED {n} prediction row(s): {why}")
     if not rows:
         # A collector that writes nothing must FAIL, not report success. Previously this
         # returned 0 quietly, so a run that read no fixtures looked identical to a healthy
