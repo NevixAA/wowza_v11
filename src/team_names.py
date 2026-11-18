@@ -328,6 +328,18 @@ _ALIASES = {
     # are already one group above ('machida' / 'machida zelvia')
     "fc machida zelvia": "machida zelvia",      # Japan J-League, team 303: 13 ledger fixtures;
                                                 # 'Machida Zelvia' 100, 'Machida' 82
+    # fix12 (2026-11-07): OddsAPI board spelling of the promoted club. FIXTURE-LEVEL proof: on all 7
+    # committed board/ledger fixtures of 'FC Energie Cottbus' (Bundesliga 2, 2026-08-09..10-24) that
+    # the history already holds, the history row of that date and the strictly resolved opponent
+    # carries 'Cottbus' in the club's slot (7/7, 0 contradicting; 2 later fixtures not played yet).
+    # The audited identity map (config/standard_ou25_identity_aliases.json) names the same club.
+    "fc energie cottbus": "cottbus",
+    # fix12: Celta's reserve side (La Liga 2 2026/27), which football-data spells 'Celta B'. Same
+    # fixture-level proof: 6/6 committed board/ledger fixtures of 'Celta Fortuna' already played sit
+    # on a 'Celta B' history row (date +-1, strictly resolved opponent), 0 contradicting. The first
+    # team is never called 'Fortuna'. ('Celta Vigo' on one La Liga 2 ledger row stays unresolved: an
+    # alias store entry is league-agnostic and would send La Liga's first team to the reserves.)
+    "celta fortuna": "celta b",
     "shanghai sipg fc": ("shanghai port", "shanghai sipg"),  # China Super League, team 836: 6 ledger
                                                 # fixtures; 'SHANGHAI SIPG' 193, 'Shanghai SIPG' 31,
                                                 # 'Shanghai Port' 64 (91 with an opponent the lists
@@ -548,6 +560,41 @@ def resolve(name: str, candidates: list[str]) -> str | None:
             return hit
 
     return None
+
+
+def resolve_identity(name: str, candidates, identity_aliases: dict | None = None) -> str | None:
+    """resolve() against a history pool the identity merge has CANONICALISED, through the identity
+    map that merge APPLIED (fix12, 2026-11-07).
+
+    The history pool holds the CANONICAL spelling only ('Stockport County' -> 'Stockport',
+    'Energie Cottbus' -> 'Cottbus': src.identity_repair.canonicalise_and_dedupe with the frozen
+    payload map for Standard serving, data_loader.IDENTITY_ALIASES for the loader's history). A
+    board/source spelling of the renamed club ('Stockport County FC') is provably that club's
+    ALIAS spelling, not its canonical one, so resolve() alone misses it and the fixture goes blind.
+
+    `identity_aliases` is ONE league's applied map {alias spelling: canonical spelling}. Only when
+    resolve(name, candidates) finds nothing: the name must equal an alias spelling, or be proven
+    equal to it by resolve() (the same proof rules as everywhere else), whose canonical club is IN
+    `candidates`. Exactly one canonical club -> that club; none or more than one -> None. Nothing is
+    guessed: the map is evidence the merge already acted on, and resolve() is the only proof."""
+    cands = candidates if isinstance(candidates, list) else list(candidates or [])
+    hit = resolve(name, cands)
+    if hit or not identity_aliases or not name or not cands:
+        return hit
+    return identity_alias_hit(name, cands, identity_aliases)
+
+
+def identity_alias_hit(name: str, candidates, identity_aliases: dict | None) -> str | None:
+    """The ONE canonical club of `candidates` whose applied-identity ALIAS spelling `name` is (equal,
+    or proven equal by resolve()), else None. The shared rule behind resolve_identity and
+    data_loader._resolve_onto_history (callers that already ran resolve() use this directly)."""
+    if not identity_aliases or not name:
+        return None
+    pool = candidates if isinstance(candidates, (set, frozenset)) else {str(c) for c in candidates}
+    txt = str(name)
+    hits = {c for a, c in identity_aliases.items()
+            if c in pool and (a == txt or resolve(txt, [a]) == a)}
+    return hits.pop() if len(hits) == 1 else None
 
 
 def resolve_result(name: str, candidates: list[str]) -> str | None:
