@@ -338,3 +338,33 @@ def test_settle_and_registry_are_flag_gated(tmp_path, monkeypatch):
     m = [x for x in reg["models"] if x["model_id"] == "v11_shadow"]
     assert m and m[0]["rows"] == 2 and m[0]["leagues"]["league_one"]["predicted"] == 2
     assert P11.main(["validate"]) == 0
+
+
+# ── private store: nothing price-derived in the public tree ─────────────────────────────────────
+
+def _git(*args) -> "subprocess.CompletedProcess":
+    import subprocess
+    return subprocess.run(["git", *args], cwd=PROJ, capture_output=True, text=True)
+
+
+def test_the_ledger_is_never_tracked_in_this_public_repo():
+    r = _git("ls-files", "--", "output/prediction_ledger", "output/prediction_ledger_settled")
+    if r.returncode != 0:
+        pytest.skip("not a git checkout")
+    assert r.stdout.strip() == "", "the price-derived v11 ledger is tracked in the PUBLIC repo"
+    for probe in ("output/prediction_ledger/v11/v11_shadow/ou25/league_one/2026.csv",
+                  "output/prediction_ledger_settled/v11/v11_shadow/ou25/league_one/2026.csv",
+                  "output/prediction_ledger/registry.json"):
+        assert _git("check-ignore", "-q", "--no-index", probe).returncode == 0, f"{probe} is not git-ignored"
+
+
+def test_collect_workflow_writes_the_ledger_to_the_private_store_only():
+    wf = (PROJ / ".github" / "workflows" / "v11_collect.yml").read_text(encoding="utf-8")
+    staged = [ln for ln in wf.splitlines() if "git add" in ln and "prediction_ledger" in ln]
+    assert staged == [], f"v11_collect.yml stages the ledger publicly: {staged}"
+    assert "bash scripts/prediction_ledger_store.sh open" in wf and "bash scripts/prediction_ledger_store.sh push" in wf
+    assert "secrets.PRICE_STORE_KEY" in wf
+    # the collector records rows only when the private store opened
+    assert "PREDICTION_LEDGER_ENABLED: ${{ steps.pl_store.outputs.ok == 'true' && 'true' || 'false' }}" in wf
+    sh = (PROJ / "scripts" / "prediction_ledger_store.sh").read_text(encoding="utf-8")
+    assert 'git@github.com:NevixAA/wowza-exec.git}"' in sh and 'BRANCH="prediction-ledger-v11"' in sh

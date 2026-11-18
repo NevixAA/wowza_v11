@@ -32,6 +32,13 @@ THE JOIN. fixture_ref is 'oa:<OddsAPI event id>' from v9's board (`_oa_event_id`
 and Pro's rows carry, so all three ledgers join 1:1 on it. predicted_at is the v11 snapshot timestamp,
 so a ledger row also joins to output/v11_shadow_snapshots.csv on (snapshot_ts, fixture).
 
+PRIVATE STORE ONLY. p_blend is at least 55% the price consensus, and with v9's public p_over25 the market
+value can be backed out of it, so the ledger is treated as price-derived: it is written to the git-ignored
+output/prediction_ledger*/ and v11_collect.yml pushes it to the private repo NevixAA/wowza-exec, branch
+prediction-ledger-v11 (scripts/prediction_ledger_store.sh, which also hydrates it before the run so first
+write wins against every stored key). It is never committed to this public repo
+(tests/test_prediction_ledger_v11.py fails if it is ever tracked).
+
 v9 is read, never written. The registry (league slugs, seasons) is v9's config/leagues.json through
 src/league_registry (V9_LOCAL in CI). OFF unless PREDICTION_LEDGER_ENABLED == 'true'; nothing here can raise
 into the collector.
