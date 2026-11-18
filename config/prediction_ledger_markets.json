@@ -1,0 +1,812 @@
+{
+ "schema_version": "pl/1.0",
+ "about": "Every model x market the prediction ledger knows (src/prediction_ledger.py). Shared VERBATIM by NevixAA/wowza-betting and NevixAA/wowzaV9-Pro: each repo writes only the entries whose `repo` is its own. status 'active' writes a row for every fixture (props: every scored player x fixture) of every registry league the model serves; 'pending_model' / 'pending_writer' are registered with NO rows (never fake or empty-filled). Adding a model x market is an entry here. Statistics only - no prices.",
+ "entries": [
+  {
+   "repo": "v9",
+   "model_id": "v9_standard",
+   "market": "ou25",
+   "family": "team",
+   "status": "active",
+   "track": "standard",
+   "line": 2.5,
+   "selections": [
+    "OVER",
+    "UNDER"
+   ],
+   "prob_col": "p_over25",
+   "positive_selection": "OVER",
+   "version_col": "model_version",
+   "model_file": {
+    "v9_repaired": "models/model_v9_standard_repaired.pkl",
+    "legacy_v9": "models/model_v9_standard.pkl"
+   },
+   "settle": {
+    "rule": "total_goals_over",
+    "period": "ft"
+   },
+   "description": "O/U 2.5 full time. UNDER = 1 - p(OVER) of the same model (one binary model, both selections stored)."
+  },
+  {
+   "repo": "v9",
+   "model_id": "v9_standard",
+   "market": "ou15",
+   "family": "team",
+   "status": "active",
+   "track": "standard",
+   "line": 1.5,
+   "selections": [
+    "OVER",
+    "UNDER"
+   ],
+   "prob_col": "p_over15",
+   "positive_selection": "OVER",
+   "version_col": "model_version_over15",
+   "model_file": {
+    "*": "models/model_v9_over15.pkl"
+   },
+   "settle": {
+    "rule": "total_goals_over",
+    "period": "ft"
+   },
+   "description": "O/U 1.5 side model (own model, never folded into O2.5)."
+  },
+  {
+   "repo": "v9",
+   "model_id": "v9_standard",
+   "market": "ou35",
+   "family": "team",
+   "status": "active",
+   "track": "standard",
+   "line": 3.5,
+   "selections": [
+    "OVER",
+    "UNDER"
+   ],
+   "prob_col": "p_over35",
+   "positive_selection": "OVER",
+   "version_col": "model_version_over35",
+   "model_file": {
+    "*": "models/model_v9_over35.pkl"
+   },
+   "settle": {
+    "rule": "total_goals_over",
+    "period": "ft"
+   },
+   "description": "O/U 3.5 side model (own model)."
+  },
+  {
+   "repo": "v9",
+   "model_id": "v9_standard",
+   "market": "btts",
+   "family": "team",
+   "status": "active",
+   "track": "standard",
+   "line": null,
+   "selections": [
+    "YES",
+    "NO"
+   ],
+   "prob_col": "p_btts",
+   "positive_selection": "YES",
+   "version_col": "model_version_btts",
+   "model_file": {
+    "*": "models/model_v9_btts.pkl"
+   },
+   "settle": {
+    "rule": "btts",
+    "period": "ft"
+   },
+   "description": "BTTS side model (own model). NO = 1 - p(YES)."
+  },
+  {
+   "repo": "v9",
+   "model_id": "v9_new_format",
+   "market": "ou25",
+   "family": "team",
+   "status": "active",
+   "track": "new_format",
+   "line": 2.5,
+   "selections": [
+    "OVER",
+    "UNDER"
+   ],
+   "prob_col": "p_over25",
+   "positive_selection": "OVER",
+   "version_col": "model_version",
+   "model_file": {
+    "*": "models/model_v9_newformat.pkl"
+   },
+   "settle": {
+    "rule": "total_goals_over",
+    "period": "ft"
+   },
+   "description": "O/U 2.5 full time. UNDER = 1 - p(OVER) of the same model (one binary model, both selections stored)."
+  },
+  {
+   "repo": "v9",
+   "model_id": "v9_new_format",
+   "market": "ou15",
+   "family": "team",
+   "status": "active",
+   "track": "new_format",
+   "line": 1.5,
+   "selections": [
+    "OVER",
+    "UNDER"
+   ],
+   "prob_col": "p_over15",
+   "positive_selection": "OVER",
+   "version_col": "model_version_over15",
+   "model_file": {
+    "*": "models/model_v9_over15.pkl"
+   },
+   "settle": {
+    "rule": "total_goals_over",
+    "period": "ft"
+   },
+   "description": "O/U 1.5 side model (own model, never folded into O2.5)."
+  },
+  {
+   "repo": "v9",
+   "model_id": "v9_new_format",
+   "market": "ou35",
+   "family": "team",
+   "status": "active",
+   "track": "new_format",
+   "line": 3.5,
+   "selections": [
+    "OVER",
+    "UNDER"
+   ],
+   "prob_col": "p_over35",
+   "positive_selection": "OVER",
+   "version_col": "model_version_over35",
+   "model_file": {
+    "*": "models/model_v9_over35.pkl"
+   },
+   "settle": {
+    "rule": "total_goals_over",
+    "period": "ft"
+   },
+   "description": "O/U 3.5 side model (own model)."
+  },
+  {
+   "repo": "v9",
+   "model_id": "v9_new_format",
+   "market": "btts",
+   "family": "team",
+   "status": "active",
+   "track": "new_format",
+   "line": null,
+   "selections": [
+    "YES",
+    "NO"
+   ],
+   "prob_col": "p_btts",
+   "positive_selection": "YES",
+   "version_col": "model_version_btts",
+   "model_file": {
+    "*": "models/model_v9_btts.pkl"
+   },
+   "settle": {
+    "rule": "btts",
+    "period": "ft"
+   },
+   "description": "BTTS side model (own model). NO = 1 - p(YES)."
+  },
+  {
+   "repo": "v9",
+   "model_id": "v9_standard",
+   "market": "ht_ou05",
+   "family": "team",
+   "status": "active",
+   "track": "standard",
+   "line": 0.5,
+   "selections": [
+    "OVER",
+    "UNDER"
+   ],
+   "prob_col": "p_ht_over05",
+   "positive_selection": "OVER",
+   "version_col": "model_version_ht_over05",
+   "model_file": {
+    "*": "models/model_ht_over05.pkl"
+   },
+   "settle": {
+    "rule": "total_goals_over",
+    "period": "ht"
+   },
+   "description": "Half-time O/U (served for Standard leagues only; New-Format has no HT model)."
+  },
+  {
+   "repo": "v9",
+   "model_id": "v9_standard",
+   "market": "ht_ou15",
+   "family": "team",
+   "status": "active",
+   "track": "standard",
+   "line": 1.5,
+   "selections": [
+    "OVER",
+    "UNDER"
+   ],
+   "prob_col": "p_ht_over15",
+   "positive_selection": "OVER",
+   "version_col": "model_version_ht_over15",
+   "model_file": {
+    "*": "models/model_ht_over15.pkl"
+   },
+   "settle": {
+    "rule": "total_goals_over",
+    "period": "ht"
+   },
+   "description": "Half-time O/U (served for Standard leagues only; New-Format has no HT model)."
+  },
+  {
+   "repo": "v9",
+   "model_id": "v9_props",
+   "market": "goals",
+   "family": "props",
+   "status": "active",
+   "track": "props",
+   "line": 0.5,
+   "selections": [
+    "YES"
+   ],
+   "prob_col": "p_goals",
+   "positive_selection": "YES",
+   "version_col": null,
+   "model_file": {
+    "*": "models/model_player_goals.pkl"
+   },
+   "settle": {
+    "rule": "player_target",
+    "target_col": "target_goals",
+    "stat": "goals",
+    "n": 1,
+    "period": "90min"
+   },
+   "description": "Player goals >= 1. The props model's own probability (predict_proba of the serving payload) for EVERY scored player x fixture, before the team-strength multiplier, caps and the tip filters (MIN_SIGNAL_PROB, MIN_GAMES_SIGNAL, starter proxy, GK skip) that player_tips.csv applies."
+  },
+  {
+   "repo": "v9",
+   "model_id": "v9_props",
+   "market": "goals2",
+   "family": "props",
+   "status": "active",
+   "track": "props",
+   "line": 1.5,
+   "selections": [
+    "YES"
+   ],
+   "prob_col": "p_goals2",
+   "positive_selection": "YES",
+   "version_col": null,
+   "model_file": {
+    "*": "models/model_player_goals2.pkl"
+   },
+   "settle": {
+    "rule": "player_target",
+    "target_col": "target_goals2",
+    "stat": "goals",
+    "n": 2,
+    "period": "90min"
+   },
+   "description": "Player goals >= 2. The props model's own probability (predict_proba of the serving payload) for EVERY scored player x fixture, before the team-strength multiplier, caps and the tip filters (MIN_SIGNAL_PROB, MIN_GAMES_SIGNAL, starter proxy, GK skip) that player_tips.csv applies."
+  },
+  {
+   "repo": "v9",
+   "model_id": "v9_props",
+   "market": "assists",
+   "family": "props",
+   "status": "active",
+   "track": "props",
+   "line": 0.5,
+   "selections": [
+    "YES"
+   ],
+   "prob_col": "p_assists",
+   "positive_selection": "YES",
+   "version_col": null,
+   "model_file": {
+    "*": "models/model_player_assists.pkl"
+   },
+   "settle": {
+    "rule": "player_target",
+    "target_col": "target_assists",
+    "stat": "assists",
+    "n": 1,
+    "period": "90min"
+   },
+   "description": "Player assists >= 1. The props model's own probability (predict_proba of the serving payload) for EVERY scored player x fixture, before the team-strength multiplier, caps and the tip filters (MIN_SIGNAL_PROB, MIN_GAMES_SIGNAL, starter proxy, GK skip) that player_tips.csv applies."
+  },
+  {
+   "repo": "v9",
+   "model_id": "v9_props",
+   "market": "sot",
+   "family": "props",
+   "status": "active",
+   "track": "props",
+   "line": 0.5,
+   "selections": [
+    "YES"
+   ],
+   "prob_col": "p_sot",
+   "positive_selection": "YES",
+   "version_col": null,
+   "model_file": {
+    "*": "models/model_player_sot.pkl"
+   },
+   "settle": {
+    "rule": "player_target",
+    "target_col": "target_sot",
+    "stat": "shots_on_target",
+    "n": 1,
+    "period": "90min"
+   },
+   "description": "Player shots_on_target >= 1. The props model's own probability (predict_proba of the serving payload) for EVERY scored player x fixture, before the team-strength multiplier, caps and the tip filters (MIN_SIGNAL_PROB, MIN_GAMES_SIGNAL, starter proxy, GK skip) that player_tips.csv applies."
+  },
+  {
+   "repo": "v9",
+   "model_id": "v9_props",
+   "market": "sot2",
+   "family": "props",
+   "status": "active",
+   "track": "props",
+   "line": 1.5,
+   "selections": [
+    "YES"
+   ],
+   "prob_col": "p_sot2",
+   "positive_selection": "YES",
+   "version_col": null,
+   "model_file": {
+    "*": "models/model_player_sot2.pkl"
+   },
+   "settle": {
+    "rule": "player_target",
+    "target_col": "target_sot2",
+    "stat": "shots_on_target",
+    "n": 2,
+    "period": "90min"
+   },
+   "description": "Player shots_on_target >= 2. The props model's own probability (predict_proba of the serving payload) for EVERY scored player x fixture, before the team-strength multiplier, caps and the tip filters (MIN_SIGNAL_PROB, MIN_GAMES_SIGNAL, starter proxy, GK skip) that player_tips.csv applies."
+  },
+  {
+   "repo": "v9",
+   "model_id": "v9_props",
+   "market": "sot3",
+   "family": "props",
+   "status": "active",
+   "track": "props",
+   "line": 2.5,
+   "selections": [
+    "YES"
+   ],
+   "prob_col": "p_sot3",
+   "positive_selection": "YES",
+   "version_col": null,
+   "model_file": {
+    "*": "models/model_player_sot3.pkl"
+   },
+   "settle": {
+    "rule": "player_target",
+    "target_col": "target_sot3",
+    "stat": "shots_on_target",
+    "n": 3,
+    "period": "90min"
+   },
+   "description": "Player shots_on_target >= 3. The props model's own probability (predict_proba of the serving payload) for EVERY scored player x fixture, before the team-strength multiplier, caps and the tip filters (MIN_SIGNAL_PROB, MIN_GAMES_SIGNAL, starter proxy, GK skip) that player_tips.csv applies."
+  },
+  {
+   "repo": "v9",
+   "model_id": "v9_props",
+   "market": "sot4",
+   "family": "props",
+   "status": "active",
+   "track": "props",
+   "line": 3.5,
+   "selections": [
+    "YES"
+   ],
+   "prob_col": "p_sot4",
+   "positive_selection": "YES",
+   "version_col": null,
+   "model_file": {
+    "*": "models/model_player_sot4.pkl"
+   },
+   "settle": {
+    "rule": "player_target",
+    "target_col": "target_sot4",
+    "stat": "shots_on_target",
+    "n": 4,
+    "period": "90min"
+   },
+   "description": "Player shots_on_target >= 4. The props model's own probability (predict_proba of the serving payload) for EVERY scored player x fixture, before the team-strength multiplier, caps and the tip filters (MIN_SIGNAL_PROB, MIN_GAMES_SIGNAL, starter proxy, GK skip) that player_tips.csv applies."
+  },
+  {
+   "repo": "v9",
+   "model_id": "v9_props",
+   "market": "cards",
+   "family": "props",
+   "status": "active",
+   "track": "props",
+   "line": 0.5,
+   "selections": [
+    "YES"
+   ],
+   "prob_col": "p_cards",
+   "positive_selection": "YES",
+   "version_col": null,
+   "model_file": {
+    "*": "models/model_player_cards.pkl"
+   },
+   "settle": {
+    "rule": "player_target",
+    "target_col": "target_cards",
+    "stat": "cards",
+    "n": 1,
+    "period": "90min"
+   },
+   "description": "Player cards >= 1. The props model's own probability (predict_proba of the serving payload) for EVERY scored player x fixture, before the team-strength multiplier, caps and the tip filters (MIN_SIGNAL_PROB, MIN_GAMES_SIGNAL, starter proxy, GK skip) that player_tips.csv applies."
+  },
+  {
+   "repo": "pro",
+   "model_id": "pro_bb_dc",
+   "market": "1x2",
+   "family": "team",
+   "status": "active",
+   "track": "board",
+   "line": null,
+   "selections": [
+    "H",
+    "D",
+    "A"
+   ],
+   "prob_col": null,
+   "positive_selection": "H",
+   "version_col": null,
+   "model_file": null,
+   "settle": {
+    "rule": "result_1x2",
+    "period": "ft"
+   },
+   "description": "1X2 from the full-board Dixon-Coles grid (src/combo/score_model fit), every board fixture, before the builder's gates. Pro src/pipelines/bet_builder.py generate(); not an independent model: the grid is fitted to v9's four goal marginals."
+  },
+  {
+   "repo": "pro",
+   "model_id": "pro_bb_dc",
+   "market": "correct_score",
+   "family": "specials",
+   "status": "active",
+   "track": "board",
+   "line": null,
+   "selections": [
+    "0-0",
+    "0-1",
+    "0-2",
+    "0-3",
+    "0-4",
+    "0-5",
+    "0-6",
+    "1-0",
+    "1-1",
+    "1-2",
+    "1-3",
+    "1-4",
+    "1-5",
+    "1-6",
+    "2-0",
+    "2-1",
+    "2-2",
+    "2-3",
+    "2-4",
+    "2-5",
+    "2-6",
+    "3-0",
+    "3-1",
+    "3-2",
+    "3-3",
+    "3-4",
+    "3-5",
+    "3-6",
+    "4-0",
+    "4-1",
+    "4-2",
+    "4-3",
+    "4-4",
+    "4-5",
+    "4-6",
+    "5-0",
+    "5-1",
+    "5-2",
+    "5-3",
+    "5-4",
+    "5-5",
+    "5-6",
+    "6-0",
+    "6-1",
+    "6-2",
+    "6-3",
+    "6-4",
+    "6-5",
+    "6-6",
+    "other"
+   ],
+   "prob_col": null,
+   "positive_selection": "0-0",
+   "version_col": null,
+   "model_file": null,
+   "settle": {
+    "rule": "correct_score",
+    "period": "ft"
+   },
+   "description": "Full scoreline distribution 0-0..6-6 + 'other' (any score with a side above 6). Pro src/pipelines/bet_builder.py generate(); not an independent model: the grid is fitted to v9's four goal marginals."
+  },
+  {
+   "repo": "pro",
+   "model_id": "pro_bb_dc",
+   "market": "goals_exact_0",
+   "family": "specials",
+   "status": "active",
+   "track": "board",
+   "line": null,
+   "selections": [
+    "YES"
+   ],
+   "prob_col": null,
+   "positive_selection": "YES",
+   "version_col": null,
+   "model_file": null,
+   "settle": {
+    "rule": "total_goals_eq0",
+    "period": "ft"
+   },
+   "description": "Extreme low: total goals = 0. Pro src/pipelines/bet_builder.py generate(); not an independent model: the grid is fitted to v9's four goal marginals."
+  },
+  {
+   "repo": "pro",
+   "model_id": "pro_bb_dc",
+   "market": "goals_le1",
+   "family": "specials",
+   "status": "active",
+   "track": "board",
+   "line": 1.5,
+   "selections": [
+    "YES"
+   ],
+   "prob_col": null,
+   "positive_selection": "YES",
+   "version_col": null,
+   "model_file": null,
+   "settle": {
+    "rule": "total_goals_le1",
+    "period": "ft"
+   },
+   "description": "Extreme low: total goals 0-1 (= UNDER 1.5). Pro src/pipelines/bet_builder.py generate(); not an independent model: the grid is fitted to v9's four goal marginals."
+  },
+  {
+   "repo": "pro",
+   "model_id": "pro_bb_dc",
+   "market": "goals_ge5",
+   "family": "specials",
+   "status": "active",
+   "track": "board",
+   "line": 4.5,
+   "selections": [
+    "YES"
+   ],
+   "prob_col": null,
+   "positive_selection": "YES",
+   "version_col": null,
+   "model_file": null,
+   "settle": {
+    "rule": "total_goals_ge5",
+    "period": "ft"
+   },
+   "description": "High total: 5+ goals. Pro src/pipelines/bet_builder.py generate(); not an independent model: the grid is fitted to v9's four goal marginals."
+  },
+  {
+   "repo": "pro",
+   "model_id": "pro_bb_dc",
+   "market": "goals_ge6",
+   "family": "specials",
+   "status": "active",
+   "track": "board",
+   "line": 5.5,
+   "selections": [
+    "YES"
+   ],
+   "prob_col": null,
+   "positive_selection": "YES",
+   "version_col": null,
+   "model_file": null,
+   "settle": {
+    "rule": "total_goals_ge6",
+    "period": "ft"
+   },
+   "description": "Extreme high: 6+ goals. Pro src/pipelines/bet_builder.py generate(); not an independent model: the grid is fitted to v9's four goal marginals."
+  },
+  {
+   "repo": "pro",
+   "model_id": "pro_bb_dc",
+   "market": "goals_ge7",
+   "family": "specials",
+   "status": "active",
+   "track": "board",
+   "line": 6.5,
+   "selections": [
+    "YES"
+   ],
+   "prob_col": null,
+   "positive_selection": "YES",
+   "version_col": null,
+   "model_file": null,
+   "settle": {
+    "rule": "total_goals_ge7",
+    "period": "ft"
+   },
+   "description": "Extreme high: 7+ goals. Pro src/pipelines/bet_builder.py generate(); not an independent model: the grid is fitted to v9's four goal marginals."
+  },
+  {
+   "repo": "pro",
+   "model_id": "pro_bb_dc",
+   "market": "team_ge4",
+   "family": "specials",
+   "status": "active",
+   "track": "board",
+   "line": 3.5,
+   "selections": [
+    "HOME",
+    "AWAY"
+   ],
+   "prob_col": null,
+   "positive_selection": "HOME",
+   "version_col": null,
+   "model_file": null,
+   "settle": {
+    "rule": "team_goals_ge4",
+    "period": "ft"
+   },
+   "description": "Side 4+: the named team scores 4 or more. Pro src/pipelines/bet_builder.py generate(); not an independent model: the grid is fitted to v9's four goal marginals."
+  },
+  {
+   "repo": "pro",
+   "model_id": "pro_bb_combo",
+   "market": "combo",
+   "family": "combo",
+   "status": "active",
+   "track": "board",
+   "line": null,
+   "selections": "per row (the combo's canonical leg string)",
+   "prob_col": null,
+   "positive_selection": null,
+   "version_col": null,
+   "model_file": null,
+   "settle": {
+    "rule": "combo_all_legs",
+    "period": "ft"
+   },
+   "description": "Bet Builder combo candidates: each candidate's model probability (p_combo) as a prediction only, BEFORE the v9-direction gate; never a bet. Settled by Pro's own combo settlement (combo_settlements)."
+  },
+  {
+   "repo": "v11",
+   "model_id": "v11_shadow",
+   "market": "ou25",
+   "family": "team",
+   "status": "active",
+   "track": "board",
+   "line": 2.5,
+   "selections": [
+    "OVER",
+    "UNDER"
+   ],
+   "prob_col": "v11_p_blend",
+   "positive_selection": "OVER",
+   "version_col": null,
+   "model_file": null,
+   "settle": {
+    "rule": "total_goals_over",
+    "period": "ft"
+   },
+   "description": "v11 market-first O/U 2.5 shadow (scripts/v11_shadow.py, v11_collect.yml; writer src/prediction_ledger_v11.py in NevixAA/wowza_v11). probability = v11's own blended forecast for EACH selection from that side's own decision: w*p_model + (1-w)*p_market, w <= the segment cap (new_format 0.45 / standard 0.40) shrunk by the measured N_EFF and the side's odds band, so OVER and UNDER need not sum to 1. Every board fixture v11 evaluates is recorded; one it cannot blend is stored unscored with the engine's reason. Its inputs are never stored: p_model is v9's p_over25 (already in v9's ledger) and p_market is the de-vigged price consensus (price-derived)."
+  },
+  {
+   "repo": "v9",
+   "model_id": "v9_corners",
+   "market": "corners_total",
+   "family": "corners",
+   "status": "pending_model",
+   "track": null,
+   "line": null,
+   "lines": "per row (the model's O/U line)",
+   "selections": [
+    "OVER",
+    "UNDER"
+   ],
+   "prob_col": null,
+   "positive_selection": "OVER",
+   "version_col": null,
+   "model_file": null,
+   "settle": {
+    "rule": "total_stat_over",
+    "stat": "corners",
+    "period": "90min"
+   },
+   "description": "total corners O/U - research only (research/side-models). Pre-registered: NO rows until the model is verified; switching it on is this entry's status -> 'active' plus prob_col/model_file, not a code change."
+  },
+  {
+   "repo": "v9",
+   "model_id": "v9_corners",
+   "market": "corners_team",
+   "family": "corners",
+   "status": "pending_model",
+   "track": null,
+   "line": null,
+   "lines": "per row (the model's O/U line)",
+   "selections": [
+    "OVER",
+    "UNDER"
+   ],
+   "prob_col": null,
+   "positive_selection": "OVER",
+   "version_col": null,
+   "model_file": null,
+   "settle": {
+    "rule": "total_stat_over",
+    "stat": "corners",
+    "period": "90min"
+   },
+   "description": "team corners O/U (HOME/AWAY) - research only (research/side-models). Pre-registered: NO rows until the model is verified; switching it on is this entry's status -> 'active' plus prob_col/model_file, not a code change."
+  },
+  {
+   "repo": "v9",
+   "model_id": "v9_cards",
+   "market": "cards_total",
+   "family": "cards",
+   "status": "pending_model",
+   "track": null,
+   "line": null,
+   "lines": "per row (the model's O/U line)",
+   "selections": [
+    "OVER",
+    "UNDER"
+   ],
+   "prob_col": null,
+   "positive_selection": "OVER",
+   "version_col": null,
+   "model_file": null,
+   "settle": {
+    "rule": "total_stat_over",
+    "stat": "cards",
+    "period": "90min"
+   },
+   "description": "total cards/bookings O/U - research only (research/side-models). Pre-registered: NO rows until the model is verified; switching it on is this entry's status -> 'active' plus prob_col/model_file, not a code change."
+  },
+  {
+   "repo": "v9",
+   "model_id": "v9_cards",
+   "market": "cards_team",
+   "family": "cards",
+   "status": "pending_model",
+   "track": null,
+   "line": null,
+   "lines": "per row (the model's O/U line)",
+   "selections": [
+    "OVER",
+    "UNDER"
+   ],
+   "prob_col": null,
+   "positive_selection": "OVER",
+   "version_col": null,
+   "model_file": null,
+   "settle": {
+    "rule": "total_stat_over",
+    "stat": "cards",
+    "period": "90min"
+   },
+   "description": "team cards O/U (HOME/AWAY) - research only (research/side-models). Pre-registered: NO rows until the model is verified; switching it on is this entry's status -> 'active' plus prob_col/model_file, not a code change."
+  }
+ ]
+}
