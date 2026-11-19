@@ -45,11 +45,14 @@ from src.evidence import EvidenceStore, MISSING_EVIDENCE
 from src.book_consensus import (load_snapshots, build_index, lookup as consensus_lookup,
                                 ESTIMATOR, pair_ok)
 from src import league_registry as LR
+# Prediction ledger (owner rule 2026-11-17/18): every fixture v11 evaluates, both sides, learning only.
+# A no-op unless PREDICTION_LEDGER_ENABLED == 'true'; it never changes a decision or a file below.
+from src import prediction_ledger_v11 as PLV11
 
 _EVIDENCE = EvidenceStore.from_json(config.OUTPUT_DIR / "v11_evidence.json")
 
 
-def _load_v9(name: str) -> pd.DataFrame:
+def _load_v9(name: str, dtype=None) -> pd.DataFrame:
     """Read a v9 output CSV.
 
     Order: explicit test override -> local v9 clone -> public raw HTTP with backoff.
@@ -69,7 +72,7 @@ def _load_v9(name: str) -> pd.DataFrame:
 
     override = config.OUTPUT_DIR / f"_v9_{name}"
     if override.exists():
-        return pd.read_csv(override)
+        return pd.read_csv(override, dtype=dtype)
 
     # A sibling clone of wowza-betting, if one is present. V9_LOCAL lets CI point at an
     # actions/checkout of the baseline repo instead of hammering raw HTTP.
@@ -80,7 +83,7 @@ def _load_v9(name: str) -> pd.DataFrame:
             continue
         p = Path(cand) / "output" / name
         if p.exists():
-            return pd.read_csv(p)
+            return pd.read_csv(p, dtype=dtype)
 
     last = None
     for attempt in range(4):
@@ -94,7 +97,7 @@ def _load_v9(name: str) -> pd.DataFrame:
                 time.sleep(wait)
                 continue
             r.raise_for_status()
-            return pd.read_csv(StringIO(r.text))
+            return pd.read_csv(StringIO(r.text), dtype=dtype)
         except Exception as e:
             last = e
             time.sleep(3 * (attempt + 1))
@@ -437,7 +440,9 @@ def closing_snapshot(snapshots: "pd.DataFrame") -> "pd.DataFrame":
 
 
 def run():
-    df = _load_v9("predictions.csv")
+    # The OddsAPI event id is read as TEXT (it is the prediction ledger's join key; an id like '8e12...'
+    # parsed as a number would be a different id). No decision reads it.
+    df = _load_v9("predictions.csv", dtype={"_oa_event_id": str})
     try:
         rstats = _rolling_clv_stats(_load_v9("bets_ledger.csv"))
     except Exception as e:                                             # noqa: BLE001
@@ -449,6 +454,29 @@ def run():
               f"NO_BET {MISSING_EVIDENCE} until scripts/v11_fit_evidence.py writes it")
     ts = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
     today = datetime.now(timezone.utc).strftime("%Y-%m-%d")
+    # predicted_at of every ledger row is this snapshot's ts, so the ledger joins the snapshot history.
+    _led = PLV11.recorder(datetime.strptime(ts, "%Y-%m-%dT%H:%M:%SZ").replace(tzinfo=timezone.utc))
+
+    def _ledger(r, lg, home, away, date, probs, reasons, inputs=()):
+        if _led is None:
+            return
+        try:
+            _led.add(league=lg, home=home, away=away, date=date, kickoff_utc=r.get("kickoff_utc"),
+                     oa_event_id=r.get("_oa_event_id"), probs=probs, reasons=reasons, inputs=inputs)
+        except Exception as ex:                                       # noqa: BLE001
+            print(f"[prediction_ledger] fixture not recorded ({type(ex).__name__}: {ex})")
+
+    def _ledger_unscored(r, why):
+        """A board row the engine could not evaluate at all: both sides unscored, with the reason."""
+        if _led is None:
+            return
+        _d = str(r.get("date"))[:10] if pd.notna(r.get("date")) else None
+        _lg = LR.canonical_league(r.get("league"))
+        _h, _a = r.get("home_team"), r.get("away_team")
+        if (_d is None or _d < today or _lg is None or pd.isna(_h) or pd.isna(_a)
+                or not str(_h).strip() or not str(_a).strip()):
+            return
+        _ledger(r, _lg, _h, _a, _d, {"OVER": None, "UNDER": None}, {"OVER": why, "UNDER": why})
 
     # Cross-book prices, loaded ONCE for the whole board rather than per fixture. Absent or
     # malformed file -> empty index -> every lookup is unusable -> _decide behaves exactly as it
@@ -475,10 +503,13 @@ def run():
             p_over = float(r.get("p_over25"))
         except (TypeError, ValueError):
             _skip("non-numeric odds or p_over25")
+            _ledger_unscored(r, "v9 board row has no numeric p_over25 or O/U 2.5 price pair")
             continue
         _date = str(r.get("date"))[:10] if pd.notna(r.get("date")) else None
         if not (0.0 <= p_over <= 1.0):
             _skip("p_over25 outside [0, 1]")
+            _ledger_unscored(r, "v9 board row has no p_over25" if p_over != p_over
+                             else "v9 p_over25 outside [0, 1]")
             continue
         if _date is None or _date < today:
             continue                                   # past fixture: not a skip, just not upcoming
@@ -504,20 +535,27 @@ def run():
         # The market's P(OVER) does not depend on the model or the evidence, so the consensus is
         # looked up for every row whose odds passed validation (market_columns below).
         _cons = consensus_lookup(_books_idx, lg, home, away, "OU25") if valid else None
+        # Ledger: v11's own per-side forecast (p_blend) or the reason there is none.
+        _lp, _lw = {"OVER": None, "UNDER": None}, {}
         if not valid:
             side, best, state = "-", dict(_nobet), "NO_BET"
+            _lw = {"OVER": f"odds rejected: {reason}", "UNDER": f"odds rejected: {reason}"}
         elif w_cap is None:
             side, best, state = "-", dict(_nobet, reason=MISSING_MODEL_TYPE), "NO_BET"
+            _lw = {"OVER": MISSING_MODEL_TYPE, "UNDER": MISSING_MODEL_TYPE}
         else:
             # Segment-specific MEASURED evidence; none measured -> NO_BET, never a typed prior.
             _ev = _EVIDENCE.lookup(mt, lg)
             if _ev is None:
                 side, best, state = "-", dict(_nobet, reason=MISSING_EVIDENCE), "NO_BET"
+                _lw = {"OVER": MISSING_EVIDENCE, "UNDER": MISSING_EVIDENCE}
             else:
                 over = _decide(p_over, o_over, o_under, _ev.n_eff, _ev.ece, rc, rn, w_cap,
                                cons=_cons, side="OVER")
                 under = _decide(1.0 - p_over, o_under, o_over, _ev.n_eff, _ev.ece, rc, rn, w_cap,
                                 cons=_cons, side="UNDER")
+                _lp = {"OVER": over.get("p_blend"), "UNDER": under.get("p_blend")}
+                _lw = {"OVER": over.get("reason"), "UNDER": under.get("reason")}
                 side, best = (("OVER", over) if TIER_RANK[over["tier"]] >= TIER_RANK[under["tier"]]
                               else ("UNDER", under))
                 state = _tier_to_state(best["tier"])
@@ -529,6 +567,9 @@ def run():
         _kickoff = r.get("kickoff_utc")
         _mtk = _minutes_to_kickoff(_kickoff, ts)
         _mkt = market_columns(o_over, o_under, _cons, best, valid)
+        _ledger(r, lg, home, away, _date, _lp, _lw,
+                inputs=(p_over, _ev.n_eff if _ev is not None else None,
+                        _ev.ece if _ev is not None else None, w_cap))
         rows.append({
             "fixture_id": _fid,
             "snapshot_id": _snapshot_id(_fid, ts),
@@ -665,6 +706,12 @@ def run():
           f"{per_fix.size} fixtures (mean {per_fix.mean():.2f}, max {per_fix.max()} "
           f"snapshots/fixture; {dropped} exact duplicate(s) skipped)")
     print(f"[v11] latest view {len(latest)} fixtures; states {sc}; odds-rejected {rej}")
+    # Prediction ledger LAST: the snapshot history above is already on disk, so nothing here can cost it.
+    if _led is not None:
+        try:
+            print(f"[prediction_ledger] {PLV11.MODEL_ID} {PLV11.MARKET}: {_led.flush()}")
+        except Exception as ex:                                       # noqa: BLE001
+            print(f"[prediction_ledger] not recorded ({type(ex).__name__}: {ex})")
     return len(rows)
 
 

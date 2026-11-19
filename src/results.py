@@ -259,6 +259,9 @@ def grade_fixtures(fixtures: pd.DataFrame, results: pd.DataFrame, *,
     f["total_goals"] = pd.NA
     f["over25_result"] = pd.NA
     f["grade_source"] = pd.NA
+    # The scoreline itself (prediction ledger settlement, src/prediction_ledger_v11.py, needs both sides).
+    f["home_goals"] = pd.NA
+    f["away_goals"] = pd.NA
     if results is None or results.empty or f.empty:
         if not quiet:
             print("[results] no results available; nothing graded")
@@ -308,6 +311,8 @@ def grade_fixtures(fixtures: pd.DataFrame, results: pd.DataFrame, *,
             row = cand.sort_values("date").iloc[-1]
             tg = float(row["home_goals"]) + float(row["away_goals"])
             f.at[i, "total_goals"] = tg
+            f.at[i, "home_goals"] = int(row["home_goals"])
+            f.at[i, "away_goals"] = int(row["away_goals"])
             f.at[i, "over25_result"] = 1 if tg > 2.5 else 0
             f.at[i, "grade_source"] = ("v9_af_history" if canon in LR.AF_RESULT_LEAGUES
                                        else "football-data.co.uk")

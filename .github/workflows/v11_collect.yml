@@ -61,15 +61,47 @@ jobs:
       - name: Install deps
         run: pip install pandas numpy requests pyarrow   # pyarrow: v9 af_history.parquet results (R2)
 
+      # PREDICTION LEDGER (owner rule 2026-11-17/18, src/prediction_ledger_v11.py) - learning only, OFF unless
+      # the repo variable PREDICTION_LEDGER_ENABLED is 'true'. v11's ledger probability (its O/U 2.5 blend) is
+      # PRICE-DERIVED, so the ledger lives ONLY in the private store NevixAA/wowza-exec, branch
+      # prediction-ledger-v11 (scripts/prediction_ledger_store.sh, deploy key PRICE_STORE_KEY). It is
+      # hydrated into the git-ignored output/prediction_ledger*/ here and pushed back after the public commit;
+      # it is never staged in this public repo. Rows are recorded only when the store opened (ok=true).
+      - name: Open the private prediction-ledger store
+        id: pl_store
+        if: vars.PREDICTION_LEDGER_ENABLED == 'true'
+        env:
+          PRICE_STORE_KEY: ${{ secrets.PRICE_STORE_KEY }}
+        run: bash scripts/prediction_ledger_store.sh open
+
+      # With the store open, the collector also appends v11's per-side forecast for EVERY board fixture it
+      # evaluates (first write wins). It never changes a decision or the snapshot files, and cannot fail
+      # this step.
       - name: Collect V11 shadow snapshot
         env:
           V9_LOCAL: ${{ github.workspace }}/_v9
+          PREDICTION_LEDGER_ENABLED: ${{ steps.pl_store.outputs.ok == 'true' && 'true' || 'false' }}
         run: python scripts/v11_shadow.py
 
       - name: Grade + scoreboard (v9 vs v11 on settled fixtures)
         env:
           V9_LOCAL: ${{ github.workspace }}/_v9
         run: python scripts/v11_grade.py
+
+      # Prediction ledger settled view + registry + contract check (learning only; flag-gated). The validator
+      # is the same contract v9 gates as Data truth 12. continue-on-error so a violation can never cost the
+      # commit below; the LAST step turns the run red when this one failed.
+      - name: Prediction ledger - settle, registry, validate (learning only)
+        id: ledger
+        if: steps.pl_store.outputs.ok == 'true'
+        continue-on-error: true
+        env:
+          V9_LOCAL: ${{ github.workspace }}/_v9
+          PREDICTION_LEDGER_ENABLED: 'true'
+        run: |
+          python -m src.prediction_ledger_v11 settle || echo "::warning::prediction ledger settlement failed (learning only)"
+          python -m src.prediction_ledger_v11 registry || echo "::warning::prediction ledger registry failed (learning only)"
+          python -m src.prediction_ledger_v11 validate
 
       # Measure N_EFF and ECE from settled outcomes, replacing the hardcoded 1000 / 0.02.
       # Runs BEFORE the residual test so that test uses the measured values. If there is not
@@ -200,6 +232,8 @@ jobs:
           # Corrections that sit BESIDE the originals (output/corrections/*: the append-only
           # p_market sidecar and the dated restatements). Data Truth round 5, 2026-11-02.
           git add -f output/corrections/ 2>/dev/null || echo "  (skip, not present: output/corrections/)"
+          # NOT the prediction ledger: output/prediction_ledger*/ is price-derived and private (git-ignored,
+          # pushed to wowza-exec by the step after this one; tests fail if it is ever tracked here).
           echo "staged: $(git diff --staged --name-only | wc -l) file(s)"
           git diff --staged --quiet || \
             git commit -m "auto: v11 collect+grade $(date -u '+%Y-%m-%d %H:%M UTC')"
@@ -232,3 +266,17 @@ jobs:
                     "research did not refresh. See output/v11_research_health.json")
               sys.exit(1)
           PY
+
+      # The prediction ledger goes to the PRIVATE store, after the public commit it can never affect. Fails
+      # the run when the ledger was switched on but the store was not opened or not pushed (a lost run).
+      - name: Push the prediction ledger to the private store
+        if: always() && vars.PREDICTION_LEDGER_ENABLED == 'true'
+        run: bash scripts/prediction_ledger_store.sh push
+
+      # After the commit, like the research check above: a ledger contract violation must colour the run,
+      # but never at the cost of the collected snapshots.
+      - name: Fail the run if the prediction ledger check failed
+        if: always() && steps.ledger.outcome == 'failure'
+        run: |
+          echo "::error title=Prediction ledger (Data truth 12)::validate/settle failed - see the 'Prediction ledger' step"
+          exit 1

@@ -7,3 +7,7 @@ __pycache__/
 output/_v9_*
 !output/research_state.json
 !output/v11_research_health.json
+# v11's prediction ledger is price-derived: it lives ONLY in the private store (wowza-exec branch
+# prediction-ledger-v11, scripts/prediction_ledger_store.sh). Never commit it here.
+output/prediction_ledger/
+output/prediction_ledger_settled/
