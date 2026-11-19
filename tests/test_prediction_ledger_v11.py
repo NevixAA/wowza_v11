@@ -29,9 +29,9 @@ from src import prediction_ledger_v11 as P11  # noqa: E402
 NOW = datetime(2026, 11, 21, 12, 0, tzinfo=timezone.utc)
 KO = "2026-11-21T15:00:00Z"                     # 180 min after NOW: first_sight only
 KO_SOON = "2026-11-21T13:30:00Z"                # 90 min after NOW: first_sight + final
-#: sha256 of src/prediction_ledger.py (LF) on wowza-betting main 2026-11-18 (deb22ba6c). Change it only by
+#: sha256 of src/prediction_ledger.py (LF) on wowza-betting main after #56 (corners / cards stat_outcome). Change it only by
 #: re-vendoring v9's file, never by editing the copy here.
-CORE_SHA256 = "f811a4dd9d1143cbd06cd26a3e2c573325cdf72347e57f713c739c4f5bb7bcbe"
+CORE_SHA256 = "7a6ecd8a2a975e38ad0bb7cd1d2d0f677648717b1b27208b980d20c070ff494f"
 
 
 def _sha(p: Path) -> str:

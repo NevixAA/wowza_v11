@@ -217,7 +217,7 @@
     "rule": "total_goals_over",
     "period": "ht"
    },
-   "description": "Half-time O/U (served for Standard leagues only; New-Format has no HT model)."
+   "description": "Half-time O/U (served for Standard leagues only; the New-Format HT entries are registered pending_model - see them)."
   },
   {
    "repo": "v9",
@@ -241,7 +241,51 @@
     "rule": "total_goals_over",
     "period": "ht"
    },
-   "description": "Half-time O/U (served for Standard leagues only; New-Format has no HT model)."
+   "description": "Half-time O/U (served for Standard leagues only; the New-Format HT entries are registered pending_model - see them)."
+  },
+  {
+   "repo": "v9",
+   "model_id": "v9_new_format",
+   "market": "ht_ou05",
+   "family": "team",
+   "status": "pending_model",
+   "track": "new_format",
+   "line": 0.5,
+   "selections": [
+    "OVER",
+    "UNDER"
+   ],
+   "prob_col": null,
+   "positive_selection": "OVER",
+   "version_col": null,
+   "model_file": null,
+   "settle": {
+    "rule": "total_goals_over",
+    "period": "ht"
+   },
+   "description": "Half-time O/U 0.5 for New-Format leagues (owner rule 2026-11-18: every model x market it can). Registered with NO rows: the 2026-11-18 refit fitted New-Format HT payloads (golive refit_1118b new_format/ht_over05.pkl) but src/predict.py scores HT on Standard rows only and the clean-switch override installs Standard HT only, so the board has no New-Format HT probability. Switching it on = an owner-approved install of the New-Format HT payload plus its serving path, then this entry's status -> 'active' with prob_col/version_col/model_file (never empty-filled rows)."
+  },
+  {
+   "repo": "v9",
+   "model_id": "v9_new_format",
+   "market": "ht_ou15",
+   "family": "team",
+   "status": "pending_model",
+   "track": "new_format",
+   "line": 1.5,
+   "selections": [
+    "OVER",
+    "UNDER"
+   ],
+   "prob_col": null,
+   "positive_selection": "OVER",
+   "version_col": null,
+   "model_file": null,
+   "settle": {
+    "rule": "total_goals_over",
+    "period": "ht"
+   },
+   "description": "Half-time O/U 1.5 for New-Format leagues (owner rule 2026-11-18: every model x market it can). Registered with NO rows: the 2026-11-18 refit fitted New-Format HT payloads (golive refit_1118b new_format/ht_over15.pkl) but src/predict.py scores HT on Standard rows only and the clean-switch override installs Standard HT only, so the board has no New-Format HT probability. Switching it on = an owner-approved install of the New-Format HT payload plus its serving path, then this entry's status -> 'active' with prob_col/version_col/model_file (never empty-filled rows)."
   },
   {
    "repo": "v9",
@@ -450,6 +494,136 @@
     "period": "90min"
    },
    "description": "Player cards >= 1. The props model's own probability (predict_proba of the serving payload) for EVERY scored player x fixture, before the team-strength multiplier, caps and the tip filters (MIN_SIGNAL_PROB, MIN_GAMES_SIGNAL, starter proxy, GK skip) that player_tips.csv applies."
+  },
+  {
+   "repo": "v9",
+   "model_id": "v9_props",
+   "market": "goals3",
+   "family": "props",
+   "status": "active",
+   "track": "props",
+   "line": 2.5,
+   "selections": [
+    "YES"
+   ],
+   "prob_col": "p_goals3",
+   "positive_selection": "YES",
+   "version_col": null,
+   "model_file": {
+    "*": "models/model_player_goals3.pkl"
+   },
+   "settle": {
+    "rule": "player_target",
+    "target_col": "target_goals3",
+    "stat": "goals",
+    "n": 3,
+    "period": "90min"
+   },
+   "description": "Player goals >= 3 (hat-trick; owner 2026-11-18: served for the rare-props research, the clean player base rate). The props model's own probability (predict_proba of the serving payload) for EVERY scored player x fixture, before the team-strength multiplier, caps and the tip filters (MIN_SIGNAL_PROB, MIN_GAMES_SIGNAL, starter proxy, GK skip) that player_tips.csv applies."
+  },
+  {
+   "repo": "v9",
+   "model_id": "v9_props_challenger",
+   "market": "goals2",
+   "family": "props",
+   "status": "active",
+   "track": "props",
+   "line": 1.5,
+   "selections": [
+    "YES"
+   ],
+   "prob_col": null,
+   "positive_selection": "YES",
+   "version_col": null,
+   "model_file": {
+    "*": "models/registry/props/goals2/challenger.pkl.gz"
+   },
+   "settle": {
+    "rule": "player_target",
+    "target_col": "target_goals2",
+    "stat": "goals",
+    "n": 2,
+    "period": "90min"
+   },
+   "description": "Player goals >= 2. The PARKED CHALLENGER's own probability (props_gate challenger slot: the clean ML candidate of the props clean retrain, beside the served player base rate; owner 2026-11-18) for EVERY player x fixture the serving model scores, so it can replace the base rate once it wins under the clean-retrain rule. Learning only: never a tip."
+  },
+  {
+   "repo": "v9",
+   "model_id": "v9_props_challenger",
+   "market": "goals3",
+   "family": "props",
+   "status": "active",
+   "track": "props",
+   "line": 2.5,
+   "selections": [
+    "YES"
+   ],
+   "prob_col": null,
+   "positive_selection": "YES",
+   "version_col": null,
+   "model_file": {
+    "*": "models/registry/props/goals3/challenger.pkl.gz"
+   },
+   "settle": {
+    "rule": "player_target",
+    "target_col": "target_goals3",
+    "stat": "goals",
+    "n": 3,
+    "period": "90min"
+   },
+   "description": "Player goals >= 3. The PARKED CHALLENGER's own probability (props_gate challenger slot: the clean ML candidate of the props clean retrain, beside the served player base rate; owner 2026-11-18) for EVERY player x fixture the serving model scores, so it can replace the base rate once it wins under the clean-retrain rule. Learning only: never a tip."
+  },
+  {
+   "repo": "v9",
+   "model_id": "v9_props_challenger",
+   "market": "sot3",
+   "family": "props",
+   "status": "active",
+   "track": "props",
+   "line": 2.5,
+   "selections": [
+    "YES"
+   ],
+   "prob_col": null,
+   "positive_selection": "YES",
+   "version_col": null,
+   "model_file": {
+    "*": "models/registry/props/sot3/challenger.pkl.gz"
+   },
+   "settle": {
+    "rule": "player_target",
+    "target_col": "target_sot3",
+    "stat": "shots_on_target",
+    "n": 3,
+    "period": "90min"
+   },
+   "description": "Player shots_on_target >= 3. The PARKED CHALLENGER's own probability (props_gate challenger slot: the clean ML candidate of the props clean retrain, beside the served player base rate; owner 2026-11-18) for EVERY player x fixture the serving model scores, so it can replace the base rate once it wins under the clean-retrain rule. Learning only: never a tip."
+  },
+  {
+   "repo": "v9",
+   "model_id": "v9_props_challenger",
+   "market": "sot4",
+   "family": "props",
+   "status": "active",
+   "track": "props",
+   "line": 3.5,
+   "selections": [
+    "YES"
+   ],
+   "prob_col": null,
+   "positive_selection": "YES",
+   "version_col": null,
+   "model_file": {
+    "*": "models/registry/props/sot4/challenger.pkl.gz"
+   },
+   "settle": {
+    "rule": "player_target",
+    "target_col": "target_sot4",
+    "stat": "shots_on_target",
+    "n": 4,
+    "period": "90min"
+   },
+   "description": "Player shots_on_target >= 4. The PARKED CHALLENGER's own probability (props_gate challenger slot: the clean ML candidate of the props clean retrain, beside the served player base rate; owner 2026-11-18) for EVERY player x fixture the serving model scores, so it can replace the base rate once it wins under the clean-retrain rule. Learning only: never a tip."
   },
   {
    "repo": "pro",
@@ -717,10 +891,15 @@
    "model_id": "v9_corners",
    "market": "corners_total",
    "family": "corners",
-   "status": "pending_model",
-   "track": null,
+   "status": "active",
+   "track": "standard",
    "line": null,
-   "lines": "per row (the model's O/U line)",
+   "lines": [
+    8.5,
+    9.5,
+    10.5,
+    11.5
+   ],
    "selections": [
     "OVER",
     "UNDER"
@@ -728,47 +907,65 @@
    "prob_col": null,
    "positive_selection": "OVER",
    "version_col": null,
-   "model_file": null,
+   "model_file": {
+    "*": "models/side_models/side_models.json"
+   },
    "settle": {
     "rule": "total_stat_over",
     "stat": "corners",
-    "period": "90min"
+    "period": "90min",
+    "source": "verified statistics (src/side_models/ledger.py settle -> src/prediction_ledger.stat_outcome)"
    },
-   "description": "total corners O/U - research only (research/side-models). Pre-registered: NO rows until the model is verified; switching it on is this entry's status -> 'active' plus prob_col/model_file, not a code change."
+   "description": "total corners O/U. Per-league negative-binomial count model on as-of team for/against means of VERIFIED matches (src/side_models/). Lines [8.5, 9.5, 10.5, 11.5]. Every upcoming fixture of a tracked league whose history is verified - two sources agree (Standard), or API-Football as the single certified source passing the sanity rules (New-Format; owner 2026-11-18) - the basis is in each row's payload_version (coverage + reasons: models/side_models/side_models.json); a fixture the model cannot score is stored unscored with its reason. Count: API-Football /fixtures/statistics 'Corner Kicks' per team (90 minutes), verified per fixture against football-data HC/AC where football-data has them, else single-source sanity. Learning only - no price, no tip, no stake.",
+   "writer": "src/side_models/ledger.py (python -m src.side_models.ledger board; repo variable SIDE_MODELS_LEDGER_ENABLED)"
   },
   {
    "repo": "v9",
    "model_id": "v9_corners",
    "market": "corners_team",
    "family": "corners",
-   "status": "pending_model",
-   "track": null,
+   "status": "active",
+   "track": "standard",
    "line": null,
-   "lines": "per row (the model's O/U line)",
+   "lines": [
+    3.5,
+    4.5,
+    5.5
+   ],
    "selections": [
-    "OVER",
-    "UNDER"
+    "HOME_OVER",
+    "HOME_UNDER",
+    "AWAY_OVER",
+    "AWAY_UNDER"
    ],
    "prob_col": null,
-   "positive_selection": "OVER",
+   "positive_selection": null,
    "version_col": null,
-   "model_file": null,
-   "settle": {
-    "rule": "total_stat_over",
-    "stat": "corners",
-    "period": "90min"
+   "model_file": {
+    "*": "models/side_models/side_models.json"
    },
-   "description": "team corners O/U (HOME/AWAY) - research only (research/side-models). Pre-registered: NO rows until the model is verified; switching it on is this entry's status -> 'active' plus prob_col/model_file, not a code change."
+   "settle": {
+    "rule": "team_stat_over",
+    "stat": "corners",
+    "period": "90min",
+    "source": "verified statistics (src/side_models/ledger.py settle -> src/prediction_ledger.stat_outcome)"
+   },
+   "description": "team corners O/U per side (selection HOME_OVER/HOME_UNDER/AWAY_OVER/AWAY_UNDER; `team` names the side). Per-league negative-binomial count model on as-of team for/against means of VERIFIED matches (src/side_models/). Lines [3.5, 4.5, 5.5]. Every upcoming fixture of a tracked league whose history is verified - two sources agree (Standard), or API-Football as the single certified source passing the sanity rules (New-Format; owner 2026-11-18) - the basis is in each row's payload_version (coverage + reasons: models/side_models/side_models.json); a fixture the model cannot score is stored unscored with its reason. Count: API-Football /fixtures/statistics 'Corner Kicks' per team (90 minutes), verified per fixture against football-data HC/AC where football-data has them, else single-source sanity. Learning only - no price, no tip, no stake.",
+   "writer": "src/side_models/ledger.py (python -m src.side_models.ledger board; repo variable SIDE_MODELS_LEDGER_ENABLED)"
   },
   {
    "repo": "v9",
    "model_id": "v9_cards",
    "market": "cards_total",
    "family": "cards",
-   "status": "pending_model",
-   "track": null,
+   "status": "active",
+   "track": "standard",
    "line": null,
-   "lines": "per row (the model's O/U line)",
+   "lines": [
+    3.5,
+    4.5,
+    5.5
+   ],
    "selections": [
     "OVER",
     "UNDER"
@@ -776,37 +973,50 @@
    "prob_col": null,
    "positive_selection": "OVER",
    "version_col": null,
-   "model_file": null,
+   "model_file": {
+    "*": "models/side_models/side_models.json"
+   },
    "settle": {
     "rule": "total_stat_over",
     "stat": "cards",
-    "period": "90min"
+    "period": "90min",
+    "source": "verified statistics (src/side_models/ledger.py settle -> src/prediction_ledger.stat_outcome)"
    },
-   "description": "total cards/bookings O/U - research only (research/side-models). Pre-registered: NO rows until the model is verified; switching it on is this entry's status -> 'active' plus prob_col/model_file, not a code change."
+   "description": "total cards O/U (card count, not booking points). Per-league negative-binomial count model on as-of team for/against means of VERIFIED matches (src/side_models/). Lines [3.5, 4.5, 5.5]. Every upcoming fixture of a tracked league whose history is verified - two sources agree (Standard), or API-Football as the single certified source passing the sanity rules (New-Format; owner 2026-11-18) - the basis is in each row's payload_version (coverage + reasons: models/side_models/side_models.json); a fixture the model cannot score is stored unscored with its reason. Count: API-Football /fixtures/statistics 'Yellow Cards' + 'Red Cards' per team (a card count, not booking points; a second-yellow dismissal is counted the provider's way - owner cards rule 2026-11-18, closes G9), verified per fixture against football-data HY/AY/HR/AR where football-data has them, else single-source sanity (src/side_models/data.py). Learning only - no price, no tip, no stake.",
+   "writer": "src/side_models/ledger.py (python -m src.side_models.ledger board; repo variable SIDE_MODELS_LEDGER_ENABLED)"
   },
   {
    "repo": "v9",
    "model_id": "v9_cards",
    "market": "cards_team",
    "family": "cards",
-   "status": "pending_model",
-   "track": null,
+   "status": "active",
+   "track": "standard",
    "line": null,
-   "lines": "per row (the model's O/U line)",
+   "lines": [
+    1.5,
+    2.5
+   ],
    "selections": [
-    "OVER",
-    "UNDER"
+    "HOME_OVER",
+    "HOME_UNDER",
+    "AWAY_OVER",
+    "AWAY_UNDER"
    ],
    "prob_col": null,
-   "positive_selection": "OVER",
+   "positive_selection": null,
    "version_col": null,
-   "model_file": null,
-   "settle": {
-    "rule": "total_stat_over",
-    "stat": "cards",
-    "period": "90min"
+   "model_file": {
+    "*": "models/side_models/side_models.json"
    },
-   "description": "team cards O/U (HOME/AWAY) - research only (research/side-models). Pre-registered: NO rows until the model is verified; switching it on is this entry's status -> 'active' plus prob_col/model_file, not a code change."
+   "settle": {
+    "rule": "team_stat_over",
+    "stat": "cards",
+    "period": "90min",
+    "source": "verified statistics (src/side_models/ledger.py settle -> src/prediction_ledger.stat_outcome)"
+   },
+   "description": "team cards O/U per side (selection HOME_OVER/HOME_UNDER/AWAY_OVER/AWAY_UNDER; `team` names the side). Per-league negative-binomial count model on as-of team for/against means of VERIFIED matches (src/side_models/). Lines [1.5, 2.5]. Every upcoming fixture of a tracked league whose history is verified - two sources agree (Standard), or API-Football as the single certified source passing the sanity rules (New-Format; owner 2026-11-18) - the basis is in each row's payload_version (coverage + reasons: models/side_models/side_models.json); a fixture the model cannot score is stored unscored with its reason. Count: API-Football /fixtures/statistics 'Yellow Cards' + 'Red Cards' per team (a card count, not booking points; a second-yellow dismissal is counted the provider's way - owner cards rule 2026-11-18, closes G9), verified per fixture against football-data HY/AY/HR/AR where football-data has them, else single-source sanity (src/side_models/data.py). Learning only - no price, no tip, no stake.",
+   "writer": "src/side_models/ledger.py (python -m src.side_models.ledger board; repo variable SIDE_MODELS_LEDGER_ENABLED)"
   }
  ]
 }

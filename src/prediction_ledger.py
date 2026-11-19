@@ -563,11 +563,44 @@ def rps(probs: list, outcome_index: int) -> float:
     return tot / (len(probs) - 1)
 
 
-def match_outcome(settle: dict, selection: str, line, hg, ag, hth=None, hta=None):
+def _missing(v) -> bool:
+    return v is None or (isinstance(v, float) and math.isnan(v))
+
+
+def stat_outcome(settle: dict, selection: str, line, hs, as_):
+    """(y, outcome_value) of a corners / cards selection from the match STATISTIC (home count hs, away
+    count as_), or (None, reason) when a count is missing - never inferred from the score.
+        total_stat_over   OVER / UNDER on hs + as_ vs line
+        team_stat_over    HOME_OVER / HOME_UNDER / AWAY_OVER / AWAY_UNDER on that side's count vs line"""
+    rule, stat = settle.get("rule"), settle.get("stat", "stat")
+    if _missing(hs) or _missing(as_):
+        return None, f"no {stat} statistics"
+    if line is None or str(line).strip() == "":
+        return None, "no line"
+    h, a, ln, sel = int(hs), int(as_), float(line), str(selection)
+    if rule == "total_stat_over":
+        if sel not in ("OVER", "UNDER"):
+            return None, f"selection {sel!r} is not OVER/UNDER"
+        over = h + a > ln
+        return int(over if sel == "OVER" else not over), f"{stat} {h}-{a}"
+    if rule == "team_stat_over":
+        side, _, ou = sel.partition("_")
+        if side not in ("HOME", "AWAY") or ou not in ("OVER", "UNDER"):
+            return None, f"selection {sel!r} is not HOME_/AWAY_ OVER/UNDER"
+        over = (h if side == "HOME" else a) > ln
+        return int(over if ou == "OVER" else not over), f"{stat} {h}-{a}"
+    return None, f"rule {rule!r} is not a statistic rule"
+
+
+def match_outcome(settle: dict, selection: str, line, hg, ag, hth=None, hta=None, hs=None, as_=None):
     """(y, outcome_value) of a TEAM / specials selection from the score, or (None, reason) when the
     score the rule needs is missing (HT rules need the HT score; never inferred from FT).
-    90-minute settlement (owner decision): hg/ag are the regular-time goals."""
+    90-minute settlement (owner decision): hg/ag are the regular-time goals.
+    Corners / cards rules (total_stat_over, team_stat_over) settle from the match statistic hs / as_
+    (stat_outcome), never from the score."""
     rule, period = settle.get("rule"), settle.get("period", "ft")
+    if rule in ("total_stat_over", "team_stat_over"):
+        return stat_outcome(settle, selection, line, hs, as_)
     h, a = (hth, hta) if period == "ht" else (hg, ag)
     if h is None or a is None or (isinstance(h, float) and math.isnan(h)) or             (isinstance(a, float) and math.isnan(a)):
         return None, f"no {period.upper()} score"
