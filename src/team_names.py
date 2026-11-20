@@ -334,6 +334,18 @@ _ALIASES = {
     # carries 'Cottbus' in the club's slot (7/7, 0 contradicting; 2 later fixtures not played yet).
     # The audited identity map (config/standard_ou25_identity_aliases.json) names the same club.
     "fc energie cottbus": "cottbus",
+    # 2026-11-19 (Pro fixture_key v2, P1): the API-Football spelling of the same club, without the
+    # 'FC'. FIXTURE-LEVEL proof: of the 12 board/ledger/Pro fixtures spelled 'Energie Cottbus'
+    # (Bundesliga 2, 2026-08-09..11-22), every one whose strictly resolved opponent has a history
+    # row on the date (+-1, identity map applied) sits on 'Cottbus' in the club's slot (5/5, 0
+    # contradicting). config/af_history_proven_aliases.json (provider 'Energie Cottbus' -> 'Cottbus',
+    # 10 dates, forced opponent + score) and the applied identity map name the same club.
+    "energie cottbus": "cottbus",
+    # 2026-11-19: the OddsAPI board spelling of Stockport (the fix12 regression below now resolves
+    # without the map too). FIXTURE-LEVEL proof: 15 of the 16 board/ledger/Pro fixtures of
+    # 'Stockport County FC' (League One, 2026-08-15..11-21) sit on a 'Stockport' history row (date
+    # +-1, strictly resolved opponent, identity map applied), 0 contradicting; the 16th is not played.
+    "stockport county fc": "stockport",
     # fix12: Celta's reserve side (La Liga 2 2026/27), which football-data spells 'Celta B'. Same
     # fixture-level proof: 6/6 committed board/ledger fixtures of 'Celta Fortuna' already played sit
     # on a 'Celta B' history row (date +-1, strictly resolved opponent), 0 contradicting. The first
