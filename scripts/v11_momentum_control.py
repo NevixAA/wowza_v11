@@ -64,6 +64,7 @@ if str(PROJ) not in sys.path:
 
 import config  # noqa: E402
 from src import movement as mv  # noqa: E402
+from src.book_consensus import RESTATED_REL, one_estimator_p_market  # noqa: E402
 
 CALC_VERSION = "1.0.0"
 
@@ -114,6 +115,13 @@ def _load() -> pd.DataFrame:
         d = d[~d["is_post_kickoff"].astype(str).str.lower().isin(("true", "1"))]
     if "minutes_to_kickoff" in d.columns:
         d = d[pd.to_numeric(d["minutes_to_kickoff"], errors="coerce") > 0]
+
+    # ONE ESTIMATOR (Data Truth round 2, 2026-11-02). p_market used to switch between an
+    # ungated exchange median, a cross-book median and one book's de-vig across snapshots of the
+    # same fixture, so a "move" could be an estimator change. Rows now carry the one estimator,
+    # either as written by the shadow or from the restated sidecar; rows with neither are dropped.
+    rp = config.OUTPUT_DIR / RESTATED_REL
+    d = one_estimator_p_market(d, pd.read_csv(rp) if rp.exists() else None)
 
     # Only rows where both sides of the comparison exist. A residual needs a model probability
     # AND a market probability; either missing makes the row uninterpretable, not zero.
@@ -269,8 +277,12 @@ def build(prior_window: int = 60, future_window: int = 60) -> pd.DataFrame:
     # DIRECTION STREAK: how many of the recent windows agree in sign. A market drifting one way
     # for three hours is a different state from one that jittered to the same place, and pooling
     # them is how momentum gets under-controlled.
-    signs = np.sign(d[["move_30m", "move_1h", "move_3h"]].fillna(0.0))
-    d["direction_streak"] = signs.sum(axis=1)
+    # Only OBSERVED windows count. An unobserved prior move used to be filled with 0 (a flat
+    # market), which inflated the 'no direction' state; now it is skipped, the number of windows
+    # actually seen is carried, and a row with none observed stays NaN.
+    signs = np.sign(d[["move_30m", "move_1h", "move_3h"]])
+    d["direction_streak"] = signs.sum(axis=1, min_count=1)
+    d["direction_streak_n_obs"] = signs.notna().sum(axis=1)
 
     # Dispersion CHANGE, not level: books converging and books scattering are opposite states
     # even at identical dispersion.
@@ -453,10 +465,12 @@ def placebo_table(d: pd.DataFrame, *, n_boot: int = 400, seed: int = 5) -> pd.Da
         "PLACEBO_momentum_continuation": sub["prev_move_pp"],
         "PLACEBO_random_direction": pd.Series(rng.normal(size=len(sub)), index=sub.index),
         "CONTROL_market_only": -sub["v11_p_market"] * 100.0,
-        "CONTROL_dispersion": sub["dispersion"].fillna(0.0),
+        # Missing dispersion / 3h velocity stay NaN: the dropna below scores these variants on
+        # OBSERVED rows only and n_obs says how many (they were 0-filled and scored as data).
+        "CONTROL_dispersion": sub["dispersion"],
     }
     if "velocity_3h" in sub.columns:
-        variants["PLACEBO_long_momentum"] = sub["velocity_3h"].fillna(0.0)
+        variants["PLACEBO_long_momentum"] = sub["velocity_3h"]
 
     rows = []
     for name, pred in variants.items():

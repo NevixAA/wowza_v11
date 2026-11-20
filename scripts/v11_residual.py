@@ -28,8 +28,8 @@ sys.path.insert(0, str(PROJ))
 sys.path.insert(0, str(PROJ / "scripts"))
 import config
 from src.edge_engine import power_devig, proportional_devig, blend
-from v11_shadow import _blend_weight, MOAT_W_CAP, DEFAULT_W_CAP, N_EFF, _load_v9
-from v11_grade import _result_lookup, _norm
+from v11_shadow import _blend_weight, MOAT_W_CAP, _EVIDENCE
+from src import league_registry as LR
 
 # PROVENANCE + ATOMIC WRITE for derived research artifacts.
 #
@@ -169,44 +169,29 @@ def run():
     #
     # Reading the graded file instead gives one grading path for the whole repo. `v11_grade.py`
     # runs immediately before this step in the workflow, so the file is current by construction.
+    #
+    # JOINED ON fixture_id (Data Truth 2026-11-01). It used to be re-joined by lowercased raw club
+    # names + date with no league, plus a second name-matched pass over v9's tip ledger. The graded
+    # file already carries the ledger fallback (league-scoped, canonical resolver), so that second
+    # pass is gone: one grading path, one join key.
     lookup: dict = {}
     graded_f = config.OUTPUT_DIR / "v11_graded.csv"
-    n_from_graded = 0
     if graded_f.exists():
         g = pd.read_csv(graded_f)
-        if {"match", "date", "over25_result"} <= set(g.columns):
+        if {"fixture_id", "over25_result"} <= set(g.columns):
             for _, gr in g.iterrows():
-                if pd.isna(gr.get("over25_result")):
+                val = _as_bool(gr.get("over25_result"))
+                if val is None or pd.isna(gr.get("fixture_id")):
                     continue
-                mm = str(gr.get("match", ""))
-                if " vs " not in mm:
-                    continue
-                hh, aa = mm.split(" vs ", 1)
-                val = _as_bool(gr["over25_result"])
-                if val is None:
-                    continue
-                lookup[(_norm(hh), _norm(aa), str(gr.get("date", ""))[:10])] = val
-                n_from_graded += 1
-    # Ledger kept ONLY as a fallback for fixtures the graded file has no row for — never as the
-    # primary source. Its entries do not overwrite a real graded result.
-    n_from_ledger = 0
-    try:
-        for k, v in _result_lookup(_load_v9("bets_ledger.csv")).items():
-            if k not in lookup:
-                lookup[k] = v
-                n_from_ledger += 1
-    except Exception:
-        pass
-    print(f"[residual] results: {n_from_graded} from v11_graded.csv, "
-          f"{n_from_ledger} extra from the v9 tip ledger (fallback only)")
+                lookup[str(gr["fixture_id"])] = val
+        else:
+            print("[residual] v11_graded.csv has no fixture_id column; re-run v11_grade.py")
+    print(f"[residual] results: {len(lookup)} graded fixture(s) from v11_graded.csv")
 
     rows = []
+    skipped: dict[str, int] = {}
     for _, r in log.iterrows():
-        m = str(r.get("match", ""))
-        if " vs " not in m:
-            continue
-        h, a = m.split(" vs ", 1)
-        over = lookup.get((_norm(h), _norm(a), str(r.get("date", ""))[:10]))
+        over = lookup.get(str(r.get("fixture_id")))
         if over is None:                      # no result yet
             continue
         try:
@@ -219,13 +204,24 @@ def run():
         p_mkt = power_devig(oo, ou) or proportional_devig(oo, ou)
         if p_mkt is None:
             continue
-        w = _blend_weight(oo, N_EFF, "over25",
-                          MOAT_W_CAP.get(str(r.get("model_type", "")), DEFAULT_W_CAP))
+        # Model type from the registry and n_eff from the MEASURED evidence for this segment, as
+        # the shadow uses. These were a 0.30 default cap and a flat N_EFF of 100 for every fixture.
+        mt = LR.model_type(r.get("league"))
+        if mt not in MOAT_W_CAP:
+            skipped["model type unknown"] = skipped.get("model type unknown", 0) + 1
+            continue
+        ev = _EVIDENCE.lookup(mt, LR.canonical_league(r.get("league")))
+        if ev is None:
+            skipped["no measured evidence"] = skipped.get("no measured evidence", 0) + 1
+            continue
+        w = _blend_weight(oo, ev.n_eff, "over25", MOAT_W_CAP[mt])
         p_bl = blend(p_model, p_mkt, w)
-        rows.append({"league": r.get("league"), "model_type": r.get("model_type"),
+        rows.append({"league": r.get("league"), "model_type": mt,
                      "y": 1.0 if over else 0.0, "p_market": p_mkt, "p_blend": p_bl,
                      "residual": round(p_model - p_mkt, 4)})
 
+    for why, n in sorted(skipped.items()):
+        print(f"[residual] SKIPPED {n} graded fixture(s): {why}")
     d = pd.DataFrame(rows)
     out = []
 
