@@ -217,7 +217,7 @@
     "rule": "total_goals_over",
     "period": "ht"
    },
-   "description": "Half-time O/U (served for Standard leagues only; the New-Format HT entries are registered pending_model - see them)."
+   "description": "Half-time O/U for Standard leagues (the Standard HT model; New-Format fixtures are scored by their own New-Format HT model - see the v9_new_format entry)."
   },
   {
    "repo": "v9",
@@ -241,51 +241,55 @@
     "rule": "total_goals_over",
     "period": "ht"
    },
-   "description": "Half-time O/U (served for Standard leagues only; the New-Format HT entries are registered pending_model - see them)."
+   "description": "Half-time O/U for Standard leagues (the Standard HT model; New-Format fixtures are scored by their own New-Format HT model - see the v9_new_format entry)."
   },
   {
    "repo": "v9",
    "model_id": "v9_new_format",
    "market": "ht_ou05",
    "family": "team",
-   "status": "pending_model",
+   "status": "active",
    "track": "new_format",
    "line": 0.5,
    "selections": [
     "OVER",
     "UNDER"
    ],
-   "prob_col": null,
+   "prob_col": "p_ht_over05",
    "positive_selection": "OVER",
-   "version_col": null,
-   "model_file": null,
+   "version_col": "model_version_ht_over05",
+   "model_file": {
+    "*": "models/model_v9_ht_over05_nf.pkl"
+   },
    "settle": {
     "rule": "total_goals_over",
     "period": "ht"
    },
-   "description": "Half-time O/U 0.5 for New-Format leagues (owner rule 2026-11-18: every model x market it can). Registered with NO rows: the 2026-11-18 refit fitted New-Format HT payloads (golive refit_1118b new_format/ht_over05.pkl) but src/predict.py scores HT on Standard rows only and the clean-switch override installs Standard HT only, so the board has no New-Format HT probability. Switching it on = an owner-approved install of the New-Format HT payload plus its serving path, then this entry's status -> 'active' with prob_col/version_col/model_file (never empty-filled rows)."
+   "description": "Half-time O/U 0.5 for New-Format leagues: the New-Format HT model fitted by the 2026-11-18 refit (model type ht_over05_nf), connected to live predictions by the owner on 2026-11-20 (\"only this and that's it\"). src/predict.py scores New-Format rows with it; the board's p_ht_over05 / model_version_ht_over05 on a New-Format row are this model's. Prediction ledger only: no New-Format HT bar is approved, so no tip, Telegram message, TOP-3 candidate or stake comes from it."
   },
   {
    "repo": "v9",
    "model_id": "v9_new_format",
    "market": "ht_ou15",
    "family": "team",
-   "status": "pending_model",
+   "status": "active",
    "track": "new_format",
    "line": 1.5,
    "selections": [
     "OVER",
     "UNDER"
    ],
-   "prob_col": null,
+   "prob_col": "p_ht_over15",
    "positive_selection": "OVER",
-   "version_col": null,
-   "model_file": null,
+   "version_col": "model_version_ht_over15",
+   "model_file": {
+    "*": "models/model_v9_ht_over15_nf.pkl"
+   },
    "settle": {
     "rule": "total_goals_over",
     "period": "ht"
    },
-   "description": "Half-time O/U 1.5 for New-Format leagues (owner rule 2026-11-18: every model x market it can). Registered with NO rows: the 2026-11-18 refit fitted New-Format HT payloads (golive refit_1118b new_format/ht_over15.pkl) but src/predict.py scores HT on Standard rows only and the clean-switch override installs Standard HT only, so the board has no New-Format HT probability. Switching it on = an owner-approved install of the New-Format HT payload plus its serving path, then this entry's status -> 'active' with prob_col/version_col/model_file (never empty-filled rows)."
+   "description": "Half-time O/U 1.5 for New-Format leagues: the New-Format HT model fitted by the 2026-11-18 refit (model type ht_over15_nf), connected to live predictions by the owner on 2026-11-20 (\"only this and that's it\"). src/predict.py scores New-Format rows with it; the board's p_ht_over15 / model_version_ht_over15 on a New-Format row are this model's. Prediction ledger only: no New-Format HT bar is approved, so no tip, Telegram message, TOP-3 candidate or stake comes from it."
   },
   {
    "repo": "v9",
