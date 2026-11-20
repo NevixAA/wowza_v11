@@ -17,16 +17,19 @@ being wrong about them is not neutral:
     0.02 understates uncertainty for a badly-calibrated segment, so EV_lb comes out too high
     and a bet clears a floor it should not.
 
-Both are now derived from settled outcomes, with a documented conservative fallback when a
-segment has too little history to say anything. The hierarchy is section 11's:
+Both are now derived from settled outcomes. The hierarchy is section 11's, every level MEASURED:
 
-    model+market+league  ->  model+market  ->  model  ->  global fallback
+    model+league  ->  model  ->  global (all settled fixtures)
 
-and shrinkage is applied by sample size rather than a hard minimum, so there is no cliff.
-
-Deliberately conservative in both directions: when evidence is thin, N_EFF goes DOWN (less
-model weight) and ECE goes UP (wider uncertainty). Being unsure should cost the model
+and shrinkage is applied by sample size rather than a hard minimum, so there is no cliff. A thin
+segment's ECE is never allowed below the global one: being unsure should cost the model
 confidence, not grant it.
+
+NO INVENTED EVIDENCE (Data Truth 2026-11-01). There used to be a third tier below "global": a
+typed FALLBACK_N_EFF = 100 / FALLBACK_ECE = 0.08 used whenever nothing had been measured (no
+evidence file, an unreadable one, or an empty fit). Those numbers were assumptions dressed as
+evidence. Now `lookup` returns None when nothing was measured, and the shadow records the fixture
+as NO_BET with reason MISSING_EVIDENCE.
 """
 from __future__ import annotations
 
@@ -37,10 +40,7 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 
-# With no evidence at all, assume very little and be pessimistic about calibration. 1000/0.02
-# was optimistic on both counts.
-FALLBACK_N_EFF = 100
-FALLBACK_ECE = 0.08
+from .edge_engine import MISSING_EVIDENCE  # noqa: F401  (re-exported for callers)
 
 # Pseudo-count for shrinking a segment's measured ECE toward the global one.
 TAU = 200.0
@@ -75,7 +75,7 @@ class Evidence:
     ece: float
     brier: float | None = None
     logloss: float | None = None
-    source: str = "measured"      # measured | shrunk | fallback
+    source: str = "measured"      # measured | shrunk
 
     def as_row(self) -> dict:
         return asdict(self)
@@ -85,9 +85,9 @@ class EvidenceStore:
     """Measured evidence per segment, with a lookup that degrades gracefully."""
 
     def __init__(self) -> None:
-        self.global_ev: Evidence = Evidence("global", 0, FALLBACK_N_EFF, FALLBACK_ECE,
-                                            source="fallback")
+        self.global_ev: Evidence | None = None        # None until measured; never a typed prior
         self.segments: dict[str, Evidence] = {}
+        self.load_error: str | None = None
 
     # ── fitting ──────────────────────────────────────────────────────────────
     def fit(self, df: pd.DataFrame, *, y_col: str, p_col: str,
@@ -130,8 +130,9 @@ class EvidenceStore:
 
     # ── lookup ───────────────────────────────────────────────────────────────
     def lookup(self, model_type: str | None = None,
-               league: str | None = None) -> Evidence:
-        """Most specific available, per section 11's hierarchy. Never raises."""
+               league: str | None = None) -> Evidence | None:
+        """Most specific MEASURED evidence, per section 11's hierarchy; None when nothing was
+        measured (the caller must not decide without it). Never raises."""
         if model_type and league:
             hit = self.segments.get(f"{model_type}|{league}")
             if hit:
@@ -147,9 +148,8 @@ class EvidenceStore:
         p = Path(path)
         p.parent.mkdir(parents=True, exist_ok=True)
         p.write_text(json.dumps({
-            "global": asdict(self.global_ev),
-            "fallback": {"n_eff": FALLBACK_N_EFF, "ece": FALLBACK_ECE, "tau": TAU,
-                         "min_rows_for_segment": MIN_ROWS_FOR_SEGMENT},
+            "global": asdict(self.global_ev) if self.global_ev is not None else None,
+            "settings": {"tau": TAU, "min_rows_for_segment": MIN_ROWS_FOR_SEGMENT},
             "segments": {k: asdict(v) for k, v in self.segments.items()},
         }, indent=2, sort_keys=True), encoding="utf-8")
 
@@ -158,14 +158,20 @@ class EvidenceStore:
         s = cls()
         try:
             d = json.loads(Path(path).read_text(encoding="utf-8"))
-        except Exception:
-            return s                       # no evidence file yet -> conservative fallback
-        if d.get("global"):
+        except Exception as e:             # noqa: BLE001
+            # No evidence file yet, or unreadable: the store stays EMPTY (lookup -> None), and
+            # the reason is kept so the caller can log it.
+            s.load_error = f"{type(e).__name__}: {e}"
+            return s
+        if d.get("global") and d["global"].get("source") != "fallback":
             s.global_ev = Evidence(**d["global"])
         for k, v in (d.get("segments") or {}).items():
             s.segments[k] = Evidence(**v)
         return s
 
     def table(self) -> pd.DataFrame:
-        rows = [self.global_ev.as_row()] + [v.as_row() for v in self.segments.values()]
+        rows = ([self.global_ev.as_row()] if self.global_ev is not None else []) \
+            + [v.as_row() for v in self.segments.values()]
+        if not rows:
+            return pd.DataFrame(columns=["scope", "n", "n_eff", "ece", "brier", "logloss", "source"])
         return pd.DataFrame(rows).sort_values("n", ascending=False).reset_index(drop=True)

@@ -87,6 +87,8 @@ CALC_VERSION = "1.0.0"
 # Below this the price is treated as UNMOVED rather than as a tiny signal. A flat market is an
 # absence of evidence, not evidence against the model, and must not be counted as a miss.
 MIN_MOVE_PP = 0.2
+#: v9 src/book_quotes.CLOSING_WINDOW_MIN: a quote inside this window may be called a close.
+NEAR_CLOSE_MIN = 30
 
 # Residual buckets in percentage points (brief section 6).
 RESIDUAL_BANDS = [(-1e9, -10, "< -10"), (-10, -6, "-10:-6"), (-6, -4, "-6:-4"),
@@ -249,6 +251,12 @@ def compute(entry: pd.DataFrame, close: pd.DataFrame) -> pd.DataFrame:
     d["abs_residual_band"] = d["abs_residual_pp"].map(lambda v: band_of(v, ABS_BANDS))
     d["time_band"] = d["minutes_to_kickoff"].map(lambda v: band_of(v, TIME_BANDS))
 
+    # Honest label for the "close" (see Summary.close_definition): NEAR_CLOSE only inside v9's
+    # 30-minute closing window, otherwise it is just the last snapshot this collector saw.
+    ctk = pd.to_numeric(d["close_minutes_to_kickoff"], errors="coerce")
+    d["close_kind"] = np.where(ctk <= NEAR_CLOSE_MIN, "NEAR_CLOSE",
+                               np.where(ctk > NEAR_CLOSE_MIN, "LAST_PRE_KICKOFF_SNAPSHOT", None))
+
     q = d.apply(quality_flags, axis=1)
     d["clv_quality"] = [f for f, _ in q]
     d["quality_not_assessed"] = ["|".join(n) for _, n in q]
@@ -341,6 +349,14 @@ class Summary:
     mean_entry_odds: float
     mean_close_odds: float
     sample_status: str
+    # WHAT "CLOSE" MEANS HERE (Data Truth round 2, 2026-11-02). It is the LAST PRE-KICKOFF
+    # SNAPSHOT this collector took, not a closing line: v11 samples v9's committed predictions
+    # hourly 08-23 UTC, so on 2,021 fixtures (2026-11-01) the median "close" was 119.5 min before
+    # kickoff and only 19.1% fell inside v9's 30-minute closing window (book_quotes
+    # CLOSING_WINDOW_MIN). Every summary row now states its definition and how far out it was.
+    close_definition: str = "last_pre_kickoff_snapshot"
+    median_close_min_to_kickoff: float = float("nan")
+    share_close_within_30m: float = float("nan")
 
 
 def _norm_sf(z: float) -> float:
@@ -440,7 +456,20 @@ def summarise(d: pd.DataFrame, segment: str, unit: str) -> Summary:
         mean_entry_odds=round(_f(moved["entry_odds"].mean()), 4) if n else float("nan"),
         mean_close_odds=round(_f(moved["close_odds"].mean()), 4) if n else float("nan"),
         sample_status=sample_status(n_fix),
+        **_close_stats(d),
     )
+
+
+def _close_stats(d: pd.DataFrame) -> dict:
+    """How far before kickoff the 'close' actually was, one value per fixture."""
+    if "close_minutes_to_kickoff" not in d.columns or d.empty:
+        return {}
+    c = pd.to_numeric(d.drop_duplicates("fixture_id")["close_minutes_to_kickoff"],
+                      errors="coerce").dropna()
+    if c.empty:
+        return {}
+    return {"median_close_min_to_kickoff": round(float(c.median()), 1),
+            "share_close_within_30m": round(float((c <= NEAR_CLOSE_MIN).mean()), 4)}
 
 
 def summarise_by(d: pd.DataFrame, by: str, unit: str, *, prefix: str = "") -> pd.DataFrame:

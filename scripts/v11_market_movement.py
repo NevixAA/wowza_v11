@@ -49,6 +49,7 @@ PROJ = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(PROJ))
 import config  # noqa: E402
 from src import movement as mv  # noqa: E402
+from src.book_consensus import research_snapshots  # noqa: E402
 from scripts.v11_shadow import closing_snapshot  # noqa: E402
 
 DETAIL_COLS = [
@@ -56,7 +57,10 @@ DETAIL_COLS = [
     "league", "model_type",
     "p_model", "p_market_entry", "residual", "abs_residual_pp", "entry_odds", "bet_side",
     "n_books", "market_prob_std", "market_prob_range", "previous_market_move_pp",
-    "close_ts", "close_minutes_to_kickoff", "window_min", "p_market_close", "close_odds",
+    # close_kind: NEAR_CLOSE (<= 30 min before kickoff) or LAST_PRE_KICKOFF_SNAPSHOT - the
+    # "close" is the last snapshot v11 took, a median ~2 h out (src/movement.Summary).
+    "close_ts", "close_minutes_to_kickoff", "close_kind", "window_min", "p_market_close",
+    "close_odds",
     "market_move_pp", "signed_market_move_pp", "toward_wowza",
     "entry_fair_probability", "close_fair_probability",
     "clv_pct", "clv_quality", "quality_not_assessed",
@@ -65,11 +69,20 @@ DETAIL_COLS = [
 ]
 
 
-def _load_snapshots() -> pd.DataFrame:
+def _load_snapshots(one_estimator: bool = True) -> pd.DataFrame:
+    """Snapshots for the movement research. ONE ESTIMATOR (Data Truth round 5, 2026-11-02):
+    v11_p_market switched between an ungated exchange median, a cross-book median and one book's
+    de-vig across snapshots of one fixture, and on many rows held P(UNDER), so a "move" could be an
+    estimator or side change. Rows now carry the one-estimator P(OVER) (src/book_consensus.
+    research_snapshots); rows with neither a live nor a restated value are dropped.
+    one_estimator=False reads the published column as-is - only for the restatement comparison
+    (scripts/v11_restate_research.py)."""
     p = config.OUTPUT_DIR / "v11_shadow_snapshots.csv"
     if not p.exists():
         return pd.DataFrame()
-    s = pd.read_csv(p)
+    s = research_snapshots(p) if one_estimator else pd.read_csv(p, low_memory=False)
+    if s.empty:
+        return s
     for c in ("p_model_over", "v11_p_market", "minutes_to_kickoff", "odds_over25",
               "odds_under25", "n_books", "book_dispersion"):
         if c in s.columns:
@@ -113,16 +126,12 @@ def _attach_results(d: pd.DataFrame) -> pd.DataFrame:
         g = pd.read_csv(p)
     except Exception:
         return d
-    if "over25_result" not in g.columns or "match" not in g.columns:
+    # Joined on fixture_id, which v11_graded.csv now carries (built from the canonical league).
+    # The old bridge on (match, date) had no league in the key.
+    if "over25_result" not in g.columns or "fixture_id" not in g.columns:
+        print("[movement] v11_graded.csv has no fixture_id/over25_result; results not attached")
         return d
-    # v11_graded is keyed by match+date, the snapshots by fixture_id; bridge on the pair the
-    # snapshot file also carries.
-    snaps = _load_snapshots()
-    if snaps.empty or "match" not in snaps.columns:
-        return d
-    bridge = snaps.drop_duplicates("fixture_id")[["fixture_id", "match", "date"]]
-    g2 = g[["match", "date", "over25_result", "v11_pnl"]].dropna(subset=["over25_result"])
-    m = bridge.merge(g2, on=["match", "date"], how="inner")
+    m = g[["fixture_id", "over25_result", "v11_pnl"]].dropna(subset=["over25_result", "fixture_id"])
     if m.empty:
         return d
     res = dict(zip(m["fixture_id"], m["over25_result"]))
@@ -132,9 +141,9 @@ def _attach_results(d: pd.DataFrame) -> pd.DataFrame:
     return d
 
 
-def build() -> tuple[pd.DataFrame, pd.DataFrame]:
+def build(one_estimator: bool = True) -> tuple[pd.DataFrame, pd.DataFrame]:
     """(detail, eligible). detail keeps flagged rows; eligible is what carries a claim."""
-    s = _load_snapshots()
+    s = _load_snapshots(one_estimator)
     if s.empty:
         return pd.DataFrame(), pd.DataFrame()
     s = s[s["p_model_over"].notna() & s["v11_p_market"].notna()]
