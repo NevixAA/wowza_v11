@@ -418,6 +418,10 @@ _RESULT_ALIASES = {
     "andorra cf": "andorra",                    # La Liga 2: 'Andorra' 19 / 'FC Andorra' 10
     "cd castellon": "castellon",                # La Liga 2: 'Castellon' 17 / 'Castellón' 8
     "pumas": "unam pumas",                      # Liga MX: 'UNAM Pumas' 21 / 'U.N.A.M. - Pumas' 18
+    # 2026-11-22 (prediction-ledger Standard settlement): the OddsAPI board spells the club 'Hertha Berlin';
+    # football-data 2026/27 has 'Hertha' (and 'Hertha BSC' for one August round), API-Football 'Hertha BSC'.
+    # A pool holding both spellings is refused (one club, two names), never split.
+    "hertha berlin": ("hertha", "hertha bsc"),  # Bundesliga 2
 }
 
 

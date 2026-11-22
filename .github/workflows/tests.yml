@@ -31,6 +31,7 @@ jobs:
     timeout-minutes: 30
     env:
       V9_LOCAL: ${{ github.workspace }}/_v9
+      PRO_LOCAL: ${{ github.workspace }}/_pro
       V9_REF: ${{ ((github.event_name == 'pull_request' && github.base_ref) || github.ref_name) == 'main' && 'main' || 'data-truth-100' }}
     steps:
       - uses: actions/checkout@v4
@@ -41,6 +42,20 @@ jobs:
           ref: ${{ env.V9_REF }}
           path: _v9
           fetch-depth: 1
+      # Pro read-only, for tests/test_v9_pro_v11_identity_parity.py (shared ledger files + Pro's committed
+      # ledger identities). Same branch rule as v9.
+      - name: Check out Pro at the matching branch (read-only)
+        uses: actions/checkout@v4
+        with:
+          repository: NevixAA/wowzaV9-Pro
+          ref: ${{ env.V9_REF }}
+          path: _pro
+          fetch-depth: 1
+          # Only what the parity test reads: Pro's season store (data/) is gigabytes.
+          sparse-checkout: |
+            src
+            config
+            output/prediction_ledger
       - uses: actions/setup-python@v5
         with:
           python-version: '3.11'
@@ -61,8 +76,8 @@ jobs:
         if: always()
         run: |
           # _v9 is the read-only peer checkout made above, not a file the tests wrote
-          if [ -n "$(git status --porcelain -- . ':!_v9')" ]; then
-            git status --short -- . ':!_v9'
+          if [ -n "$(git status --porcelain -- . ':!_v9' ':!_pro')" ]; then
+            git status --short -- . ':!_v9' ':!_pro'
             echo "::error title=Test hygiene::the test run changed or created files in the repo tree"
             exit 1
           fi
