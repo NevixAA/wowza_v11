@@ -63,7 +63,9 @@ from __future__ import annotations
 import numpy as np
 import pandas as pd
 
-CALC_VERSION = "1.0.0"
+# 1.1.0 (2026-11-23): eligibility comes from src/movement.eligible, which now excludes
+# KICKOFF_CHANGED rows, so segment counts and CLV move with movement 1.1.0.
+CALC_VERSION = "1.1.0"
 
 # Lookback windows in minutes. 30m is absent on purpose — see the module docstring.
 WINDOWS_MIN = (60, 180, 360)
