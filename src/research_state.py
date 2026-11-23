@@ -44,7 +44,9 @@ import pandas as pd
 
 import config
 
-CALC_VERSION = "1.0.0"
+# Moves with src/movement.CALC_VERSION: Pro compares this health stamp with movement's version
+# (V11_CALC_VERSION_MISMATCH). 1.1.0 = KICKOFF_CHANGED flag (2026-11-23).
+CALC_VERSION = "1.1.0"
 
 # Freshness thresholds, set from the workflow's real cadence: v11_collect runs at :25 and :55
 # during match hours (08-23 UTC), so ~30 min between runs and an ~9h overnight gap.

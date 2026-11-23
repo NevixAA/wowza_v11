@@ -60,3 +60,24 @@ The momentum headline is the residual-only coefficient. Window 720/720 min, 200 
 | one estimator (restated) | 0.0040 [0.0018, 0.0060], p=0.02 | 0.0025 [-0.0009, 0.0057], p=0.10 | 0.0007 (p=0.41) |
 
 Under one estimator, the controlled residual coefficient is no longer distinguishable from zero. `scripts/v11_momentum_control.py` now reads the one-estimator value: from the row itself, or from the sidecar for older rows. It drops any row that has neither.
+
+## v11_movement_kickoff_changed_2026-11-23.csv (movement calc 1.0.0 -> 1.1.0)
+
+**What changed.** A new movement quality flag, `KICKOFF_CHANGED` (owner approval 2026-11-23 of `reports/P1_V11_RECONCILIATION.md` on v9 main). A row is flagged when the close snapshot's own kickoff (`close_ts + close_minutes_to_kickoff`) differs from the row's `kickoff_ts` by more than 5 minutes. Those rows paired an entry with a close taken under a different kickoff (reschedules and kickoff updates). Some closes were even taken after the row's own kickoff.
+
+**Rows are flagged, never deleted.** `v11_market_movement_detail.csv` keeps every row and gains `close_kickoff_ts`, `kickoff_shift_min` and `kickoff_changed`. Flagged rows leave `src/movement.eligible`, so they drop out of every movement and CLV statistic, including the microstructure segments. A row without a recorded `kickoff_ts` lists `KICKOFF_CHANGED` under `quality_not_assessed`; it is never passed silently.
+
+**Versions.** `src/movement.CALC_VERSION`, `src/research_state.CALC_VERSION` and `src/microstructure.CALC_VERSION` are now 1.1.0. Pro compares the health stamp with movement's version, so the first two move together. Do not pool 1.0.0 and 1.1.0 observations.
+
+**Old vs new counts** (same committed snapshots, built by `scripts/v11_restate_kickoff_changed.py` on 2026-11-23):
+
+| metric | calc 1.0.0 | calc 1.1.0 |
+|---|---|---|
+| detail rows (none deleted) | 86,385 | 86,385 |
+| clv_quality = OK | 83,027 | 81,266 |
+| clv_quality = KICKOFF_CHANGED | 0 | 1,829 |
+| clv_quality = INSUFFICIENT_BOOKS | 3,175 | 3,107 |
+| clv_quality = MISSING_KICKOFF | 183 | 183 |
+| eligible fixtures | 2,399 | 2,396 |
+
+The 1,829 flagged rows cover 64 fixtures. 1,761 of them were OK under 1.0.0. 68 were INSUFFICIENT_BOOKS and are now reported under the kickoff flag. 401 had a close after the row's own kickoff. The fixture-level headline and CLV figures for both versions are in the CSV.

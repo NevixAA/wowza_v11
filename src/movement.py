@@ -82,7 +82,15 @@ import pandas as pd
 # different definitions must never be pooled, and without a version stamp they silently would be:
 # a later reader would average a v1 and a v2 residual and get a number that means nothing. Pro
 # partitions by ingest run, so a bump ADDS a version rather than overwriting the previous one.
-CALC_VERSION = "1.0.0"
+#
+# 1.1.0 (2026-11-23, owner approval of P1_V11_RECONCILIATION): new KICKOFF_CHANGED quality flag.
+# 1,829 rows over 64 fixtures paired an entry with a close taken under a different kickoff
+# (reschedules / kickoff updates); 1,761 were OK and 401 had a close after the row's own kickoff.
+# They are flagged and leave the movement/CLV statistics; no row is deleted. Old vs new counts:
+# output/corrections/v11_movement_kickoff_changed_2026-11-23.csv.
+# src/research_state.CALC_VERSION moves with this one: Pro compares the two
+# (src/importers/v11_research.py, V11_CALC_VERSION_MISMATCH).
+CALC_VERSION = "1.1.0"
 
 # Below this the price is treated as UNMOVED rather than as a tiny signal. A flat market is an
 # absence of evidence, not evidence against the model, and must not be counted as a miss.
@@ -126,6 +134,14 @@ FLAG_OK = "OK"
 # O/U 2.5 quote and the mapping is suspect.
 _OVERROUND_LO, _OVERROUND_HI = 0.98, 1.25
 _MIN_BOOKS = 3
+#: KICKOFF_CHANGED: the close snapshot's own kickoff (close_ts + close_minutes_to_kickoff) differs
+#: from the row's recorded kickoff_ts by more than this many minutes. 5 minutes is the tolerance the
+#: P1 reconciliation used (strictly greater; the shift is kept to 3 decimals so 5.03 min is not
+#: rounded down to 5.0).
+KICKOFF_CHANGE_TOL_MIN = 5.0
+#: Switch for the restatement record only (scripts/v11_restate_kickoff_changed.py rebuilds the
+#: 1.0.0 counts with it off). Production never turns it off.
+KICKOFF_CHECK = True
 
 
 def quality_flags(row: pd.Series) -> tuple[str, list[str]]:
@@ -143,6 +159,16 @@ def quality_flags(row: pd.Series) -> tuple[str, list[str]]:
     ctk = row.get("close_minutes_to_kickoff")
     if pd.notna(ctk) and float(ctk) <= 0:
         flags.append("POST_KICKOFF_CLOSE")
+
+    # The entry and the close must describe the SAME kickoff. A reschedule between them pairs an
+    # entry with a close taken for a different match time (and sometimes after the row's own
+    # kickoff), so the "movement" is not a pre-match movement of one event.
+    if KICKOFF_CHECK:
+        ks = row.get("kickoff_shift_min")
+        if ks is None or pd.isna(ks):
+            not_assessed.append("KICKOFF_CHANGED")
+        elif abs(float(ks)) > KICKOFF_CHANGE_TOL_MIN:
+            flags.append("KICKOFF_CHANGED")
 
     o, u = row.get("odds_over25"), row.get("odds_under25")
     if pd.isna(o) or pd.isna(u):
@@ -256,6 +282,17 @@ def compute(entry: pd.DataFrame, close: pd.DataFrame) -> pd.DataFrame:
     ctk = pd.to_numeric(d["close_minutes_to_kickoff"], errors="coerce")
     d["close_kind"] = np.where(ctk <= NEAR_CLOSE_MIN, "NEAR_CLOSE",
                                np.where(ctk > NEAR_CLOSE_MIN, "LAST_PRE_KICKOFF_SNAPSHOT", None))
+
+    # KICKOFF_CHANGED inputs: the close's own kickoff and its shift from the row's kickoff_ts.
+    # A row without a recorded kickoff_ts gets NaN (the check is then "not assessed", never passed).
+    close_ko = (pd.to_datetime(d["close_ts"], utc=True, errors="coerce")
+                + pd.to_timedelta(ctk, unit="m"))
+    row_ko = (pd.to_datetime(d["kickoff_ts"], utc=True, errors="coerce")
+              if "kickoff_ts" in d.columns else pd.Series(pd.NaT, index=d.index, dtype="datetime64[ns, UTC]"))
+    d["close_kickoff_ts"] = close_ko.dt.strftime("%Y-%m-%dT%H:%M:%SZ")
+    d["kickoff_shift_min"] = ((close_ko - row_ko).dt.total_seconds() / 60.0).round(3)
+    d["kickoff_changed"] = (d["kickoff_shift_min"].abs() > KICKOFF_CHANGE_TOL_MIN).astype("boolean")
+    d.loc[d["kickoff_shift_min"].isna(), "kickoff_changed"] = pd.NA
 
     q = d.apply(quality_flags, axis=1)
     d["clv_quality"] = [f for f, _ in q]

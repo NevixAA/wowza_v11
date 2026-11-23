@@ -520,6 +520,64 @@ def _movement_checks() -> None:
           all(f in r13["quality_not_assessed"].iloc[0]
               for f in ("STALE_ENTRY_PRICE", "STALE_CLOSE_PRICE", "SYNTHETIC_ODDS")))
 
+    print("\n== movement: KICKOFF_CHANGED (calc 1.1.0, 2026-11-23) ==")
+    # Entry 10:00 for a 20:00 kickoff. A close at 18:00 that says "120 min to kickoff" describes the
+    # same kickoff; one that says "60 min" was taken under a kickoff of 19:00 - a different match time.
+    ek = e.copy(); ek["kickoff_ts"] = "2026-08-20 20:00:00"
+    same = c.copy(); same["minutes_to_kickoff"] = 120.0
+    rs = mv.compute(ek, same)
+    check("same kickoff -> OK and kickoff_changed False",
+          rs["clv_quality"].iloc[0] == "OK" and rs["kickoff_changed"].iloc[0] == False,  # noqa: E712
+          f"{rs['clv_quality'].iloc[0]} {rs['kickoff_shift_min'].iloc[0]}")
+    rk = mv.compute(ek, c)                                        # close kickoff 19:00: shift -60
+    check("close under a different kickoff -> KICKOFF_CHANGED",
+          rk["clv_quality"].iloc[0] == "KICKOFF_CHANGED", str(rk["clv_quality"].iloc[0]))
+    check("...the shift is recorded in minutes", abs(rk["kickoff_shift_min"].iloc[0] + 60.0) < 1e-9,
+          str(rk["kickoff_shift_min"].iloc[0]))
+    check("...the row is kept (flagged, never deleted)", len(rk) == 1)
+    check("...and excluded from the movement/CLV statistics", mv.eligible(rk).empty)
+    late = c.copy(); late["minutes_to_kickoff"] = 125.0           # close kickoff 20:05: shift +5
+    check("a shift of exactly 5 min is within tolerance",
+          mv.compute(ek, late)["clv_quality"].iloc[0] == "OK")
+    late["minutes_to_kickoff"] = 125.05                           # shift +5.05 min
+    check("a shift just over 5 min is flagged (no rounding down)",
+          mv.compute(ek, late)["clv_quality"].iloc[0] == "KICKOFF_CHANGED")
+    moved_ko = e.copy(); moved_ko["kickoff_ts"] = "2026-08-20 17:00:00"   # row says 17:00
+    rl = mv.compute(moved_ko, same)                               # close at 18:00, after it
+    check("a close taken after the row's own kickoff is flagged",
+          rl["clv_quality"].iloc[0] == "KICKOFF_CHANGED", str(rl["clv_quality"].iloc[0]))
+    nk = mv.compute(e, c)                                         # no kickoff_ts recorded
+    check("no recorded kickoff_ts -> KICKOFF_CHANGED not assessed (never passed silently)",
+          "KICKOFF_CHANGED" in nk["quality_not_assessed"].iloc[0]
+          and pd.isna(nk["kickoff_changed"].iloc[0]))
+    two = pd.concat([ek.assign(snapshot_ts="2026-08-20T09:00:00Z"), ek], ignore_index=True)
+    two.loc[0, "kickoff_ts"] = "2026-08-20 19:00:00"              # same fixture, older kickoff
+    rt = mv.compute(two, same)
+    check("flagging is per row: only the row with the other kickoff is excluded",
+          list(rt["clv_quality"]) == ["KICKOFF_CHANGED", "OK"] and len(mv.eligible(rt)) == 1,
+          str(list(rt["clv_quality"])))
+    from src import research_state as rsm, microstructure as ms
+    check("movement CALC_VERSION bumped to 1.1.0", mv.CALC_VERSION == "1.1.0", mv.CALC_VERSION)
+    check("research_state CALC_VERSION moves with movement (Pro compares them)",
+          rsm.CALC_VERSION == mv.CALC_VERSION, f"{rsm.CALC_VERSION} vs {mv.CALC_VERSION}")
+    check("microstructure CALC_VERSION bumped (its eligibility comes from movement)",
+          ms.CALC_VERSION == "1.1.0", ms.CALC_VERSION)
+    check("the kickoff check is on in production", mv.KICKOFF_CHECK is True)
+    from scripts import v11_market_movement as vmm
+    check("detail file carries the kickoff evidence columns",
+          all(cn in vmm.DETAIL_COLS for cn in ("close_kickoff_ts", "kickoff_shift_min",
+                                               "kickoff_changed")))
+    rec = PROJ / "output" / "corrections" / "v11_movement_kickoff_changed_2026-11-23.csv"
+    if rec.exists():
+        r = pd.read_csv(rec).set_index("metric")
+        check("restatement record: 1,829 rows over 64 fixtures flagged",
+              int(r.loc["kickoff_changed_rows", "calc_1.1.0"]) == 1829
+              and int(r.loc["kickoff_changed_fixtures", "calc_1.1.0"]) == 64)
+        check("restatement record: no detail row deleted",
+              int(r.loc["detail_rows", "calc_1.0.0"]) == int(r.loc["detail_rows", "calc_1.1.0"]))
+    else:
+        check("restatement record exists", False, str(rec))
+
     print("\n== movement: duplicate snapshots and fixture-level reduction ==")
     dup = pd.concat([e, e], ignore_index=True)
     check("duplicate identical snapshots both compute", len(mv.compute(dup, c)) == 2)

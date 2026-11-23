@@ -66,6 +66,8 @@ DETAIL_COLS = [
     "clv_pct", "clv_quality", "quality_not_assessed",
     "residual_band", "abs_residual_band", "time_band",
     "result", "pnl_flat",
+    # KICKOFF_CHANGED evidence (calc 1.1.0): the close's own kickoff and its shift from kickoff_ts
+    "close_kickoff_ts", "kickoff_shift_min", "kickoff_changed",
 ]
 
 
