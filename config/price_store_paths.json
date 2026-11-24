@@ -1,0 +1,196 @@
+{
+ "store": {
+  "repo": "NevixAA/wowza-exec",
+  "branch": "af-prices-live"
+ },
+ "sources": [
+  [
+   "wowza-betting",
+   "main"
+  ],
+  [
+   "wowza-betting",
+   "data-truth-100"
+  ],
+  [
+   "wowza-betting",
+   "prep/bars-oddsapi-hist"
+  ],
+  [
+   "wowzaV9-Pro",
+   "main"
+  ],
+  [
+   "wowza_v11",
+   "main"
+  ]
+ ],
+ "rules": {
+  "wowza-betting": {
+   "A_O": [
+    "^output/book_quotes/",
+    "^output/specials_quotes/",
+    "^output/prop_quotes/",
+    "^output/player_prop_odds_history(\\.csv$|_archive/)",
+    "^output/newformat_odds_history\\.csv$",
+    "^output/standard_sidemarket_odds_history\\.csv$",
+    "^output/odds_heartbeat/",
+    "^output/book_odds_snapshots(\\.csv$|_archive/)",
+    "^output/exchange_quotes/",
+    "^output/standard_odds_history\\.csv$",
+    "^output/newformat_odds_dense\\.csv$",
+    "^odds_history_v9\\.json$",
+    "^output/sharp_history/",
+    "^output/worldcup_history\\.json$"
+   ],
+   "B": [
+    "^docs/quality_tiers_2026_10/seed_first_sight_tips\\.csv$",
+    "^output/backtest_all_leagues\\.csv$",
+    "^output/backtest_results_btts\\.csv$",
+    "^output/backtest_results_newformat\\.csv$",
+    "^output/backtest_results_over15\\.csv$",
+    "^output/backtest_results_over35\\.csv$",
+    "^output/backtest_results_standard\\.csv$",
+    "^output/bars_opt/study/final_bets\\.parquet$",
+    "^output/bars_opt/study/top3_final_TOP_M_PLUS_TIER2\\.csv$",
+    "^output/bars_opt/study/top3_final_TOP_ONLY_M\\.csv$",
+    "^output/bars_opt/study/top3_final_TOP_ONLY_V\\.csv$",
+    "^output/bars_opt/study/top3_final_baseline\\.csv$",
+    "^output/bars_opt/study_58f10476/final_bets\\.parquet$",
+    "^output/bars_opt/study_58f10476/top3_final_TOP_M_PLUS_TIER2\\.csv$",
+    "^output/bars_opt/study_58f10476/top3_final_TOP_ONLY_M\\.csv$",
+    "^output/bars_opt/study_58f10476/top3_final_TOP_ONLY_V\\.csv$",
+    "^output/bars_opt/study_58f10476/top3_final_baseline\\.csv$",
+    "^output/bets\\.csv$",
+    "^output/bets_ledger\\.csv$",
+    "^output/clv_records\\.csv$",
+    "^output/corrections/bets_ledger_multi_tip_fixtures\\.csv$",
+    "^output/corrections/bets_ledger_post_kickoff\\.csv$",
+    "^output/corrections/bets_ledger_removed_backtest_rows_2026\\-11\\-01\\.csv$",
+    "^output/corrections/clv_first_half_contaminated\\.csv$",
+    "^output/corrections/clv_first_half_contaminated_archive_rows\\.csv$",
+    "^output/corrections/clv_invalid_close\\.csv$",
+    "^output/corrections/history_cup_unproven_rows\\.csv$",
+    "^output/corrections/history_excluded_cup_rows\\.csv$",
+    "^output/corrections/history_removed_duplicates\\.csv$",
+    "^output/corrections/ht_ledger_unpriced\\.csv$",
+    "^output/corrections/player_ledger_card_regrade_2026\\-11\\.csv$",
+    "^output/corrections/player_ledger_relogged_first_sight_2026\\-11\\.csv$",
+    "^output/corrections/player_ledger_restored_2026\\-11\\.csv$",
+    "^output/corrections/props_ghost_tips\\.csv$",
+    "^output/corrections/props_sentinel_prob\\.csv$",
+    "^output/corrections/sharp_ledger_restated\\.csv$",
+    "^output/corrections/side_clv_first_half_contaminated\\.csv$",
+    "^output/corrections/side_clv_first_half_contaminated_archive_rows\\.csv$",
+    "^output/direction_conflicts\\.csv$",
+    "^output/drift_shadow\\.csv$",
+    "^output/edge_engine_backtest\\.csv$",
+    "^output/edge_engine_shadow\\.csv$",
+    "^output/ht_ledger\\.csv$",
+    "^output/ht_observations\\.csv$",
+    "^output/league_weekly_candidates\\.csv$",
+    "^output/league_weekly_research\\.csv$",
+    "^output/ledger_tier_seen\\.csv$",
+    "^output/player_ledger\\.csv$",
+    "^output/player_tips\\.csv$",
+    "^output/predictions\\.csv$",
+    "^output/props_shown_log\\.csv$",
+    "^output/quality_tier_shadow\\.csv$",
+    "^output/sharp_ledger\\.csv$",
+    "^output/sharp_tips\\.csv$",
+    "^output/side_bets_ledger\\.csv$",
+    "^output/side_edge_devig_shadow\\.csv$",
+    "^output/stake_audit\\.csv$",
+    "^output/stake_plan\\.csv$",
+    "^output/top3_league_candidates\\.csv$",
+    "^output/top3_league_candidates_pre_reseed_2026\\-11\\-20\\.csv$",
+    "^output/top3_league_ledger\\.csv$",
+    "^output/top_picks_log\\.csv$",
+    "^output/v91_shadow\\.csv$",
+    "^output/weekly_league_report\\.json$",
+    "^output/worldcup_tips\\.csv$",
+    "^reports/10_reconciliation_full\\.csv$",
+    "^reports/au1_data/config_timeline\\.csv$",
+    "^reports/au1_data/regime_ledger_rows\\.csv$",
+    "^reports/au1_data/regime_performance\\.csv$",
+    "^reports/au1_data/side_ledger_price_classes\\.csv$",
+    "^reports/au3_data/first_sight_ou25\\.csv$",
+    "^reports/au3_data/first_sight_side\\.csv$",
+    "^reports/au3_data/phase4_rows\\.csv$",
+    "^reports/au3_data/phase9_nf_btts_universe\\.csv$",
+    "^reports/au3_data/phase9_side_rows\\.csv$",
+    "^reports/au3_data/pred_panel\\.csv$",
+    "^reports/au3_data/settled_ou25\\.csv$",
+    "^reports/au3_data/settled_side\\.csv$",
+    "^reports/au4_data/clv_records_reconstructed\\.csv$",
+    "^reports/au4_data/clv_top_outliers\\.csv$",
+    "^reports/au4_data/ledger_close_provenance\\.csv$",
+    "^reports/au4_data/ledger_decision_time_availability\\.csv$",
+    "^reports/au4_data/price_postko_newformat_odds_dense\\.csv$",
+    "^reports/au4_data/price_postko_standard_odds_history\\.csv$",
+    "^reports/au4_data/props_mvm_oot_predictions\\.csv$",
+    "^reports/au4_data/props_regrade\\.csv$",
+    "^output/edge_engine_shadow_pre_reseed_2026\\-11\\-20\\.csv$",
+    "^output/model_lineage/shadow_experiments\\.csv$",
+    "^output/props_top3_candidates\\.csv$",
+    "^output/props_top3_ledger\\.csv$"
+   ]
+  },
+  "wowzaV9-Pro": {
+   "A_O": [
+    "^data/season_2026_27/scout_odds/",
+    "^data/season_2026_27/scout_specials_quotes/",
+    "^data/season_2026_27/live_odds_snapshots/",
+    "^data/season_2026_27/market_snapshots/",
+    "^data/season_2026_27/book_odds_snapshots/",
+    "^docs/league_scout_af_odds_probe_2026_10_08\\.csv$"
+   ],
+   "B": [
+    "^data/_backfill_fixtures\\.parquet$",
+    "^data/_backfill_joined\\.parquet$",
+    "^data/season_2026_27/clv/",
+    "^data/season_2026_27/combo_candidates/",
+    "^data/season_2026_27/combo_legs/",
+    "^data/season_2026_27/combo_settlements/",
+    "^data/season_2026_27/feature_snapshots/",
+    "^data/season_2026_27/movement_observations/",
+    "^data/season_2026_27/player_props/",
+    "^data/season_2026_27/settlements/",
+    "^data/season_2026_27/settlements_backfill/",
+    "^experiments/valuable_2026_10/all_fixture_settled\\.parquet$",
+    "^output/clv_enriched\\.csv$",
+    "^output/paper_1x2\\.csv$",
+    "^output/player_v3/consensus/two_sided_pairs\\.csv$",
+    "^output/player_v3/player_market_residual\\.csv$",
+    "^output/price_trader/paper_trades\\.csv$",
+    "^output/price_trader/price_paths\\.parquet$",
+    "^output/price_trader/trades\\.parquet$",
+    "^output/standard_repair/forward_first_sight\\.csv$",
+    "^output/standard_repair/forward_shadow\\.csv$",
+    "^output/standard_repair/forward_shadow_settled\\.csv$",
+    "^output/standard_repair/forward_shadow_sightings/",
+    "^output/standard_repair/pre_repair/forward_first_sight\\.csv$",
+    "^output/standard_repair/top5_panel_repair\\.csv$",
+    "^output/studies/btts_contradiction_first_logged\\.csv$",
+    "^output/studies/learned_tiers/walk_forward_rows\\.csv$",
+    "^output/studies/ou_challenger_forward\\.csv$",
+    "^output/studies/weather/match_venues\\.csv$",
+    "^output/valuable_shadow/valuable_shadow\\.csv$"
+   ]
+  },
+  "wowza_v11": {
+   "A_O": [],
+   "B": [
+    "^output/v11_market_microstructure\\.csv$",
+    "^output/v11_market_movement_detail\\.csv$",
+    "^output/v11_shadow_log\\.csv$",
+    "^output/v11_shadow_snapshots\\.csv$"
+   ]
+  }
+ },
+ "live": {
+  "wowza-betting": [
+   "A_O"
+  ]
+ }
+}

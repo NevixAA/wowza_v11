@@ -44,6 +44,13 @@ jobs:
           fetch-depth: 1
       # Pro read-only, for tests/test_v9_pro_v11_identity_parity.py (shared ledger files + Pro's committed
       # ledger identities). Same branch rule as v9.
+      - name: v9 prices from the private store (owner 2026-11-24)
+        # v9's price files live only in NevixAA/wowza-exec since the cut-over; this fills them into the
+        # v9 checkout at their usual paths (read-only key, counts-only log). Before the cut-over the
+        # checkout still has them and this step does nothing.
+        env:
+          PRICE_STORE_RO_KEY: ${{ secrets.PRICE_STORE_RO_KEY }}
+        run: bash scripts/price_store_live.sh read wowza-betting _v9
       - name: Check out Pro at the matching branch (read-only)
         uses: actions/checkout@v4
         with:
